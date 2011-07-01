@@ -10,16 +10,20 @@
 #ifndef XY_CODEPOINT_HPP_
 #define XY_CODEPOINT_HPP_
 
+#include <stdint.h>
+
 namespace xy { namespace utf8 {
 
     class decoder;
-
     class codepoint {
+        friend class decoder;
     private:
 
-        friend class decoder;
+        typedef void private_tag;
 
         char data[5];
+
+        void init_from_byte_array(uint8_t *);
 
     public:
 
@@ -30,6 +34,11 @@ namespace xy { namespace utf8 {
         friend bool operator==(const char, const codepoint &) throw();
 
         bool operator==(const codepoint &) const throw();
+
+        bool is_null(void) const throw();
+        bool is_ascii(void) const throw();
+
+        const char *to_cstring(void) const throw();
 
         codepoint &operator=(const char) throw();
         codepoint &operator=(const codepoint &) throw();

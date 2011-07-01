@@ -39,4 +39,19 @@ namespace xy { namespace utf8 {
         return *this;
     }
 
+    void codepoint::init_from_byte_array(uint8_t *a) {
+        memcpy(data, a, 5U);
+    }
+
+    bool codepoint::is_null(void) const throw() {
+        return 0 == data[0];
+    }
+
+    bool codepoint::is_ascii(void) const throw() {
+        return 0 != data[0] && 0 == data[1];
+    }
+
+    const char *codepoint::to_cstring(void) const throw() {
+        return data;
+    }
 }}

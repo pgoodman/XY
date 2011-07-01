@@ -1,5 +1,9 @@
 
+#include <cstring>
+
+#include "xy/include/array.hpp"
 #include "xy/include/utf8/decoder.hpp"
+#include "xy/include/utf8/codepoint.hpp"
 
 
 // Copyright (c) 2008-2010 Bjoern Hoehrmann <bjoern@hoehrmann.de>
@@ -46,18 +50,40 @@ namespace {
       12,12,12,12,12,12,12,36,12,36,12,12, 12,36,12,12,12,12,12,36,12,36,12,12,
       12,36,12,12,12,12,12,12,12,12,12,12,
     };
+
+    enum {
+        ACCEPT_STATE = 0,
+        SINK_STATE = 12
+    };
+
+    static uint8_t REPLACEMENT_CHARACTER[]{0xFF,0xFD,0,0,0};
 }
 
 namespace xy { namespace utf8 {
 
-    decoder::decoder(void) throw() : state(0) { }
-
-    inline void decoder::reset(void) throw() {
-        state = 0;
+    decoder::decoder(void) throw()
+        : state{ACCEPT_STATE}
+        , seen{0U}
+    {
+        memset(chars, 0, array::size(chars));
     }
 
-    inline bool decoder::byte_is_valid(uint8_t byte) throw() {
+    bool decoder::next_state(uint8_t byte, codepoint &codepoint) throw() {
         state = utf8d[256 + state + utf8d[byte]];
-        return 0U == state;
+        chars[seen] = byte;
+        ++seen;
+        if(ACCEPT_STATE == state) {
+            codepoint.init_from_byte_array(chars);
+            memset(chars, 0, array::size(chars));
+            seen = 0;
+            return true;
+        } else if(SINK_STATE) {
+            codepoint.init_from_byte_array(REPLACEMENT_CHARACTER);
+            memset(chars, 0, array::size(chars));
+            seen = 0;
+            return true;
+        }
+
+        return false;
     }
 }}
