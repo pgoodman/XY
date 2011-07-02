@@ -24,6 +24,9 @@ namespace xy { namespace mpl {
     };
 
     template <typename A, typename B>
+    class equal<A *, B *> : equal<A, B> { };
+
+    template <typename A, typename B>
     class equal<const A, const B> : equal<A, B> { };
 
     template <typename A, typename B>
@@ -49,6 +52,9 @@ namespace xy { namespace mpl {
             return false;
         }
     };
+
+    template <typename A, typename B>
+    class const_equal<A *, B *> : const_equal<A, B> { };
 
     template <typename A, typename B>
     class const_equal<const A, const B> : equal<A, B> { };

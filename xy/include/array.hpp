@@ -10,6 +10,8 @@
 #ifndef XY_ARRAY_HPP_
 #define XY_ARRAY_HPP_
 
+#include <cstddef>
+
 namespace xy { namespace array {
 
     /// type-aware and safe slice of an array

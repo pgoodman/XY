@@ -15,25 +15,19 @@
 namespace xy { namespace utf8 {
 
     class codepoint;
-    /*
-    class decoder {
-    public:
-        typedef uint8_t (next_char_func)(bool &);
-    private:
-        uint8_t state;
-    public:
-        decoder(next_char_func *) throw();
-        size_t decode_next_into(uint8_t ) const throw();
-    };*/
 
     class decoder {
     private:
         uint8_t state;
         uint8_t seen;
         uint8_t chars[5];
+        bool found_error_;
+
     public:
         decoder(void) throw();
         bool next_state(uint8_t, codepoint &) throw();
+        bool is_in_use(void) const throw();
+        bool found_error(void) const throw();
     };
 
 }}

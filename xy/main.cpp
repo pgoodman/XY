@@ -17,68 +17,42 @@
 #include <cstdio>
 #include <cctype>
 
-#include "xy/include/array.hpp"
+#include "xy/include/lexer.hpp"
 #include "xy/include/io/file.hpp"
+#include "xy/include/io/message.hpp"
 #include "xy/include/utf8/codepoint.hpp"
-#include "xy/include/utf8/decoder.hpp"
 
 using namespace xy;
 
 /// lex an open file
-static void lex_open_file(io::file<io::read_tag> &f) {
-
-    enum {
-        BLOCK_MARGIN = 5,
-        BLOCK_SIZE = 4096
-    };
-
-    uint8_t scratch[BLOCK_SIZE]{0};
-
-    utf8::codepoint chr;
-    utf8::decoder decoder;
-
-    size_t line[2]{1, 0};
-    size_t column[2]{1, 0};
-    unsigned curr{0}, next{1};
-
-    for(size_t read_size{BLOCK_SIZE};
-        read_size == BLOCK_SIZE; ) {
-
-        read_size = f.read_block<BLOCK_SIZE>(scratch);
-        if(0U == read_size) {
+static void lex_open_file(io::file<io::read_tag> &f, io::message_queue &mq, lexer &ll) {
+    utf8::codepoint cp;
+    int chr;
+    for(; ll.get_codepoint(f, mq, cp); ) {
+        if(cp.is_null()) {
             break;
         }
 
-        for(size_t i(0); i < read_size; ++i) {
-            if(!decoder.next_state(scratch[i], chr)) {
-                continue;
-            }
-
-            line[next] = line[curr];
-            column[next] = column[curr] + 1;
-
-            if(chr.is_ascii()) {
-                if('\n' == chr) {
-                    line[next] += 1;
-                    column[next] = 1;
-                } else if('\t' == chr) {
-                    column[next] += 3;
-                } else if(!isgraph(chr.to_cstring()[0])) {
-                    column[next] -= 1;
-                }
-            }
-
-            printf("%lu %lu %s\n", line[curr], column[curr], chr.to_cstring());
-
-            curr = next;
-            next = 1 - curr;
+        if(!cp.is_ascii()) {
+            (void) mq;
+            //mq.push(io::e_mb_not_in_string, );
         }
+
+        chr = cp.to_cstring()[0];
+
+        printf("%lu %lu %s\n", ll.line(), ll.column(), cp.to_cstring());
     }
 }
 
 /// lex a file by its file name
 static bool lex_file(const char * const file_name) throw() {
-    return io::with_open_file<io::read_tag>(file_name, lex_open_file);
+    io::message_queue mq;
+    lexer ll;
+
+    mq.push(io::test, 10, 'a', "hello world!!!");
+    mq.print_all(stderr);
+
+    return io::with_open_file<io::read_tag>(file_name, lex_open_file, mq, ll);
 }
 
 int main(int argc, const char **argv) throw() {

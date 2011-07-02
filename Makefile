@@ -8,7 +8,7 @@ DEFAULT_CXX = clang++
 CXX = ${DEFAULT_CXX}
 CXX_FEATURES = -fno-rtti -fno-exceptions -fstrict-aliasing
 CXX_WARN_FLAGS += -Wall -Werror -Wno-unused-function 
-CXX_WARN_FLAGS += -Wcast-qual
+CXX_WARN_FLAGS += -Wcast-qual -Wno-format-security
 CXX_FLAGS = -O2 -g -ansi -I${ROOT_DIR} -std=c++0x
 LD_FLAGS =
 
@@ -48,6 +48,8 @@ OBJS =
 OBJS += bin/lib/utf8/codepoint.o
 OBJS += bin/lib/utf8/decoder.o 
 OBJS += bin/lib/io/file.o
+OBJS += bin/lib/io/message.o
+OBJS += bin/lib/lexer.o
 OBJS += bin/main.o 
 OUT = bin/xy
 

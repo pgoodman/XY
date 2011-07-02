@@ -64,26 +64,37 @@ namespace xy { namespace utf8 {
     decoder::decoder(void) throw()
         : state{ACCEPT_STATE}
         , seen{0U}
+        , found_error_{false}
     {
         memset(chars, 0, array::size(chars));
     }
 
     bool decoder::next_state(uint8_t byte, codepoint &codepoint) throw() {
-        state = utf8d[256 + state + utf8d[byte]];
+        state = utf8d[(256 + state + utf8d[byte]) % array::length(utf8d)];
         chars[seen] = byte;
         ++seen;
         if(ACCEPT_STATE == state) {
             codepoint.init_from_byte_array(chars);
             memset(chars, 0, array::size(chars));
             seen = 0;
+            found_error_ = false;
             return true;
-        } else if(SINK_STATE) {
+        } else if(SINK_STATE == state) {
             codepoint.init_from_byte_array(REPLACEMENT_CHARACTER);
             memset(chars, 0, array::size(chars));
             seen = 0;
+            found_error_ = true;
             return true;
         }
 
         return false;
+    }
+
+    bool decoder::is_in_use(void) const throw() {
+        return 0 != seen;
+    }
+
+    bool decoder::found_error(void) const throw() {
+        return found_error_;
     }
 }}
