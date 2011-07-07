@@ -23,17 +23,14 @@ namespace xy { namespace mpl {
         }
     };
 
-    template <typename A, typename B>
-    class equal<A *, B *> : equal<A, B> { };
-
-    template <typename A, typename B>
-    class equal<const A, const B> : equal<A, B> { };
-
-    template <typename A, typename B>
-    class equal<const A, B> : equal<A, B> { };
-
-    template <typename A, typename B>
-    class equal<A, const B> : equal<A, B> { };
+    template <typename A>
+    class equal<A *, A *> {
+    public:
+        typedef true_tag result;
+        constexpr operator bool (void) {
+            return true;
+        }
+    };
 
     template <typename A>
     class equal<A, A> {
@@ -45,6 +42,18 @@ namespace xy { namespace mpl {
     };
 
     template <typename A, typename B>
+    class equal<A *, B *> : public equal<A, B> { };
+
+    template <typename A, typename B>
+    class equal<const A, const B> : public equal<A, B> { };
+
+    template <typename A, typename B>
+    class equal<const A, B> : public equal<A, B> { };
+
+    template <typename A, typename B>
+    class equal<A, const B> : public equal<A, B> { };
+
+    template <typename A, typename B>
     class const_equal {
     public:
         typedef false_tag result;
@@ -53,11 +62,29 @@ namespace xy { namespace mpl {
         }
     };
 
-    template <typename A, typename B>
-    class const_equal<A *, B *> : const_equal<A, B> { };
+    template <typename A>
+    class const_equal<A *, A *> {
+    public:
+        typedef true_tag result;
+        constexpr operator bool (void) {
+            return true;
+        }
+    };
+
+    template <typename A>
+    class const_equal<A, A> {
+    public:
+        typedef true_tag result;
+        constexpr operator bool (void) {
+            return true;
+        }
+    };
 
     template <typename A, typename B>
-    class const_equal<const A, const B> : equal<A, B> { };
+    class const_equal<A *, B *> : public const_equal<A, B> { };
+
+    template <typename A, typename B>
+    class const_equal<const A, const B> : public equal<A, B> { };
 
     template <typename A, typename B>
     class const_equal<const A, B> {
@@ -74,15 +101,6 @@ namespace xy { namespace mpl {
         typedef false_tag result;
         constexpr operator bool (void) {
             return false;
-        }
-    };
-
-    template <typename A>
-    class const_equal<A, A> {
-    public:
-        typedef true_tag result;
-        constexpr operator bool (void) {
-            return true;
         }
     };
 

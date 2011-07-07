@@ -63,13 +63,13 @@ namespace xy { namespace io {
     }
 
     template <typename> class file;
-    template <typename> class with_open_file;
+    class read;
 
     template<>
     class file<read_tag> {
     private:
 
-        template <typename> friend class with_open_file;
+        friend class read;
 
         int fd;
         const char *file_name;
@@ -93,7 +93,7 @@ namespace xy { namespace io {
 
             memset(block, 0, array::size(block));
 
-            ssize_t amount{read(fd, block, array::size(block))};
+            ssize_t amount{::read(fd, block, array::size(block))};
 
             if(amount < 0) {
                 // TODO report error
@@ -104,48 +104,38 @@ namespace xy { namespace io {
         }
     };
 
-    template <typename access_tag>
-    class with_open_file {
-    private:
 
-        file<access_tag> open_file;
-
-        template <typename ...state_types>
-        class use_file_func {
-        public:
-            typedef void (type)(file<access_tag> &, state_types&...);
-        };
-
+    /// read from a file.
+    class read {
     public:
 
-
         template <typename ...state_types>
-        with_open_file(
+        static bool open_file(
             const char *fname,
-            typename use_file_func<state_types...>::type *func,
+            void (*func)(file<read_tag> &, state_types&...),
             state_types&... args
         ) throw() {
+            file<read_tag> open_file;
             open_file.fd = INVALID_FILE_DESCRIPTOR;
 
             if(nullptr == fname || '\0' == *fname) {
-                return;
+                return false;
             }
 
-            const int fd = open(fname, access_tag::FLAGS);
+            const int fd = open(fname, read_tag::FLAGS);
             if(0 > fd) {
-                return;
+                return false;
             }
 
             open_file.fd = fd;
             open_file.file_name = fname;
 
             func(open_file, args...);
-        }
 
-        operator bool(void) const throw() {
             return INVALID_FILE_DESCRIPTOR != open_file.fd;
         }
     };
+
 }}
 
 #endif /* XY_FILE_READER_HPP_ */

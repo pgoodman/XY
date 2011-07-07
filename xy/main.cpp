@@ -16,8 +16,12 @@
 
 #include <cstdio>
 #include <cctype>
+#include <vector>
+#include <cassert>
 
-#include "xy/include/lexer.hpp"
+
+#include "xy/include/diagnostic_context.hpp"
+#include "xy/include/tokenizer.hpp"
 #include "xy/include/io/file.hpp"
 #include "xy/include/io/message.hpp"
 #include "xy/include/utf8/codepoint.hpp"
@@ -25,38 +29,36 @@
 using namespace xy;
 
 /// lex an open file
-static void lex_open_file(io::file<io::read_tag> &f, io::message_queue &mq, lexer &ll) {
-    utf8::codepoint cp;
-    int chr;
-    for(; ll.get_codepoint(f, mq, cp); ) {
-        if(cp.is_null()) {
-            break;
-        }
+static void tokenize_open_file(io::file<io::read_tag> &f, diagnostic_context &ctx, tokenizer &tt) {
+    token tok;
 
-        if(!cp.is_ascii()) {
-            (void) mq;
-            //mq.push(io::e_mb_not_in_string, );
-        }
-
-        chr = cp.to_cstring()[0];
-
-        printf("%lu %lu %s\n", ll.line(), ll.column(), cp.to_cstring());
+    for(; tt.get_token(f, ctx, tok); ) {
+        printf("%u:%u %s %s\n", tok.line(), tok.column(), tok.name(), tt.get_value());
     }
 }
 
 /// lex a file by its file name
-static bool lex_file(const char * const file_name) throw() {
-    io::message_queue mq;
-    lexer ll;
+static bool tokenize_file(diagnostic_context &ctx, const char * const file_name) throw() {
+    tokenizer tt;
 
-    mq.push(io::test, 10, 'a', "hello world!!!");
-    mq.print_all(stderr);
+    ctx.push_file(file_name);
 
-    return io::with_open_file<io::read_tag>(file_name, lex_open_file, mq, ll);
+    if(!io::read::open_file(file_name, tokenize_open_file, ctx, tt)) {
+        ctx.diag.push(io::e_open_file, file_name);
+    }
+
+    if(ctx.diag.has_message()) {
+        ctx.print_diagnostics(stderr);
+        return false;
+    }
+
+    return true;
 }
 
 int main(int argc, const char **argv) throw() {
-    if(argc > 1 && lex_file(argv[1])) {
+    diagnostic_context c;
+    if(argc > 1) {
+        tokenize_file(c, argv[1]);
         printf("done parsing.\n");
     } else if(argc > 1) {
         printf("unable to open file '%s' for parsing.\n", argv[1]);

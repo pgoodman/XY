@@ -15,6 +15,9 @@
 #include <utility>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
+
+#include "xy/include/cstring.hpp"
 
 #include "xy/include/mpl/bool.hpp"
 #include "xy/include/mpl/equal.hpp"
@@ -35,13 +38,14 @@ namespace xy { namespace io {
 #   undef XY_MSG
 
     typedef enum : uint8_t {
-        recoverable_error,
-        error,
-        warning,
-        note,
-        failed_assertion,
+        recoverable_error = 0,
+        error = 1,
+        warning = 2,
+        note = 3,
+        failed_assertion = 4,
+        special = 5,
 
-        sentinel_type
+        sentinel_type = 6,
     } message_type;
 
     struct message_template {
@@ -51,26 +55,59 @@ namespace xy { namespace io {
         const char * const message;
     };
 
-    // forward declaration
+    // forward declarations
     class message_queue;
+    class message_iterator;
 
     class message {
     private:
 
         friend class message_queue;
+        friend class message_iterator;
+
         message *next;
 
     protected:
 
         static const message_template MESSAGE_STRINGS[];
+        static const char * const MESSAGE_TYPES[];
 
     public:
 
-        message(void) throw();
+        const message_id id;
+        const message_type type;
+
+        message(message_id) throw();
 
         virtual ~message(void) throw();
 
         virtual void print(FILE *) const throw() = 0;
+    };
+
+    /// iterator for messages in a message queue
+    class message_iterator : public std::iterator<std::input_iterator_tag, const message *> {
+    private:
+        friend class message_queue;
+
+        const message *ptr;
+
+        message_iterator(void) throw();
+        message_iterator(const message *) throw();
+
+    public:
+
+        ~message_iterator(void) throw();
+        message_iterator(const message_iterator &) throw();
+        message_iterator &operator=(const message_iterator &) throw();
+
+        bool operator==(const message_iterator &) const throw();
+        bool operator!=(const message_iterator &) const throw();
+
+        value_type operator*(void) const throw();
+        value_type operator->(void) const throw();
+
+        message_iterator &operator++(void) throw();
+        message_iterator operator++(int) const throw();
     };
 
     namespace {
@@ -158,11 +195,7 @@ namespace xy { namespace io {
         class allocate_string<mpl::true_tag, i, tuple_type> {
         public:
             static void allocate(tuple_type &t) {
-                const char *curr{std::tr1::get<i>(t)};
-                const size_t str_len{strlen(curr)};
-                char *copy{new char[str_len + 1]};
-                strncpy(copy, curr, str_len);
-                std::tr1::get<i>(t) = copy;
+                std::tr1::get<i>(t) = cstring::copy(std::tr1::get<i>(t));
             }
         };
 
@@ -203,8 +236,7 @@ namespace xy { namespace io {
         class free_string<mpl::true_tag, i, tuple_type> {
         public:
             static void free(tuple_type &t) {
-                const char *curr{std::tr1::get<i>(t)};
-                delete [] curr;
+                cstring::free(std::tr1::get<i>(t));
                 std::tr1::get<i>(t) = nullptr;
             }
         };
@@ -241,11 +273,11 @@ namespace xy { namespace io {
                 TUPLE_SIZE = std::tr1::tuple_size<tuple_type>::value
             };
 
-            const message_id id;
+
             tuple_type values;
 
             message_impl(message_id id_, arg_types... values_) throw()
-                : id(id_)
+                : message(id_)
                 , values(values_...)
             {
                 allocate_strings<0, TUPLE_SIZE, tuple_type>::allocate(values);
@@ -256,6 +288,7 @@ namespace xy { namespace io {
             }
 
             virtual void print(FILE *fp) const throw() {
+                fprintf(fp, "%s" XY_F_BOLD, message::MESSAGE_TYPES[this->type]);
                 print_tuple<
                     TUPLE_SIZE,
                     tuple_type
@@ -267,15 +300,14 @@ namespace xy { namespace io {
         class message_impl<> : public message {
         public:
 
-            const message_id id;
-
             message_impl(message_id id_) throw()
-                : id(id_)
+                : message(id_)
             { }
 
             virtual ~message_impl(void) throw() { }
 
             virtual void print(FILE *fp) const throw() {
+                fprintf(fp, "%s" XY_F_BOLD, message::MESSAGE_TYPES[this->type]);
                 fprintf(fp, message::MESSAGE_STRINGS[id].message);
             }
         };
@@ -283,9 +315,23 @@ namespace xy { namespace io {
 
     class message_queue {
     private:
+
+        friend class message;
+        friend class message_iterator;
+
         message *first;
         message *last;
-        bool seen[sentinel_type];
+
+        unsigned num_messages;
+        bool seen[static_cast<size_t>(sentinel_type) + 1U];
+
+        class message_end : public message {
+        public:
+            message_end(void) throw();
+            virtual void print(FILE *) const throw();
+        };
+
+        static message_end LAST_MESSAGE;
 
     public:
 
@@ -294,18 +340,26 @@ namespace xy { namespace io {
         ~message_queue(void) throw();
 
         template <typename ...arg_types>
-        void push(message_id id, arg_types&&... args) throw() {
+        void push(message_id id, arg_types... args) throw() {
             message *msg{new message_impl<arg_types...>(id, args...)};
-            if(nullptr == first) {
+            seen[msg->type] = true;
+            if(&LAST_MESSAGE == first) {
                 first = msg;
                 last = msg;
             } else {
                 last->next = msg;
                 last = msg;
             }
+            last->next = &LAST_MESSAGE;
+            ++num_messages;
         }
 
-        void print_all(FILE *) const throw();
+        message_iterator begin(void) const throw();
+        message_iterator end(void) const throw();
+
+        bool has_message(void) const throw();
+
+        bool has_message(message_type) const throw();
     };
 
 }}

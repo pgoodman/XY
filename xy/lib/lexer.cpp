@@ -17,21 +17,24 @@ namespace xy {
 
     lexer::lexer(void) throw()
         : chr()
+        , decoder()
     {
-        line_tracker[0] = 1;
-        column_tracker[0] = 1;
+        line_tracker[0] = line_tracker[1] = 1;
+        column_tracker[0] = column_tracker[1] = 1;
         curr = 0;
         next = 1;
         read_size = BLOCK_SIZE;
         state = READ_BLOCK;
+        seen_carriage_return = false;
         memset(scratch, 0, array::size(scratch));
     }
 
     bool lexer::get_codepoint(
         io::file<io::read_tag> &f,
-        io::message_queue &mq,
+        diagnostic_context &ctx,
         utf8::codepoint &cp
     )  throw() {
+        int first_chr{'\0'};
         switch(state) {
         case READ_BLOCK:
 
@@ -40,7 +43,7 @@ namespace xy {
                 read_size = f.read_block<BLOCK_SIZE>(scratch);
                 if(0U == read_size) {
                     state = DONE_READING;
-                    return false;
+                    goto check_trailing_mb;
                 }
 
                 for(i = 0; i < read_size; ++i) {
@@ -51,7 +54,11 @@ namespace xy {
                     }
 
                     if(decoder.found_error()) {
-                        mq.push(io::w_invalid_utf8_cp);
+                        ctx.diag.push(io::w_invalid_utf8_cp, chr.to_cstring());
+                        ctx.diag.push(
+                            io::c_file_line_col, ctx.top_file(),
+                            line_tracker[curr], column_tracker[curr]
+                        );
                     }
 
                     // we've read a codepoint
@@ -59,13 +66,39 @@ namespace xy {
                     column_tracker[next] = column_tracker[curr] + 1;
 
                     if(chr.is_ascii()) {
-                        if('\n' == chr) {
+                        first_chr = chr.to_cstring()[0];
+                        if('\n' == first_chr) {
                             line_tracker[next] += 1;
                             column_tracker[next] = 1;
-                        } else if('\t' == chr) {
-                            column_tracker[next] += 3;
-                        } else if(!isgraph(chr.to_cstring()[0])) {
-                            column_tracker[next] -= 1;
+                        } else {
+
+                            // if we had a \r without having \r\n
+                            if(seen_carriage_return) {
+                                seen_carriage_return = false;
+                                line_tracker[curr] = line_tracker[curr] + 1;
+                                line_tracker[next] = line_tracker[curr];
+                                column_tracker[curr] = 1;
+                                column_tracker[next] = 2;
+                            }
+
+                            if('\t' == first_chr) {
+                                column_tracker[next] += 3;
+                            } else if('\r' == first_chr) {
+                                seen_carriage_return = true;
+                            } else if('\0' != first_chr) {
+                                if(!isprint(first_chr) && !isspace(first_chr)) {
+                                    ctx.diag.push(io::e_non_graph_char, first_chr);
+                                    ctx.diag.push(
+                                        io::c_file_line_col, ctx.top_file(),
+                                        line_tracker[curr], column_tracker[curr]
+                                    );
+                                    state = READ_NEXT_CODEPOINT;
+                                    goto read_next_codepoint;
+                                }
+                            } else {
+                                state = DONE_READING;
+                                return false;
+                            }
                         }
                     }
 
@@ -74,6 +107,7 @@ namespace xy {
                     return true;
 
         case READ_NEXT_CODEPOINT:
+        read_next_codepoint:
                     curr = next;
                     next = 1 - curr;
                 }
@@ -84,20 +118,25 @@ namespace xy {
             return false;
         }
 
+    check_trailing_mb:
+
         // todo: this is an error condition
         if(decoder.is_in_use()) {
-            mq.push(io::e_invalid_trailing_utf8_cp);
-            return false;
+            ctx.diag.push(io::e_invalid_trailing_utf8_cp);
+            ctx.diag.push(
+                io::c_file_line_col, ctx.top_file(),
+                line_tracker[curr], column_tracker[curr]
+            );
         }
 
         return false;
     }
 
-    size_t lexer::line(void) const throw() {
+    uint32_t lexer::line(void) const throw() {
         return line_tracker[curr];
     }
 
-    size_t lexer::lexer::column(void) const throw() {
+    uint32_t lexer::lexer::column(void) const throw() {
         return column_tracker[curr];
     }
 }

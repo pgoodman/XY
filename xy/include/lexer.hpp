@@ -10,8 +10,10 @@
 #ifndef XY_LEXER_HPP_
 #define XY_LEXER_HPP_
 
+#include <stdint.h>
+
 #include "xy/include/io/file.hpp"
-#include "xy/include/io/message.hpp"
+#include "xy/include/diagnostic_context.hpp"
 #include "xy/include/utf8/codepoint.hpp"
 #include "xy/include/utf8/decoder.hpp"
 
@@ -31,12 +33,14 @@ namespace xy {
         utf8::decoder decoder;
 
         uint8_t scratch[BLOCK_SIZE];
-        size_t line_tracker[2];
-        size_t column_tracker[2];
+        uint32_t line_tracker[2];
+        uint32_t column_tracker[2];
         unsigned curr;
         unsigned next;
         size_t read_size;
         size_t i;
+        bool seen_carriage_return;
+
         enum {
             READ_BLOCK,
             DONE_READING,
@@ -49,13 +53,12 @@ namespace xy {
 
         bool get_codepoint(
             io::file<io::read_tag> &f,
-            io::message_queue &mq,
+            diagnostic_context &ctx,
             utf8::codepoint &cp
         ) throw();
 
-        size_t line(void) const throw();
-
-        size_t column(void) const throw();
+        uint32_t line(void) const throw();
+        uint32_t column(void) const throw();
     };
 
 }
