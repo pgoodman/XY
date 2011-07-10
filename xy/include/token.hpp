@@ -19,7 +19,7 @@ namespace xy {
         T_BEGIN,                    // begin
         T_END,                      // end
         T_NOT,                      // not
-        T_IS,                       // is
+        T_INTO,                     // into
         T_GIVE,                     // give
         T_TAKE,                     // take
         T_OWN,                      // own
@@ -49,7 +49,7 @@ namespace xy {
         T_HAT,                      // ^
         T_PERCENT,                  // %
         T_TILDE,                    // ~
-        T_COLON,                    // :
+        //T_COLON,                    // :
         T_SEMICOLON,                // ;
 
         T_LESS_THAN,                // <

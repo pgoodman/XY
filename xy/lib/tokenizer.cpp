@@ -151,12 +151,25 @@ namespace xy {
             SCA_ERROR, //  127    ^?    .
         };
 
-        size_t write_to_buff(char *buffer, const char *str) throw() {
+        static size_t write_to_buff(char *buffer, const char *str) throw() {
             char *bb(buffer);
             for(; '\0' != *str; ) {
                 *bb++ = *str++;
             }
             return static_cast<size_t>(bb - buffer);
+        }
+
+        static bool is_decimal(char c) throw() {
+            return isdigit(c);
+        }
+
+        static bool is_octal(char c) throw() {
+            return '0' <= c && c <= '7';
+        }
+
+        static bool is_hex(char c) throw() {
+            const char cl(tolower(c));
+            return isdigit(c) || ('a' <= cl && cl <= 'f');
         }
     }
 
@@ -192,7 +205,7 @@ namespace xy {
             return false;
         }
 
-        int16_t new_val = scratch[i] + (digit - '0');
+        int16_t new_val = (scratch[i] * 8) + (digit - '0');
         if(new_val > 255) { // wrap-around
             ctx.diag.push(io::e_octal_escape_too_big, new_val, new_val);
             push_line_file_col(ctx);
@@ -207,21 +220,21 @@ namespace xy {
         size_t i
     ) throw() {
         if(!cp.is_ascii()) {
-            ctx.diag.push(io::e_invalid_octal_escape, cp.to_cstring());
+            ctx.diag.push(io::e_invalid_hex_escape, cp.to_cstring());
             push_line_file_col(ctx);
             return false;
         }
 
         char digit = tolower(cp.to_cstring()[0]);
         if(!isalnum(digit) || 'f' < digit) {
-            ctx.diag.push(io::e_invalid_octal_escape, cp.to_cstring());
+            ctx.diag.push(io::e_invalid_hex_escape, cp.to_cstring());
             push_line_file_col(ctx);
             return false;
         } else if('a' <= digit) {
             digit -= 'a' - ':';
         }
-
-        scratch[i] += digit - '0';
+        const int16_t new_val = (scratch[i] * 16) + (digit - '0');
+        scratch[i] = new_val;
         return true;
     }
 
@@ -253,6 +266,7 @@ namespace xy {
                 chr = cp.to_cstring()[0];
 
         case HAVE_ASCII_CODEPOINT:
+
                 tt = SINGLE_CHAR_TOKENS[chr];
 
                 // single character token
@@ -260,15 +274,142 @@ namespace xy {
                     tok.col_ = ll.column();
                     tok.line_ = ll.line();
                     tok.type_ = tt;
+
                     state = READ_NEXT_CODEPOINT;
                     return true;
                 }
 
+                // minus/dash or comment
+                if('-' == chr) {
+                    tok.col_ = ll.column();
+                    tok.line_ = ll.line();
+                    tok.type_ = T_MINUS;
+
+                    if(!ll.get_codepoint(f, ctx, cp) || cp.is_null()) {
+                        state = DONE;
+                        return true;
+                    } else if(!cp.is_ascii()) {
+                        state = HAVE_NON_ASCII_CODEPOINT;
+                        return true;
+                    }
+
+                    chr = cp.to_cstring()[0];
+
+                    // single-line comment
+                    if('-' == chr) {
+                        tok.type_ = T_NEW_LINE;
+                        state = READ_NEXT_CODEPOINT;
+
+                        for(; ll.get_codepoint(f, ctx, cp); ) {
+                            if(cp.is_null()) {
+                                tok.line_ = ll.line();
+                                tok.col_ = ll.column();
+                                state = DONE;
+                                break;
+                            } else if(cp.is_ascii()) {
+                                chr = cp.to_cstring()[0];
+                                if('\n' == chr) {
+                                    tok.line_ = ll.line();
+                                    tok.col_ = ll.column();
+                                    break;
+                                } else if('\r' == chr) {
+                                    tok.line_ = ll.line();
+                                    tok.col_ = ll.column();
+
+                                    if(!ll.get_codepoint(f, ctx, cp) || cp.is_null()) {
+                                        break;
+                                    }
+
+                                    if(!cp.is_ascii()) {
+                                        state = HAVE_NON_ASCII_CODEPOINT;
+                                        break;
+                                    }
+
+                                    chr = cp.to_cstring()[0];
+                                    if('\n' != chr) {
+                                        state = HAVE_ASCII_CODEPOINT;
+                                        break;
+                                    }
+
+                                    tok.line_ = ll.line();
+                                    tok.col_ = ll.column();
+                                    break;
+                                }
+                            }
+                        }
+
+                    // block comment
+                    } else if('*' == chr) {
+                        tok.type_ = T_NEW_LINE;
+
+                        int num_to_close(1);
+                        int old_chr(chr);
+
+                        for(; ll.get_codepoint(f, ctx, cp); ) {
+                            if(cp.is_null()) {
+                                break;
+                            }
+
+                            if(cp.is_ascii()) {
+                                chr = cp.to_cstring()[0];
+
+                                if('*' != chr && '-' != chr) {
+                                    continue;
+                                }
+
+                            try_next_char_in_comment:
+
+                                if(!ll.get_codepoint(f, ctx, cp)
+                                || cp.is_null()) {
+                                    break;
+                                } else if(!cp.is_ascii()) {
+                                    continue;
+                                }
+
+                                old_chr = chr;
+                                chr = cp.to_cstring()[0];
+
+                                if('*' == old_chr && '-' == chr) {
+                                    --num_to_close;
+                                    if(0 == num_to_close) {
+                                        tok.line_ = ll.line();
+                                        tok.col_ = ll.column();
+                                        break;
+                                    }
+                                    continue;
+                                } else if('-' == old_chr && '*' == chr) {
+                                    ++num_to_close;
+                                    continue;
+                                }
+
+                                if('*' == chr || '-' == chr) {
+                                    goto try_next_char_in_comment;
+                                }
+                            }
+                        }
+
+                        if(0 == num_to_close) {
+                            return true;
+                        }
+
+                        ctx.diag.push(io::e_unclosed_block_comment,
+                            num_to_close
+                        );
+                        push_line_file_col(ctx);
+                        return false;
+
+                    } else {
+                        state = HAVE_ASCII_CODEPOINT;
+
+                    }
+                    return true;
+
                 // \r, \r\n
-                if('\r' == chr) {
+                } else if('\r' == chr) {
                     tok.line_ = ll.line();
                     tok.col_ = ll.column();
                     tok.type_ = T_NEW_LINE;
+                    state = READ_NEXT_CODEPOINT;
 
                     if(!ll.get_codepoint(f, ctx, cp)) {
                         state = DONE;
@@ -276,15 +417,14 @@ namespace xy {
                         chr = cp.to_cstring()[0];
 
                         if(cp.is_ascii()) {
-                            if('\n' == chr) {
-                                state = READ_NEXT_CODEPOINT;
-                            } else {
+                            if('\n' != chr) {
                                 state = HAVE_ASCII_CODEPOINT;
                             }
                         } else {
                             state = HAVE_NON_ASCII_CODEPOINT;
                         }
                     }
+
                     return true;
 
                 // string literal
@@ -293,6 +433,7 @@ namespace xy {
                     tok.line_ = ll.line();
                     tok.col_ = ll.column();
                     tok.type_ = T_STRING_LITERAL;
+                    state = READ_NEXT_CODEPOINT;
 
                     size_t i(0);
                     for(; ll.get_codepoint(f, ctx, cp); ) {
@@ -303,7 +444,9 @@ namespace xy {
                                 ctx.top_file(), tok.line_, tok.col_
                             );
                             state = DONE;
+                            scratch[0] = '\0';
                             return false;
+
                         } else if(cp.is_null()) {
                             goto early_termination_of_string;
                         }
@@ -322,6 +465,7 @@ namespace xy {
                                         cp.to_cstring()
                                     );
                                     push_line_file_col(ctx);
+                                    scratch[0] = '\0';
                                     return false;
                                 }
 
@@ -341,26 +485,46 @@ namespace xy {
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    get_octal_digit(ctx, i);
+                                    if(!get_octal_digit(ctx, i)) {
+                                        state = DONE;
+                                        scratch[0] = '\0';
+                                        return false;
+                                    }
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    get_octal_digit(ctx, i);
+                                    if(!get_octal_digit(ctx, i)) {
+                                        state = DONE;
+                                        scratch[0] = '\0';
+                                        return false;
+                                    }
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    get_octal_digit(ctx, i);
+                                    if(!get_octal_digit(ctx, i)) {
+                                        state = DONE;
+                                        scratch[0] = '\0';
+                                        return false;
+                                    }
                                     i += 2;
                                     break;
                                 case 'x':
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    get_hex_digit(ctx, i);
+                                    if(!get_hex_digit(ctx, i)) {
+                                        state = DONE;
+                                        scratch[0] = '\0';
+                                        return false;
+                                    }
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    get_hex_digit(ctx, i);
+                                    if(!get_hex_digit(ctx, i)) {
+                                        state = DONE;
+                                        scratch[0] = '\0';
+                                        return false;
+                                    }
                                     i += 1;
                                     break;
 
@@ -369,6 +533,7 @@ namespace xy {
                                         cp.to_cstring()[0]
                                     );
                                     push_line_file_col(ctx);
+                                    scratch[0] = '\0';
                                     return false;
                                 }
                             } else {
@@ -388,6 +553,7 @@ namespace xy {
                         ctx.top_file(), tok.line_, tok.col_
                     );
                     state = DONE;
+                    scratch[0] = '\0';
                     return false;
 
                 found_end_of_string:
@@ -397,9 +563,7 @@ namespace xy {
                 // skip non-newline whitespace
                 if(isspace(chr)) {
                     continue;
-                }
-
-                if(isalpha(chr)) {
+                } else if(isalpha(chr)) {
 
                     tok.line_ = ll.line();
                     tok.col_ = ll.column();
@@ -413,6 +577,7 @@ namespace xy {
                         tok.type_ = T_NAME;
                     }
 
+                    state = READ_NEXT_CODEPOINT;
                     scratch[0] = static_cast<char>(chr);
                     size_t i(1);
 
@@ -434,6 +599,7 @@ namespace xy {
                                 ctx.top_file(), tok.line_, tok.col_
                             );
                             state = DONE;
+                            scratch[0] = '\0';
                             return false;
                         }
 
@@ -443,6 +609,7 @@ namespace xy {
                         if(SCA_ERROR == NAME_SUFFIX_CHAR[chr]) {
                             ctx.diag.push(io::e_bad_char_in_name, chr);
                             push_line_file_col(ctx);
+                            scratch[0] = '\0';
                             return false;
 
                         // token barrier
@@ -466,8 +633,45 @@ namespace xy {
                     tok.type_ = T_INTEGER_LITERAL;
                     scratch[0] = chr;
                     size_t i(1);
+                    bool (*digit_p)(char) = is_decimal;
+                    state = READ_NEXT_CODEPOINT;
+
+                    for(; ll.get_codepoint(f, ctx, cp); ++i) {
+                        if(cp.is_null()) {
+                            break;
+                        }
+                        if(!cp.is_ascii()) {
+                            state = HAVE_NON_ASCII_CODEPOINT;
+                            break;
+                        }
+                        chr = cp.to_cstring()[0];
+                        scratch[i] = chr;
+
+                        if(!digit_p(chr)) {
+                            if('.' == chr) {
+                                if(T_INTEGER_LITERAL == tok.type_) {
+                                    if(is_decimal != digit_p) {
+                                        state = HAVE_ASCII_CODEPOINT;
+                                        break;
+                                    }
+                                    tok.type_ = T_RATIONAL_LITERAL;
+                                } else {
+                                    state = HAVE_ASCII_CODEPOINT;
+                                    break;
+                                }
+                            } else if('x' == chr && 1 == i && '0' == scratch[0]) {
+                                digit_p = is_hex;
+                            } else if('o' == chr && 1 == i && '0' == scratch[0]) {
+                                digit_p = is_octal;
+                            } else {
+                                state = HAVE_ASCII_CODEPOINT;
+                                break;
+                            }
+                        }
+                    }
 
                     scratch[i] = '\0';
+                    return true;
                 }
             }
         case DONE: break;
@@ -526,7 +730,7 @@ namespace xy {
         T_ASTERISK, //  42     *
         T_PLUS, //  43     +
         T_COMMA, //  44     ,
-        T_MINUS, //  45     -
+        T_INVALID, //  45     -
         T_PERIOD, //  46     .
         T_FORWARD_SLASH, //  47     /
         T_INVALID, //  48     0
