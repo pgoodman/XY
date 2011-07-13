@@ -38,8 +38,6 @@ namespace xy {
             DONE,
         } state;
 
-        static const token_type SINGLE_CHAR_TOKENS[];
-
     private:
 
         void push_line_file_col(diagnostic_context &ctx) throw();

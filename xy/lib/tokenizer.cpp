@@ -8,6 +8,7 @@
  */
 
 #include <cassert>
+#include <cstring>
 
 #include "xy/include/tokenizer.hpp"
 
@@ -20,7 +21,7 @@ namespace xy {
             SCA_OK,
         } suffix_char_action;
 
-        static suffix_char_action NAME_SUFFIX_CHAR[]{
+        static const suffix_char_action NAME_CHAR[]{
             SCA_BARRIER, //  0    ^@    .
             SCA_ERROR, //  1    ^A    .
             SCA_ERROR, //  2    ^B    .
@@ -57,7 +58,7 @@ namespace xy {
             SCA_BARRIER, //  33    !    .
             SCA_BARRIER, //  34    "    .
             SCA_BARRIER, //  35    #    .
-            SCA_BARRIER, //  36    $    .
+            SCA_OK, //  36    $    .
             SCA_BARRIER, //  37    %    .
             SCA_BARRIER, //  38    &    .
             SCA_OK, //  39    '    .
@@ -151,6 +152,137 @@ namespace xy {
             SCA_ERROR, //  127    ^?    .
         };
 
+        static const token_type SINGLE_CHAR_TOKENS[]{
+            T_INVALID, //  0     ^@
+            T_INVALID, //  1     ^A
+            T_INVALID, //  2     ^B
+            T_INVALID, //  3     ^C
+            T_INVALID, //  4     ^D
+            T_INVALID, //  5     ^E
+            T_INVALID, //  6     ^F
+            T_INVALID, //  7     ^G
+            T_INVALID, //  8     ^H
+            T_INVALID, //  9     ^I
+            T_NEW_LINE, //  10     ^J
+            T_INVALID, //  11     ^K
+            T_INVALID, //  12     ^L
+            T_INVALID, //  13     ^M
+            T_INVALID, //  14     ^N
+            T_INVALID, //  15     ^O
+            T_INVALID, //  16     ^P
+            T_INVALID, //  17     ^Q
+            T_INVALID, //  18     ^R
+            T_INVALID, //  19     ^S
+            T_INVALID, //  20     ^T
+            T_INVALID, //  21     ^U
+            T_INVALID, //  22     ^V
+            T_INVALID, //  23     ^W
+            T_INVALID, //  24     ^X
+            T_INVALID, //  25     ^Y
+            T_INVALID, //  26     ^Z
+            T_INVALID, //  27     ^[
+            T_INVALID, //  28     ^\ .
+            T_INVALID, //  29     ^]
+            T_INVALID, //  30     ^^
+            T_INVALID, //  31     ^_
+            T_INVALID, //  32
+            T_INVALID, //  33     !
+            T_INVALID, //  34     "
+            T_INVALID, //  35     #
+            T_INVALID, //  36     $
+            T_PERCENT, //  37     %
+            T_AMPERSAND, //  38     &
+            T_INVALID, //  39     '
+            T_OPEN_PAREN, //  40     (
+            T_CLOSE_PAREN, //  41     )
+            T_ASTERISK, //  42     *
+            T_PLUS, //  43     +
+            T_COMMA, //  44     ,
+            T_INVALID, //  45     -
+            T_PERIOD, //  46     .
+            T_FORWARD_SLASH, //  47     /
+            T_INVALID, //  48     0
+            T_INVALID, //  49     1
+            T_INVALID, //  50     2
+            T_INVALID, //  51     3
+            T_INVALID, //  52     4
+            T_INVALID, //  53     5
+            T_INVALID, //  54     6
+            T_INVALID, //  55     7
+            T_INVALID, //  56     8
+            T_INVALID, //  57     9
+            T_INVALID, //  58     :
+            T_SEMICOLON, //  59     ;
+            T_LESS_THAN, //  60     <
+            T_EQUAL, //  61     =
+            T_GREATER_THAN, //  62     >
+            T_INVALID, //  63     ?
+            T_AT, //  64     @
+            T_INVALID, //  65     A
+            T_INVALID, //  66     B
+            T_INVALID, //  67     C
+            T_INVALID, //  68     D
+            T_INVALID, //  69     E
+            T_INVALID, //  70     F
+            T_INVALID, //  71     G
+            T_INVALID, //  72     H
+            T_INVALID, //  73     I
+            T_INVALID, //  74     J
+            T_INVALID, //  75     K
+            T_INVALID, //  76     L
+            T_INVALID, //  77     M
+            T_INVALID, //  78     N
+            T_INVALID, //  79     O
+            T_INVALID, //  80     P
+            T_INVALID, //  81     Q
+            T_INVALID, //  82     R
+            T_INVALID, //  83     S
+            T_INVALID, //  84     T
+            T_INVALID, //  85     U
+            T_INVALID, //  86     V
+            T_INVALID, //  87     W
+            T_INVALID, //  88     X
+            T_INVALID, //  89     Y
+            T_INVALID, //  90     Z
+            T_OPEN_BRACKET, //  91     [
+            T_BACKWARD_SLASH, //  92     \ .
+            T_CLOSE_BRACKET, //  93     ]
+            T_HAT, //  94     ^
+            T_INVALID, //  95     _
+            T_INVALID, //  96     `
+            T_INVALID, //  97     a
+            T_INVALID, //  98     b
+            T_INVALID, //  99     c
+            T_INVALID, //  100     d
+            T_INVALID, //  101     e
+            T_INVALID, //  102     f
+            T_INVALID, //  103     g
+            T_INVALID, //  104     h
+            T_INVALID, //  105     i
+            T_INVALID, //  106     j
+            T_INVALID, //  107     k
+            T_INVALID, //  108     l
+            T_INVALID, //  109     m
+            T_INVALID, //  110     n
+            T_INVALID, //  111     o
+            T_INVALID, //  112     p
+            T_INVALID, //  113     q
+            T_INVALID, //  114     r
+            T_INVALID, //  115     s
+            T_INVALID, //  116     t
+            T_INVALID, //  117     u
+            T_INVALID, //  118     v
+            T_INVALID, //  119     w
+            T_INVALID, //  120     x
+            T_INVALID, //  121     y
+            T_INVALID, //  122     z
+            T_OPEN_BRACE, //  123     {
+            T_PIPE, //  124     |
+            T_CLOSE_BRACE, //  125     }
+            T_TILDE, //  126     ~
+            T_INVALID, //  127     ^?
+        };
+
         static size_t write_to_buff(char *buffer, const char *str) throw() {
             char *bb(buffer);
             for(; '\0' != *str; ) {
@@ -171,6 +303,23 @@ namespace xy {
             const char cl(tolower(c));
             return isdigit(c) || ('a' <= cl && cl <= 'f');
         }
+
+        static struct {
+            const char * const str;
+            const size_t len;
+            const token_type type;
+        } RESERVED_NAMES[]{
+            {"take",        5U, T_TAKE},
+            {"give",        5U, T_GIVE},
+            {"begin",       6U, T_BEGIN},
+            {"end",         4U, T_END},
+            {"into",        5U, T_INTO},
+            {"own",         4U, T_OWN},
+            {"let",         4U, T_LET},
+            {"if",          3U, T_IF},
+            {"then",        5U, T_THEN},
+            {"else",        5U, T_ELSE},
+        };
     }
 
     tokenizer::tokenizer(void) throw()
@@ -295,8 +444,12 @@ namespace xy {
 
                     chr = cp.to_cstring()[0];
 
+                    if('>' == chr) {
+                        state = READ_NEXT_CODEPOINT;
+                        tok.type_ = T_ARROW;
+
                     // single-line comment
-                    if('-' == chr) {
+                    } else if('-' == chr) {
                         tok.type_ = T_NEW_LINE;
                         state = READ_NEXT_CODEPOINT;
 
@@ -563,68 +716,6 @@ namespace xy {
                 // skip non-newline whitespace
                 if(isspace(chr)) {
                     continue;
-                } else if(isalpha(chr)) {
-
-                    tok.line_ = ll.line();
-                    tok.col_ = ll.column();
-
-                    // type name, starts with upper case
-                    if(tolower(chr) != chr) {
-                        tok.type_ = T_TYPE_NAME;
-
-                    // name, starts with lower case
-                    } else {
-                        tok.type_ = T_NAME;
-                    }
-
-                    state = READ_NEXT_CODEPOINT;
-                    scratch[0] = static_cast<char>(chr);
-                    size_t i(1);
-
-                    for(; ll.get_codepoint(f, ctx, cp); ++i) {
-                        if(cp.is_null()) {
-                            state = DONE;
-                            break;
-                        } else if(!cp.is_ascii()) {
-                            state = HAVE_NON_ASCII_CODEPOINT;
-                            break;
-                        }
-
-                        if(i >= NAME_LENGTH) {
-                            scratch[i] = '\0';
-                            ctx.diag.push(io::e_name_too_long,
-                                scratch, NAME_LENGTH
-                            );
-                            ctx.diag.push(io::c_file_line_col,
-                                ctx.top_file(), tok.line_, tok.col_
-                            );
-                            state = DONE;
-                            scratch[0] = '\0';
-                            return false;
-                        }
-
-                        chr = cp.to_cstring()[0];
-
-                        // error, character not allowed in a name
-                        if(SCA_ERROR == NAME_SUFFIX_CHAR[chr]) {
-                            ctx.diag.push(io::e_bad_char_in_name, chr);
-                            push_line_file_col(ctx);
-                            scratch[0] = '\0';
-                            return false;
-
-                        // token barrier
-                        } else if(SCA_BARRIER == NAME_SUFFIX_CHAR[chr]) {
-                            state = HAVE_ASCII_CODEPOINT;
-                            break;
-
-                        // collect another char
-                        } else {
-                            scratch[i] = static_cast<char>(chr);
-                        }
-                    }
-
-                    scratch[i] = '\0';
-                    return true;
 
                 // integer or float
                 } else if(isdigit(chr)) {
@@ -672,6 +763,78 @@ namespace xy {
 
                     scratch[i] = '\0';
                     return true;
+
+                // name / type name
+                // invariant: chr is not a digit
+                } else if(SCA_OK == NAME_CHAR[chr]) {
+
+                    tok.line_ = ll.line();
+                    tok.col_ = ll.column();
+                    tok.type_ = T_NAME;
+
+                    // type name, starts with upper case
+                    if(tolower(chr) != chr) {
+                        tok.type_ = T_TYPE_NAME;
+                    }
+
+                    state = READ_NEXT_CODEPOINT;
+                    scratch[0] = static_cast<char>(chr);
+                    size_t i(1);
+
+                    for(; ll.get_codepoint(f, ctx, cp); ++i) {
+                        if(cp.is_null()) {
+                            state = DONE;
+                            break;
+                        } else if(!cp.is_ascii()) {
+                            state = HAVE_NON_ASCII_CODEPOINT;
+                            break;
+                        }
+
+                        if(i >= NAME_LENGTH) {
+                            scratch[i] = '\0';
+                            ctx.diag.push(io::e_name_too_long,
+                                scratch, NAME_LENGTH
+                            );
+                            ctx.diag.push(io::c_file_line_col,
+                                ctx.top_file(), tok.line_, tok.col_
+                            );
+                            state = DONE;
+                            scratch[0] = '\0';
+                            return false;
+                        }
+
+                        chr = cp.to_cstring()[0];
+
+                        // error, character not allowed in a name
+                        if(SCA_ERROR == NAME_CHAR[chr]) {
+                            ctx.diag.push(io::e_bad_char_in_name, chr);
+                            push_line_file_col(ctx);
+                            scratch[0] = '\0';
+                            return false;
+
+                        // token barrier
+                        } else if(SCA_BARRIER == NAME_CHAR[chr]) {
+                            state = HAVE_ASCII_CODEPOINT;
+                            break;
+
+                        // collect another char
+                        } else {
+                            scratch[i] = static_cast<char>(chr);
+                        }
+                    }
+
+                    if(T_NAME == tok.type_) {
+                        for(size_t i(0); i < array::length(RESERVED_NAMES); ++i) {
+                            if(0 == strncmp(scratch, RESERVED_NAMES[i].str, RESERVED_NAMES[i].len)) {
+                                tok.type_ = RESERVED_NAMES[i].type;
+                                break;
+                            }
+                        }
+                    }
+
+                    scratch[i] = '\0';
+                    return true;
+
                 }
             }
         case DONE: break;
@@ -683,136 +846,5 @@ namespace xy {
     const char *tokenizer::get_value(void) const throw() {
         return &(scratch[0]);
     }
-
-    const token_type tokenizer::SINGLE_CHAR_TOKENS[]{
-        T_INVALID, //  0     ^@
-        T_INVALID, //  1     ^A
-        T_INVALID, //  2     ^B
-        T_INVALID, //  3     ^C
-        T_INVALID, //  4     ^D
-        T_INVALID, //  5     ^E
-        T_INVALID, //  6     ^F
-        T_INVALID, //  7     ^G
-        T_INVALID, //  8     ^H
-        T_INVALID, //  9     ^I
-        T_NEW_LINE, //  10     ^J
-        T_INVALID, //  11     ^K
-        T_INVALID, //  12     ^L
-        T_INVALID, //  13     ^M
-        T_INVALID, //  14     ^N
-        T_INVALID, //  15     ^O
-        T_INVALID, //  16     ^P
-        T_INVALID, //  17     ^Q
-        T_INVALID, //  18     ^R
-        T_INVALID, //  19     ^S
-        T_INVALID, //  20     ^T
-        T_INVALID, //  21     ^U
-        T_INVALID, //  22     ^V
-        T_INVALID, //  23     ^W
-        T_INVALID, //  24     ^X
-        T_INVALID, //  25     ^Y
-        T_INVALID, //  26     ^Z
-        T_INVALID, //  27     ^[
-        T_INVALID, //  28     ^\ .
-        T_INVALID, //  29     ^]
-        T_INVALID, //  30     ^^
-        T_INVALID, //  31     ^_
-        T_INVALID, //  32
-        T_INVALID, //  33     !
-        T_INVALID, //  34     "
-        T_INVALID, //  35     #
-        T_INVALID, //  36     $
-        T_PERCENT, //  37     %
-        T_AMPERSAND, //  38     &
-        T_INVALID, //  39     '
-        T_OPEN_PAREN, //  40     (
-        T_CLOSE_PAREN, //  41     )
-        T_ASTERISK, //  42     *
-        T_PLUS, //  43     +
-        T_COMMA, //  44     ,
-        T_INVALID, //  45     -
-        T_PERIOD, //  46     .
-        T_FORWARD_SLASH, //  47     /
-        T_INVALID, //  48     0
-        T_INVALID, //  49     1
-        T_INVALID, //  50     2
-        T_INVALID, //  51     3
-        T_INVALID, //  52     4
-        T_INVALID, //  53     5
-        T_INVALID, //  54     6
-        T_INVALID, //  55     7
-        T_INVALID, //  56     8
-        T_INVALID, //  57     9
-        T_COLON, //  58     :
-        T_SEMICOLON, //  59     ;
-        T_LESS_THAN, //  60     <
-        T_EQUAL, //  61     =
-        T_GREATER_THAN, //  62     >
-        T_INVALID, //  63     ?
-        T_INVALID, //  64     @
-        T_INVALID, //  65     A
-        T_INVALID, //  66     B
-        T_INVALID, //  67     C
-        T_INVALID, //  68     D
-        T_INVALID, //  69     E
-        T_INVALID, //  70     F
-        T_INVALID, //  71     G
-        T_INVALID, //  72     H
-        T_INVALID, //  73     I
-        T_INVALID, //  74     J
-        T_INVALID, //  75     K
-        T_INVALID, //  76     L
-        T_INVALID, //  77     M
-        T_INVALID, //  78     N
-        T_INVALID, //  79     O
-        T_INVALID, //  80     P
-        T_INVALID, //  81     Q
-        T_INVALID, //  82     R
-        T_INVALID, //  83     S
-        T_INVALID, //  84     T
-        T_INVALID, //  85     U
-        T_INVALID, //  86     V
-        T_INVALID, //  87     W
-        T_INVALID, //  88     X
-        T_INVALID, //  89     Y
-        T_INVALID, //  90     Z
-        T_OPEN_BRACKET, //  91     [
-        T_BACKWARD_SLASH, //  92     \ .
-        T_CLOSE_BRACKET, //  93     ]
-        T_HAT, //  94     ^
-        T_INVALID, //  95     _
-        T_INVALID, //  96     `
-        T_INVALID, //  97     a
-        T_INVALID, //  98     b
-        T_INVALID, //  99     c
-        T_INVALID, //  100     d
-        T_INVALID, //  101     e
-        T_INVALID, //  102     f
-        T_INVALID, //  103     g
-        T_INVALID, //  104     h
-        T_INVALID, //  105     i
-        T_INVALID, //  106     j
-        T_INVALID, //  107     k
-        T_INVALID, //  108     l
-        T_INVALID, //  109     m
-        T_INVALID, //  110     n
-        T_INVALID, //  111     o
-        T_INVALID, //  112     p
-        T_INVALID, //  113     q
-        T_INVALID, //  114     r
-        T_INVALID, //  115     s
-        T_INVALID, //  116     t
-        T_INVALID, //  117     u
-        T_INVALID, //  118     v
-        T_INVALID, //  119     w
-        T_INVALID, //  120     x
-        T_INVALID, //  121     y
-        T_INVALID, //  122     z
-        T_OPEN_BRACE, //  123     {
-        T_PIPE, //  124     |
-        T_CLOSE_BRACE, //  125     }
-        T_TILDE, //  126     ~
-        T_INVALID, //  127     ^?
-    };
 }
 

@@ -1,0 +1,260 @@
+
+
+program
+    :   import_statement_list statement_list
+    ;
+
+statement_list
+    :   type_declaration T_NEW_LINE statement_list
+    |   function_declaration T_NEW_LINE statement_list
+    |   epsilon
+    ;
+
+#
+# Import statement, the idea is that imports are always relative to some
+# root file that the compiler "starts" on, or relative to the current
+# working directory of the compiler.
+#
+# import "hello/world.xy" into hello:world
+# import "world.xy" into world
+#
+
+import_statement
+    :   "import" T_STRING_LITERAL "into" T_NAME
+    ;
+
+import_statement_list
+    :   import_statement T_NEW_LINE import_statement_list
+    |   epsilon
+    ;
+
+#
+# Type instance
+#
+#   Int32                           # int value
+#   &Int32                          # reference to an int
+#   Array[Int32, 10]                # array of ints
+#   Array[int64, foo]               # dependently typed array of ints or
+#                                   # template instantiation
+#
+
+type_instance_param
+    :   type_instance               # type instantiation
+    |   T_NAME                      # dependent type
+    |   T_INTEGER_LITERAL           # value instantiation
+    |   T_RATIONAL_LITERAL          # value instantiation
+    |   T_STRING_LITERAL            # value instantiation
+    ;
+
+type_instance_param_list
+    :   type_instance_param "," type_instance_param_list
+    |   type_instance_param
+    ;
+
+type_instance_params
+    :   "[" type_instance_param_list "]"
+    |   epsilon
+    ;
+
+simple_type_instance
+    :   T_TYPE_NAME type_instance_params
+    |   "&" T_TYPE_NAME type_instance_params
+    ;
+
+type_instance_prefix
+    :   simple_type_instance
+    |   "(" type_instance ")"
+    ;
+    
+type_instance
+    :   type_instance_prefix
+    |   type_instance_prefix "->" type_instance
+    ;
+
+#
+# Type declaration
+#
+# Records:
+#
+#   record FooArray [@Foo, Int32 @bar] begin
+#       Int32 length
+#       Array[Foo, bar] data
+#   end
+#
+#   record FooArray [@Foo, 0] begin
+#       error ""
+#   end
+#
+
+type_declaration_param
+    :   "@" T_TYPE_NAME               # parameterized type
+    |   T_TYPE_NAME                   # bound type
+    |   type_instance "@" T_NAME      # parameterized value            
+    |   T_NAME                        # bound value
+    |   T_INTEGER_LITERAL             # bound literal
+    |   T_RATIONAL_LITERAL            # bound literal
+    |   T_STRING_LITERAL              # bound literal
+    ;
+
+type_declaration_param_list
+    :   type_declaration_param "," type_declaration_param_list
+    |   type_declaration_param
+    ;
+
+type_declaration_params
+    :   "[" type_declaration_param_list "]"
+    |   epsilon
+    ;
+
+enum_name_list
+    :   T_NAME "," enum_name_list
+    |   T_NAME ","
+    |   T_NAME
+    ;
+
+type_declaration
+    :   "record" structured_type_declaration
+    |   "variant" structured_type_declaration
+    |   "enum" T_TYPE_NAME "begin" T_NEW_LINE
+            enum_name_list
+        "end"
+    |   "alias" type_name_declaration "=" type_instance
+    |   "newtype" type_name_declaration "=" type_instance
+    ;
+
+type_name_declaration
+    : T_TYPE_NAME type_declaration_params
+    ;
+
+structured_type_declaration
+    :   type_name_declaration "begin" T_NEW_LINE
+            record_field_declaration_list
+        "end"
+    ;
+
+record_field_declaration_list
+    :   record_field_declaration record_field_declaration_list
+    |   record_field_declaration
+    ;
+
+record_field_declaration
+    :   type_instance T_NAME T_NEW_LINE
+    ;
+
+#
+# Function definition/declaration
+#
+#   def foo(Int32 bar, baz; Int16 fizz) -> Buzz
+#       ...
+#   end
+#
+
+function_declaration
+    :   "export" function_declaration_tail
+    |   function_declaration_tail
+    ;
+
+function_declaration_tail
+    :   "def" T_NAME type_declaration_params "("
+            function_parameter_list
+        ")" "->" type_instance T_NEW_LINE
+            function_statement_list
+        "end"
+    ;
+
+function_statement_list
+    :   function_statement function_statement_list
+    |   epsilon
+    ;
+
+function_statement
+    :   variable_definition T_NEW_LINE
+    |   type_declaration T_NEW_LINE
+    |   expression T_NEW_LINE
+    |   block_statement T_NEW_LINE
+    ;
+
+function_argument
+    :   T_NAME              # argument
+    |   "@" T_NAME          # argument by name, with a specific type
+    ;
+
+function_argument_list
+    :   function_argument "," function_argument_list
+    |   function_argument
+    ;
+
+function_parameter_sublist
+    :   type_instance function_argument_list        # list of arguments of the same type
+    |   "@" T_NAME                                  # argument by name; token list
+    ;
+
+function_parameter_sublist_rest
+    :   ";" function_parameter_sublist function_parameter_sublist_rest
+    |   epsilon
+    ;
+
+function_parameter_list
+    :   function_parameter_sublist function_parameter_sublist_rest
+    |   epsilon
+    ;
+
+#
+# Variable definition / declarations
+#
+
+variable_definition
+    :   "let" T_NAME "=" expression
+    ;
+
+#
+# Expressions
+#
+
+expression_list
+    :   expression "," expression_list
+    |   expresion
+    ;
+
+expression_list_opt
+    :   expression_list
+    |   epsilon
+    ;
+
+expression
+    :   T_NAME
+    |   T_STRING_LITERAL
+    |   T_INTEGER_LITERAL
+    |   T_RATIONAL_LITERAL
+    |   T_NAME type_instance_params "(" expression_list_opt ")"
+    |   simple_type_instance "(" expression_list_opt ")"
+    |   "new" type_instance "(" expression_list_opt ")"
+    |   "(" expression ")"
+    ;
+
+#
+# Block statement
+#
+
+elif_statement
+    : "elif" expression "then" T_NEW_LINE
+        function_statement_list
+        elif_statement
+    | epsilon
+    ;
+
+else_statement
+    : "else" T_NEW_LINE
+        function_statement_list
+    | epsilon
+    ;
+
+block_statement
+    :   "if" expression "then" T_NEW_LINE
+            function_statement_list
+            elif_statement
+            else_statement
+        "end"
+    |   "return" expression
+    |   "return"
+    ;

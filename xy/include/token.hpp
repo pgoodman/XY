@@ -18,7 +18,7 @@ namespace xy {
 
         T_BEGIN,                    // begin
         T_END,                      // end
-        T_NOT,                      // not
+        //T_NOT,                      // not
         T_INTO,                     // into
         T_GIVE,                     // give
         T_TAKE,                     // take
@@ -49,8 +49,9 @@ namespace xy {
         T_HAT,                      // ^
         T_PERCENT,                  // %
         T_TILDE,                    // ~
-        //T_COLON,                    // :
+        T_ARROW,                    // ->
         T_SEMICOLON,                // ;
+        T_AT,                       // @
 
         T_LESS_THAN,                // <
         T_GREATER_THAN,             // >
