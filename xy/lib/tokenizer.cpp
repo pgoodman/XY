@@ -21,6 +21,11 @@ namespace xy {
             SCA_OK,
         } suffix_char_action;
 
+        /// how the tokenizer should behave when it encounters a specific ASCII
+        /// character as the next character in a name/identifier. A BARRIER
+        /// signals the end of the name, an OK signals that the character should
+        /// be appended to the name, and an ERROR represents an unexpected
+        /// character.
         static const suffix_char_action NAME_CHAR[]{
             SCA_BARRIER, //  0    ^@    .
             SCA_ERROR, //  1    ^A    .
@@ -152,6 +157,7 @@ namespace xy {
             SCA_ERROR, //  127    ^?    .
         };
 
+        /// tokens that can be matched by a single ASCII character
         static const token_type SINGLE_CHAR_TOKENS[]{
             T_INVALID, //  0     ^@
             T_INVALID, //  1     ^A
@@ -283,6 +289,9 @@ namespace xy {
             T_INVALID, //  127     ^?
         };
 
+        /// memcpy/strcpy equivalent that returns the number of characters
+        /// written. This does not write a null character to the end of
+        /// the buffer
         static size_t write_to_buff(char *buffer, const char *str) throw() {
             char *bb(buffer);
             for(; '\0' != *str; ) {
@@ -291,19 +300,23 @@ namespace xy {
             return static_cast<size_t>(bb - buffer);
         }
 
+        /// is a character a decimal digit?
         static bool is_decimal(char c) throw() {
             return isdigit(c);
         }
 
+        /// is a character an octal digit?
         static bool is_octal(char c) throw() {
             return '0' <= c && c <= '7';
         }
 
+        /// is a character a hexadecimal digit?
         static bool is_hex(char c) throw() {
             const char cl(tolower(c));
             return isdigit(c) || ('a' <= cl && cl <= 'f');
         }
 
+        /// a names to token type mapping of reserved keywords in the language
         static struct {
             const char * const str;
             const size_t len;
@@ -311,6 +324,8 @@ namespace xy {
         } RESERVED_NAMES[]{
             {"take",        5U, T_TAKE},
             {"give",        5U, T_GIVE},
+            {"shared",      7U, T_SHARED},
+            {"share",       6U, T_SHARE},
             {"begin",       6U, T_BEGIN},
             {"end",         4U, T_END},
             {"into",        5U, T_INTO},
@@ -327,73 +342,77 @@ namespace xy {
         , chr(0)
         , cp()
         , state(READ_NEXT_CODEPOINT)
-        , scratch{'\0'}
     { }
 
-    void tokenizer::push_line_file_col(diagnostic_context &ctx) throw() {
+    /// push the file, line, and column information as a message into the
+    /// diagnostic context's message queue.
+    void tokenizer::push_file_line_col(diagnostic_context &ctx) throw() {
         ctx.diag.push(io::c_file_line_col,
             ctx.top_file(), ll.line(), ll.column()
         );
         state = DONE;
     }
 
-    bool tokenizer::get_octal_digit(
-        diagnostic_context &ctx,
-        size_t i
-    ) throw() {
+    /// interpret a byte as a digit in an octal number
+    bool tokenizer::get_octal_digit(diagnostic_context &ctx, char *chr) throw() {
+
         if(!cp.is_ascii()) {
             ctx.diag.push(io::e_invalid_octal_escape, cp.to_cstring());
-            push_line_file_col(ctx);
+            push_file_line_col(ctx);
             return false;
         }
 
         char digit = cp.to_cstring()[0];
         if(digit < '0' || '7' < digit) {
             ctx.diag.push(io::e_invalid_octal_escape, cp.to_cstring());
-            push_line_file_col(ctx);
+            push_file_line_col(ctx);
             return false;
         }
 
-        int16_t new_val = (scratch[i] * 8) + (digit - '0');
+        int16_t new_val = (static_cast<int16_t>(*chr) * 8) + (digit - '0');
         if(new_val > 255) { // wrap-around
             ctx.diag.push(io::e_octal_escape_too_big, new_val, new_val);
-            push_line_file_col(ctx);
+            push_file_line_col(ctx);
             return false;
         }
-        scratch[i] = static_cast<char>(new_val);
+        *chr = static_cast<char>(new_val);
         return true;
     }
 
-    bool tokenizer::get_hex_digit(
-        diagnostic_context &ctx,
-        size_t i
-    ) throw() {
+    /// interpret a byte as a digit in a hexadecimal number.
+    bool tokenizer::get_hex_digit(diagnostic_context &ctx, char *chr) throw() {
         if(!cp.is_ascii()) {
             ctx.diag.push(io::e_invalid_hex_escape, cp.to_cstring());
-            push_line_file_col(ctx);
+            push_file_line_col(ctx);
             return false;
         }
 
         char digit = tolower(cp.to_cstring()[0]);
         if(!isalnum(digit) || 'f' < digit) {
             ctx.diag.push(io::e_invalid_hex_escape, cp.to_cstring());
-            push_line_file_col(ctx);
+            push_file_line_col(ctx);
             return false;
         } else if('a' <= digit) {
             digit -= 'a' - ':';
         }
-        const int16_t new_val = (scratch[i] * 16) + (digit - '0');
-        scratch[i] = new_val;
+        const int16_t new_val = (static_cast<int16_t>(*chr) * 16) + (digit - '0');
+        *chr = static_cast<char>(new_val);
         return true;
     }
 
+    /// get the next token. If a token is found, this function returns true,
+    /// and the token argument is updated to contain relevant information. If
+    /// the token is one in which the lexed value is meaningful, e.g. an
+    /// identifier name, then that value is stored in the scratch buffer.
     bool tokenizer::get_token(
         io::file<io::read_tag> &f,
         diagnostic_context &ctx,
-        token &tok
+        token &tok,
+        char (&scratch)[MAX_TOKEN_LENGTH]
     ) throw() {
-        token_type tt;
+        token_type tt(T_INVALID);
         scratch[0] = '\0';
+        tok.type_ = T_INVALID;
 
         switch(state) {
         case READ_NEXT_CODEPOINT:
@@ -408,7 +427,7 @@ namespace xy {
                 if(!cp.is_ascii()) {
         case HAVE_NON_ASCII_CODEPOINT:
                     ctx.diag.push(io::e_mb_not_in_string, cp.to_cstring());
-                    push_line_file_col(ctx);
+                    push_file_line_col(ctx);
                     return false;
                 }
 
@@ -548,7 +567,7 @@ namespace xy {
                         ctx.diag.push(io::e_unclosed_block_comment,
                             num_to_close
                         );
-                        push_line_file_col(ctx);
+                        push_file_line_col(ctx);
                         return false;
 
                     } else {
@@ -607,9 +626,12 @@ namespace xy {
                         if(cp.is_ascii()) {
                             chr = cp.to_cstring()[0];
 
+                            // end of the string
                             if('"' == chr) {
                                 scratch[i] = '\0';
                                 goto found_end_of_string;
+
+                            // escape sequence
                             } else if('\\' == chr) {
                                 if(!ll.get_codepoint(f, ctx, cp)) {
                                     goto early_termination_of_string;
@@ -617,7 +639,7 @@ namespace xy {
                                     ctx.diag.push(io::e_mb_escape_string,
                                         cp.to_cstring()
                                     );
-                                    push_line_file_col(ctx);
+                                    push_file_line_col(ctx);
                                     scratch[0] = '\0';
                                     return false;
                                 }
@@ -634,11 +656,13 @@ namespace xy {
                                 case 'v': scratch[i] = '\x0B'; break;
                                 case '"': scratch[i] = '"'; break;
                                 case '\\': scratch[i] = '\\'; break;
+
+                                // octal escape sequence, e.g. \oOOO
                                 case 'o':
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_octal_digit(ctx, i)) {
+                                    if(!get_octal_digit(ctx, &(scratch[i]))) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
@@ -646,7 +670,7 @@ namespace xy {
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_octal_digit(ctx, i)) {
+                                    if(!get_octal_digit(ctx, &(scratch[i]))) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
@@ -654,18 +678,20 @@ namespace xy {
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_octal_digit(ctx, i)) {
+                                    if(!get_octal_digit(ctx, &(scratch[i]))) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
                                     }
                                     i += 2;
                                     break;
+
+                                // hexadecimal escape sequence, e.g. \xXX
                                 case 'x':
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_hex_digit(ctx, i)) {
+                                    if(!get_hex_digit(ctx, &(scratch[i]))) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
@@ -673,7 +699,7 @@ namespace xy {
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_hex_digit(ctx, i)) {
+                                    if(!get_hex_digit(ctx, &(scratch[i]))) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
@@ -685,7 +711,7 @@ namespace xy {
                                     ctx.diag.push(io::e_invalid_escape,
                                         cp.to_cstring()[0]
                                     );
-                                    push_line_file_col(ctx);
+                                    push_file_line_col(ctx);
                                     scratch[0] = '\0';
                                     return false;
                                 }
@@ -808,7 +834,7 @@ namespace xy {
                         // error, character not allowed in a name
                         if(SCA_ERROR == NAME_CHAR[chr]) {
                             ctx.diag.push(io::e_bad_char_in_name, chr);
-                            push_line_file_col(ctx);
+                            push_file_line_col(ctx);
                             scratch[0] = '\0';
                             return false;
 
@@ -841,10 +867,6 @@ namespace xy {
         }
 
         return false;
-    }
-
-    const char *tokenizer::get_value(void) const throw() {
-        return &(scratch[0]);
     }
 }
 

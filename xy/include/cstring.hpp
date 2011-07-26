@@ -12,7 +12,10 @@
 
 namespace xy { namespace cstring {
 
+    /// return a heap-allocated copy of a C-string
     char *copy(const char *str) throw();
+
+    /// free a heap-allocated C string
     void free(const char *str) throw();
 
 }}

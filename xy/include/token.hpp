@@ -14,6 +14,7 @@
 
 namespace xy {
 
+    /// the set of tokens recognized by the tokenizer
     typedef enum : uint8_t {
 
         T_BEGIN,                    // begin
@@ -23,6 +24,8 @@ namespace xy {
         T_GIVE,                     // give
         T_TAKE,                     // take
         T_OWN,                      // own
+        T_SHARE,                    // share
+        T_SHARED,                   // shared
         T_LET,                      // let
         T_IF,                       // if
         T_THEN,                     // then
@@ -69,16 +72,23 @@ namespace xy {
         T_INVALID
     } token_type;
 
+    /// the maximum byte length of any given token
+    enum {
+        MAX_TOKEN_LENGTH = 4096U
+    };
+
     // forward declaration
     class tokenizer;
 
+    /// represents a single lexical unit (e.g. a word). This stores the kind of
+    /// the word and the position of the word inside its file.
     class token {
     private:
         friend class tokenizer;
 
         token_type type_;
+        uint32_t col_:24;
         uint32_t line_;
-        uint32_t col_;
 
     public:
 

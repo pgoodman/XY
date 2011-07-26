@@ -65,6 +65,7 @@ namespace xy { namespace io {
     template <typename> class file;
     class read;
 
+    /// represents an open file in read-only mode.
     template<>
     class file<read_tag> {
     private:
@@ -93,7 +94,7 @@ namespace xy { namespace io {
 
             memset(block, 0, array::size(block));
 
-            ssize_t amount{::read(fd, block, array::size(block))};
+            ssize_t amount(::read(fd, block, array::size(block)));
 
             if(amount < 0) {
                 // TODO report error
@@ -105,7 +106,8 @@ namespace xy { namespace io {
     };
 
 
-    /// read from a file.
+    /// represents the computation to be done with a file that has been
+    /// opened in read-only mode.
     class read {
     public:
 

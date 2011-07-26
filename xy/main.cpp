@@ -24,6 +24,8 @@
 #include "xy/include/tokenizer.hpp"
 #include "xy/include/io/file.hpp"
 #include "xy/include/io/message.hpp"
+#include "xy/include/io/cwd.hpp"
+#include "xy/include/io/real_path.hpp"
 #include "xy/include/utf8/codepoint.hpp"
 
 using namespace xy;
@@ -31,9 +33,15 @@ using namespace xy;
 /// lex an open file
 static void tokenize_open_file(io::file<io::read_tag> &f, diagnostic_context &ctx, tokenizer &tt) {
     token tok;
+    char file_name[io::REAL_PATH_MAX_LEN];
+    char scratch[MAX_TOKEN_LENGTH];
 
-    for(; tt.get_token(f, ctx, tok); ) {
-        printf("%u:%u %s %s\n", tok.line(), tok.column(), tok.name(), tt.get_value());
+    printf("token size=%lu\n", sizeof(token));
+    printf("cwd='%s'\n", io::get_cwd());
+    printf("file='%s'\n", io::get_real_path(ctx.top_file(), file_name));
+
+    for(; tt.get_token(f, ctx, tok, scratch); ) {
+        printf("%u:%u %s %s\n", tok.line(), tok.column(), tok.name(), scratch);
     }
 }
 

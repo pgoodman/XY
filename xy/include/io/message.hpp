@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 #include <tr1/tuple>
-#include <utility>
+#include <tr1/utility>
 #include <cstdio>
 #include <cstring>
 #include <iterator>
@@ -48,6 +48,11 @@ namespace xy { namespace io {
         sentinel_type = 6,
     } message_type;
 
+    /// represents a single diagnostic message template. Each message has a
+    /// unique identifier, a type (e.g. error, warning), and a format string.
+    /// The format string uses C printf formatting rules. Diagnostic message
+    /// templates are "instantiated" by means of the message class, where the
+    /// parameters to be substituted into the string and stored.
     struct message_template {
     public:
         const message_id id;
@@ -59,6 +64,9 @@ namespace xy { namespace io {
     class message_queue;
     class message_iterator;
 
+    /// represents an instantiated message template with its formal parameters.
+    /// the parameters are stored in a tuple (which is defined in the derived
+    /// template classes).
     class message {
     private:
 
@@ -112,8 +120,14 @@ namespace xy { namespace io {
 
     namespace {
 
+        /// send the tuple parameters of an instantiated message template
+        /// as arguments to C printf
+
         template <const int len, typename tuple_type>
-        class print_tuple;
+        class print_tuple {
+        public:
+            static void print(FILE *fp, const char *fmt, const tuple_type &);
+        };
 
         template <typename tuple_type>
         class print_tuple<0, tuple_type> {
@@ -182,6 +196,12 @@ namespace xy { namespace io {
             }
         };
 
+        /// recursively duplicate and replace parameter C strings stored in the
+        /// message tuple. This is so that parameter strings can be stored in
+        /// reusable buffers and so that those buffers can be safely passed as
+        /// arguments to the messages because the string contents of the
+        /// buffers will be duplicated.
+
         template <typename result, const int i, typename tuple_type>
         class allocate_string;
 
@@ -222,6 +242,9 @@ namespace xy { namespace io {
         public:
             static void allocate(tuple_type &) throw() { }
         };
+
+        /// recursively free any C strings stored in the tuple of arguments in
+        /// the instantiated message template
 
         template <typename result, const int i, typename tuple_type>
         class free_string;
@@ -264,6 +287,8 @@ namespace xy { namespace io {
         public:
             static void free(tuple_type &) throw() { }
         };
+
+        /// implementation of a given instantiated message template
 
         template <typename ...arg_types>
         class message_impl : public message {
@@ -313,6 +338,8 @@ namespace xy { namespace io {
         };
     }
 
+    /// represents a simple queue of messages, where each message is represented
+    /// by a message id and the arguments to substitute into the message.
     class message_queue {
     private:
 
@@ -339,9 +366,10 @@ namespace xy { namespace io {
 
         ~message_queue(void) throw();
 
+        /// push a message into the queue.
         template <typename ...arg_types>
         void push(message_id id, arg_types... args) throw() {
-            message *msg{new message_impl<arg_types...>(id, args...)};
+            message *msg(new message_impl<arg_types...>(id, args...));
             seen[msg->type] = true;
             if(&LAST_MESSAGE == first) {
                 first = msg;
@@ -357,8 +385,10 @@ namespace xy { namespace io {
         message_iterator begin(void) const throw();
         message_iterator end(void) const throw();
 
+        /// check if we have any messages
         bool has_message(void) const throw();
 
+        /// check if we have any messages of a particular type
         bool has_message(message_type) const throw();
     };
 

@@ -17,6 +17,7 @@
 
 namespace xy {
 
+    /// stores context-specific diagnostic information.
     class diagnostic_context {
     private:
 

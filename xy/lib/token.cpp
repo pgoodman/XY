@@ -13,14 +13,14 @@ namespace xy {
 
     token::token(void) throw()
         : type_(T_INVALID)
-        , line_(0)
         , col_(0)
+        , line_(0)
     { }
 
     token::token(const token &o) throw()
         : type_(o.type_)
-        , line_(o.line_)
         , col_(o.col_)
+        , line_(o.line_)
     { }
 
     token &token::operator=(const token &o) throw() {
@@ -58,6 +58,8 @@ namespace xy {
             "T_GIVE",                     // give
             "T_TAKE",                     // take
             "T_OWN",                      // own
+            "T_SHARE",                    // share
+            "T_SHARED",                   // shared
             "T_LET",                      // let
             "T_IF",                       // if
             "T_THEN",                     // then

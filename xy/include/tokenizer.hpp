@@ -12,6 +12,7 @@
 
 #include "xy/include/token.hpp"
 #include "xy/include/lexer.hpp"
+#include "xy/include/diagnostic_context.hpp"
 #include "xy/include/utf8/codepoint.hpp"
 
 namespace xy {
@@ -23,12 +24,21 @@ namespace xy {
         int chr;
         utf8::codepoint cp;
 
+        static_assert(20U < MAX_TOKEN_LENGTH,
+            "The maximum length of a token must be larger than 20 bytes. This "
+            "requirement is to allow a bit of overflow to occur."
+        );
+
         enum {
-            BUFFER_LENGTH = 4096U,
-            NAME_LENGTH = 32U
+            NAME_LENGTH = 32U,
+            BUFFER_LENGTH = MAX_TOKEN_LENGTH - 20U
         };
 
-        char scratch[BUFFER_LENGTH + 20];
+        static_assert(NAME_LENGTH <= MAX_TOKEN_LENGTH,
+            "The maximum length of a name (type name, identifier) must be less "
+            "than or equal to the maximum length of a token (usually the length "
+            "of a string literal)."
+        );
 
         enum {
             READ_NEXT_CODEPOINT,
@@ -40,17 +50,21 @@ namespace xy {
 
     private:
 
-        void push_line_file_col(diagnostic_context &ctx) throw();
-        bool get_octal_digit(diagnostic_context &ctx, size_t i) throw();
-        bool get_hex_digit(diagnostic_context &ctx, size_t i) throw();
+        void push_file_line_col(diagnostic_context &ctx) throw();
+        bool get_octal_digit(diagnostic_context &ctx, char *) throw();
+        bool get_hex_digit(diagnostic_context &ctx, char *) throw();
 
     public:
 
         tokenizer(void) throw();
 
-        bool get_token(io::file<io::read_tag> &f, diagnostic_context &ctx, token &tok) throw();
-
-        const char *get_value(void) const throw();
+        /// get the next token
+        bool get_token(
+            io::file<io::read_tag> &f,
+            diagnostic_context &ctx,
+            token &tok,
+            char (&scratch)[MAX_TOKEN_LENGTH]
+        ) throw();
     };
 }
 

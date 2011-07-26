@@ -16,6 +16,8 @@ namespace xy { namespace utf8 {
 
     class codepoint;
 
+    /// represents a UTF-8 decoder state machine that takes as input a single
+    /// byte and performs transitions base on the byte.
     class decoder {
     private:
         uint8_t state;

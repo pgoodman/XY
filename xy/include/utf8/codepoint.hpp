@@ -15,6 +15,9 @@
 namespace xy { namespace utf8 {
 
     class decoder;
+
+    /// represents a single UTF-8 codepoint. Stores the codepoints as null-
+    /// terminated C strings.
     class codepoint {
         friend class decoder;
     private:
