@@ -17,7 +17,7 @@ namespace xy {
     /// the set of tokens recognized by the tokenizer
     typedef enum : uint8_t {
 
-        T_BEGIN,                    // begin
+        /*T_BEGIN,                    // begin
         T_END,                      // end
         //T_NOT,                      // not
         T_INTO,                     // into
@@ -29,7 +29,10 @@ namespace xy {
         T_LET,                      // let
         T_IF,                       // if
         T_THEN,                     // then
-        T_ELSE,                     // else
+        T_ELSE,                     // else*/
+        T_LET,                      // let
+        T_DEF_FUNCTION,             // defun
+        T_DEF_TYPE,                 // deftype
 
         T_OPEN_PAREN,               // (
         T_CLOSE_PAREN,              // )

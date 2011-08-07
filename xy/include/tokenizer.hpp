@@ -51,6 +51,7 @@ namespace xy {
     private:
 
         void push_file_line_col(diagnostic_context &ctx) throw();
+        void push_file_line_col_point(diagnostic_context &ctx) throw();
         void push_file_line_col_under(diagnostic_context &ctx, uint32_t start_col) throw();
         void push_file_line_col_left(diagnostic_context &ctx, uint32_t start_col) throw();
         bool get_octal_digit(diagnostic_context &ctx, char *, uint32_t start_col) throw();

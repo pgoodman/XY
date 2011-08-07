@@ -9,6 +9,8 @@
 
 #include <cassert>
 #include <cstring>
+#include <vector>
+#include <utility>
 
 #include "xy/include/tokenizer.hpp"
 #include "xy/include/io/line_highlight.hpp"
@@ -323,7 +325,7 @@ namespace xy {
             const size_t len;
             const token_type type;
         } RESERVED_NAMES[]{
-            {"take",        5U, T_TAKE},
+            /*{"take",        5U, T_TAKE},
             {"give",        5U, T_GIVE},
             {"shared",      7U, T_SHARED},
             {"share",       6U, T_SHARE},
@@ -334,7 +336,10 @@ namespace xy {
             {"let",         4U, T_LET},
             {"if",          3U, T_IF},
             {"then",        5U, T_THEN},
-            {"else",        5U, T_ELSE},
+            {"else",        5U, T_ELSE},*/
+            {"let",         4U, T_LET},
+            {"defun",       6U, T_DEF_FUNCTION},
+            {"deftype",     8U, T_DEF_TYPE},
         };
     }
 
@@ -351,6 +356,11 @@ namespace xy {
         ctx.diag.push(io::c_file_line_col,
             ctx.top_file(), ll.line(), ll.column()
         );
+        state = DONE;
+    }
+
+    void tokenizer::push_file_line_col_point(diagnostic_context &ctx) throw() {
+        push_file_line_col(ctx);
         ctx.diag.push(io::c_highlight, io::highlight_column(
             ctx.top_file(), ll.line(), ll.column()
         ));
@@ -358,9 +368,7 @@ namespace xy {
     }
 
     void tokenizer::push_file_line_col_under(diagnostic_context &ctx, uint32_t start_col) throw() {
-        ctx.diag.push(io::c_file_line_col,
-            ctx.top_file(), ll.line(), ll.column()
-        );
+        push_file_line_col(ctx);
         ctx.diag.push(io::c_highlight, io::highlight_line(
             ctx.top_file(), ll.line(), start_col, ll.column()
         ));
@@ -368,9 +376,7 @@ namespace xy {
     }
 
     void tokenizer::push_file_line_col_left(diagnostic_context &ctx, uint32_t start_col) throw() {
-        ctx.diag.push(io::c_file_line_col,
-            ctx.top_file(), ll.line(), ll.column()
-        );
+        push_file_line_col(ctx);
         ctx.diag.push(io::c_highlight, io::highlight_left(
             ctx.top_file(), ll.line(), start_col, ll.column()
         ));
@@ -452,7 +458,7 @@ namespace xy {
                 if(!cp.is_ascii()) {
         case HAVE_NON_ASCII_CODEPOINT:
                     ctx.diag.push(io::e_mb_not_in_string, cp.to_cstring());
-                    push_file_line_col(ctx);
+                    push_file_line_col_point(ctx);
                     return false;
                 }
 
@@ -539,8 +545,11 @@ namespace xy {
                     } else if('*' == chr) {
                         tok.type_ = T_NEW_LINE;
 
+                        std::vector<std::pair<uint32_t, uint32_t> > positions;
                         int num_to_close(1);
                         int old_chr(chr);
+
+                        positions.push_back(std::make_pair(ll.line(), ll.column() - 1));
 
                         for(; ll.get_codepoint(f, ctx, cp); ) {
                             if(cp.is_null()) {
@@ -567,6 +576,7 @@ namespace xy {
                                 chr = cp.to_cstring()[0];
 
                                 if('*' == old_chr && '-' == chr) {
+                                    positions.pop_back();
                                     --num_to_close;
                                     if(0 == num_to_close) {
                                         tok.line_ = ll.line();
@@ -575,6 +585,7 @@ namespace xy {
                                     }
                                     continue;
                                 } else if('-' == old_chr && '*' == chr) {
+                                    positions.push_back(std::make_pair(ll.line(), ll.column() - 1));
                                     ++num_to_close;
                                     continue;
                                 }
@@ -589,10 +600,19 @@ namespace xy {
                             return true;
                         }
 
-                        ctx.diag.push(io::e_unclosed_block_comment,
-                            num_to_close
-                        );
+                        ctx.diag.push(io::e_unclosed_block_comment, num_to_close);
                         push_file_line_col(ctx);
+
+                        for(; !positions.empty(); positions.pop_back()) {
+                            ctx.diag.push(io::n_start_of_block_comment);
+                            ctx.diag.push(io::c_file_line_col,
+                                ctx.top_file(), positions.back().first, positions.back().second
+                            );
+                            ctx.diag.push(io::c_highlight, io::highlight_column(
+                                ctx.top_file(), positions.back().first, positions.back().second
+                            ));
+                        }
+
                         return false;
 
                     } else {
@@ -668,7 +688,7 @@ namespace xy {
                                     ctx.diag.push(io::e_mb_escape_string,
                                         cp.to_cstring()
                                     );
-                                    push_file_line_col(ctx);
+                                    push_file_line_col_point(ctx);
                                     scratch[0] = '\0';
                                     return false;
                                 }
@@ -869,7 +889,7 @@ namespace xy {
                         // error, character not allowed in a name
                         if(SCA_ERROR == NAME_CHAR[chr]) {
                             ctx.diag.push(io::e_bad_char_in_name, chr);
-                            push_file_line_col(ctx);
+                            push_file_line_col_point(ctx);
                             scratch[0] = '\0';
                             return false;
 

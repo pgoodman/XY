@@ -10,4 +10,5 @@ XY_MSG(e_invalid_hex_escape, error, "The character '%s' is not valid as a digit 
 XY_MSG(e_invalid_escape, error, "The escape sequence '\\%c' is invalid. Valid escape sequences are \\a, \\b, \\f, \\n, \\r, \\t, \\v, \\\", \\\\, \\oOOO (where O is an octal digit), and \\xXX (where X is a hexadecimal digit).")
 XY_MSG(e_octal_escape_too_big, error, "The octal escape sequence '\\o%03o' (which evaluates to the character with value '%d') cannot fit in a single byte. The maximum evaluated value of an octal-escaped byte is 255, or \\o377.")
 XY_MSG(e_unclosed_block_comment, recoverable_error, "%d block comment(s) (starting with '-*' and ending with '*-') was/were left unclosed. This could be because one or more block comments were opened near the end of the file and because one was left unclosed, or because an error occurred while reading the contents of the file. I am going to assume the former.")
+XY_MSG(n_start_of_block_comment, note, "Start of unclosed block comment was here.")
 

@@ -8,6 +8,7 @@
 
 #include <limits>
 #include <cstdio>
+#include <cctype>
 
 #include "xy/include/io/line_highlight.hpp"
 #include "xy/include/color.hpp"
@@ -120,10 +121,7 @@ namespace xy { namespace io { namespace detail {
         size_t &p
     ) {
 
-        enum {
-            MAX_LINE_NUM_BYTES = LINE_NUM_CPS * 4U,
-            MAX_NUM_BYTES = LINE_NUM_CPS * 4U + 1U
-        };
+
 
         uint8_t scratch[BLOCK_SIZE]{'\0'};
 
@@ -147,7 +145,7 @@ namespace xy { namespace io { namespace detail {
             for(; self.i < self.read_size && col < col_max; ++(self.i), ++j) {
 
                 buff[j % MAX_NUM_BYTES] = scratch[self.i];
-                //printf("buff[%lu] = %d\n", j % MAX_NUM_BYTES, scratch[self.i]);
+                //printf("buff[%lu] = %c\n", j % MAX_NUM_BYTES, scratch[self.i]);
 
                 if(std::numeric_limits<size_t>::max() == k
                 && col == self.find_col) {
@@ -167,7 +165,7 @@ namespace xy { namespace io { namespace detail {
                     j = j - num_conts;
                     const char *bcp(chr.to_cstring());
                     for(; '\0' != *bcp; ++j) {
-                        //printf("buff[%lu] = *bcp = %d\n", j % MAX_NUM_BYTES, *bcp);
+                        //printf("buff[%lu] = *bcp = %c\n", j % MAX_NUM_BYTES, *bcp);
                         buff[j % MAX_NUM_BYTES] = *bcp++;
                     }
                     j -= 1; // because the loop around will auto increment
@@ -179,7 +177,7 @@ namespace xy { namespace io { namespace detail {
                 if('\n' == chr || '\r' == chr) {
                     self.read_size = 0;
                     buff[j % MAX_NUM_BYTES] = '\0';
-                    //printf("buff[%lu] <nl> = 0\n", j % MAX_NUM_BYTES);
+                    //printf("buff[%lu] <nl> = 000\n", j % MAX_NUM_BYTES);
                     goto process_line;
                 }
 
@@ -188,7 +186,13 @@ namespace xy { namespace io { namespace detail {
 
             self.i = 0;
             buff[j % MAX_NUM_BYTES] = '\0';
+
             //printf("buff[%lu] <bl> = 000\n", j % MAX_NUM_BYTES);
+
+            if(self.read_size < BLOCK_SIZE) {
+                break;
+            }
+
             self.read_size = f.read_block(scratch);
         }
 
@@ -199,12 +203,6 @@ namespace xy { namespace io { namespace detail {
             self.found_line = NULL_STRING;
             return 0;
         }
-
-        // try to get MARGIN codepoints on either side of the column
-        enum {
-            MARGIN = (LINE_NUM_CPS / 2) - 2,
-            MAX_BYTES_PER_MARGIN = MARGIN * 4
-        };
 
         static_assert(MAX_BYTES_PER_MARGIN <= BLOCK_SIZE,
             "BLOCK_SIZE must be bigger to properly handle margins on "
@@ -217,35 +215,50 @@ namespace xy { namespace io { namespace detail {
         );
 
         size_t o(0);
+        bool seen_non_ws(false);
+        size_t extra_on_right(0);
 
-        // copy things up to and including the byte at the column
+        // copy things up to and including the byte at the column, ignoring
+        // any leading whitespace
 
         // we haven't read over one line (and so haven't wrapped around the ring)
         if(j < MAX_BYTES_PER_MARGIN) {
-            for(; p <= k && '\0' != buff[p]; ++p) {
-                //printf("scratch[p = %lu] = buff[p = %lu] = %d\n", p, p, buff[p]);
-                scratch[p] = buff[p];
+
+            for(size_t pp(0); pp <= k && '\0' != buff[pp]; ++pp) {
+                if(!seen_non_ws && isspace(buff[pp])) {
+                    ++extra_on_right;
+                    continue;
+                }
+                //printf("scratch[p = %lu] = buff[pp = %lu] = %c\n", p, pp, buff[pp]);
+                seen_non_ws = true;
+                scratch[p] = buff[pp];
+                ++p;
             }
-            o = k + 1;
+            o = p;
 
         // we have read over one line and so might need to handle wrap around.
         } else {
             size_t n((MAX_NUM_BYTES + k - MAX_BYTES_PER_MARGIN) % MAX_NUM_BYTES);
             size_t m(n);
             for(; m != k && '\0' != buff[m]; m = (++n) % MAX_NUM_BYTES) {
-                //printf("scratch[o++ = %lu] = buff[m = %lu] = %d\n", o, m, buff[m]);
+                if(!seen_non_ws && isspace(buff[m])) {
+                    ++extra_on_right;
+                    continue;
+                }
+                //printf("scratch[o++ = %lu] = buff[m = %lu] = %c\n", o, m, buff[m]);
+                seen_non_ws = true;
                 scratch[o++] = buff[m];
             }
             p = o;
 
-            //printf("scratch[o++ = %lu] = buff[k = %lu] = %d\n", o, k, buff[k]);
+            //printf("scratch[o++ = %lu] = buff[k = %lu] = %c\n", o, k, buff[k]);
             scratch[o++] = buff[k];
         }
 
         // copy things after the byte at the column
-        for(size_t m(0); m < MAX_BYTES_PER_MARGIN; ++m) {
+        for(size_t m(0); m < (extra_on_right + MAX_BYTES_PER_MARGIN); ++m) {
             scratch[o] = buff[((k + 1) + m) % MAX_BYTES_PER_MARGIN];
-            //printf("scratch[o = %lu] = buff[... = %lu] = %d\n", o, ((k + 1) + m) % MAX_BYTES_PER_MARGIN, buff[((k + 1) + m) % MAX_BYTES_PER_MARGIN]);
+            //printf("scratch[o = %lu] = buff[... = %lu] = %c\n", o, ((k + 1) + m) % MAX_BYTES_PER_MARGIN, buff[((k + 1) + m) % MAX_BYTES_PER_MARGIN]);
             if('\0' == scratch[o++]) {
                 break;
             }
@@ -265,7 +278,7 @@ namespace xy { namespace io { namespace detail {
                 break;
             }
             scratch[n] = '\0';
-            //printf("scratch[%lu] = %d\n", n, 0);
+            //printf("scratch[%lu] <lead> = 000\n", n);
         }
 
         // chop off trailing extended bytes if a unicode character cannot be
@@ -283,10 +296,10 @@ namespace xy { namespace io { namespace detail {
         if(self.decoder.is_in_use()) {
             for(; 0x80 == (0xC0 & scratch[--o]);) {
                 scratch[o] = '\0';
-                //printf("scratch[%lu] = %d\n", o, 0);
+                //printf("scratch[%lu] <tail> = 000\n", o);
             }
             scratch[o] = '\0';
-            //printf("scratch[%lu] = %d\n", o, 0);
+            //printf("scratch[%lu] <end-tail> = 000\n", o);
         }
 
         // we've now got the line right :D
@@ -417,7 +430,7 @@ namespace xy { namespace io { namespace detail {
 
 namespace xy { namespace io {
 
-    /// allow for highlighting of a column
+    /// allow for highlighting of a column with a ^
     line_highlight highlight_column(
         const char *file_name,
         const uint32_t line,
@@ -426,30 +439,48 @@ namespace xy { namespace io {
         return line_highlight(new detail::highlight_column(file_name, line, column));
     }
 
+    /// highlighting of something, e.g. ~~~~^
     line_highlight highlight_left(
         const char *file_name,
-        const uint32_t line,
-        const uint32_t from_col,
-        const uint32_t to_col
+        uint32_t line,
+        uint32_t from_col,
+        uint32_t to_col
     ) throw() {
+        if(from_col > to_col) {
+            from_col = to_col;
+        } else if(detail::highlight_column::MARGIN < (to_col - from_col)) {
+            from_col = to_col;
+        }
         return line_highlight(new detail::underline(file_name, line, from_col, to_col, '~', '^'));
     }
 
+    /// highlighting of something, e.g. ^~~~~
     line_highlight highlight_right(
         const char *file_name,
-        const uint32_t line,
-        const uint32_t from_col,
-        const uint32_t to_col
+        uint32_t line,
+        uint32_t from_col,
+        uint32_t to_col
     ) throw() {
+        if(from_col > to_col) {
+            from_col = to_col;
+        } else if(detail::highlight_column::MARGIN < (to_col - from_col)) {
+            from_col = to_col;
+        }
         return line_highlight(new detail::underline(file_name, line, from_col, to_col, '^', '~'));
     }
 
+    /// underlining of something, e.g. ~~~~~
     line_highlight highlight_line(
         const char *file_name,
-        const uint32_t line,
-        const uint32_t from_col,
-        const uint32_t to_col
+        uint32_t line,
+        uint32_t from_col,
+        uint32_t to_col
     ) throw() {
+        if(from_col > to_col) {
+            from_col = to_col;
+        } else if(detail::highlight_column::MARGIN < (to_col - from_col)) {
+            from_col = to_col;
+        }
         return line_highlight(new detail::underline(file_name, line, from_col, to_col, '~', '~'));
     }
 

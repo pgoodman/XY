@@ -73,6 +73,14 @@ namespace xy { namespace io {
             static void point_to_column(io::file<io::read_tag> &f, const highlight_column &self);
 
         public:
+
+            enum {
+                MAX_LINE_NUM_BYTES = LINE_NUM_CPS * 4U,
+                MAX_NUM_BYTES = LINE_NUM_CPS * 4U + 1U,
+                MARGIN = (LINE_NUM_CPS / 2) - 2,
+                MAX_BYTES_PER_MARGIN = MARGIN * 4
+            };
+
             highlight_column(const char *file_name_, uint32_t line_, uint32_t col_) throw();
             virtual ~highlight_column(void) throw();
 
@@ -109,27 +117,27 @@ namespace xy { namespace io {
     /// the line.
     line_highlight highlight_left(
         const char *file_name,
-        const uint32_t line,
-        const uint32_t from_col,
-        const uint32_t to_col
+        uint32_t line,
+        uint32_t from_col,
+        uint32_t to_col
     ) throw();
 
     /// return a line highlighter whose strategy highlights a single token in
     /// the line.
     line_highlight highlight_right(
         const char *file_name,
-        const uint32_t line,
-        const uint32_t from_col,
-        const uint32_t to_col
+        uint32_t line,
+        uint32_t from_col,
+        uint32_t to_col
     ) throw();
 
     /// return a line highlighter whose strategy highlights a single token in
     /// the line.
     line_highlight highlight_line(
         const char *file_name,
-        const uint32_t line,
-        const uint32_t from_col,
-        const uint32_t to_col
+        uint32_t line,
+        uint32_t from_col,
+        uint32_t to_col
     ) throw();
 
     /// lazily evaluated line highlighter, i.e. it will go get some buffer
