@@ -1,30 +1,12 @@
 
 
 program
-    :   import_statement_list statement_list
+    :   statement_list
     ;
 
 statement_list
     :   type_declaration T_NEW_LINE statement_list
     |   function_declaration T_NEW_LINE statement_list
-    |   epsilon
-    ;
-
-#
-# Import statement, the idea is that imports are always relative to some
-# root file that the compiler "starts" on, or relative to the current
-# working directory of the compiler.
-#
-# import "hello/world.xy" into hello:world
-# import "world.xy" into world
-#
-
-import_statement
-    :   "import" T_STRING_LITERAL "into" T_NAME
-    ;
-
-import_statement_list
-    :   import_statement T_NEW_LINE import_statement_list
     |   epsilon
     ;
 
@@ -112,8 +94,10 @@ enum_name_list
     |   T_NAME
     ;
 
+# only one export keyword is allowed, and only at the top-level scope
 type_declaration
-    :   "record" structured_type_declaration
+    :   "export" type_declaration
+    |   "record" structured_type_declaration
     |   "variant" structured_type_declaration
     |   "enum" T_TYPE_NAME "begin" T_NEW_LINE
             enum_name_list
@@ -204,7 +188,8 @@ function_parameter_list
 #
 
 variable_definition
-    :   "let" T_NAME "=" expression
+    :   "let" T_NAME "=" "import" T_STRING_LITERAL
+    |   "let" T_NAME "=" expression
     ;
 
 #

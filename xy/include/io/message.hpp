@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <tr1/tuple>
 #include <tr1/utility>
+#include <tr1/type_traits>
 #include <cstdio>
 #include <cstring>
 #include <iterator>
@@ -21,6 +22,7 @@
 
 #include "xy/include/mpl/bool.hpp"
 #include "xy/include/mpl/equal.hpp"
+#include "xy/include/mpl/remove_const.hpp"
 
 namespace xy { namespace io {
 
@@ -120,6 +122,80 @@ namespace xy { namespace io {
 
     namespace {
 
+#define XY_MAX_POD_OBJS(F)                                      \
+    F(char)                                                     \
+    F(unsigned char)                                            \
+    F(short)                                                    \
+    F(unsigned short)                                           \
+    F(int)                                                      \
+    F(unsigned)                                                 \
+    F(long)                                                     \
+    F(unsigned long)                                            \
+    F(long long)                                                \
+    F(unsigned long long)                                       \
+    F(float)                                                    \
+    F(double)
+
+#define XY_MAKE_POD_CONV(T)                                     \
+    template <>                                                 \
+    class as_pod<T> {                                           \
+    public:                                                     \
+        typedef const typename mpl::remove_const<T>::type type; \
+        static type convert(type &v) throw() {                  \
+            return v;                                           \
+        }                                                       \
+    };
+
+        template <typename T>
+        class as_pod;
+
+        template <typename T, bool>
+        class as_pod_impl;
+
+        /// convert some type that is integral, and so is indeed a base type
+        template <typename T>
+        class as_pod_impl<T, true> {
+        public:
+            typedef int type;
+            static int convert(const typename mpl::remove_const<T>::type &v) throw() {
+                return static_cast<int>(v);
+            }
+        };
+
+        /// comvert some type that is not integral
+        template <typename T>
+        class as_pod_impl<T, false> {
+        public:
+            typedef const char *type;
+            static const char *convert(const typename mpl::remove_const<T>::type &v) throw() {
+                return v.operator const char *();
+            }
+        };
+
+        template <typename T>
+        class as_pod {
+        public:
+            typedef as_pod_impl<T, std::tr1::is_enum<T>::value> converter;
+            typedef typename converter::type type;
+            static type convert(
+                const typename mpl::remove_const<T>::type &v
+            ) throw() {
+                return converter::convert(v);
+            }
+        };
+
+        template <typename T>
+        class as_pod<const T> : public as_pod<T> { };
+
+        XY_MAX_POD_OBJS(XY_MAKE_POD_CONV)
+        XY_MAKE_POD_CONV(char *)
+        XY_MAKE_POD_CONV(const char *)
+
+        template <typename T>
+        typename as_pod<T>::type to_pod(const T &v) throw() {
+            return as_pod<T>::convert(v);
+        }
+
         /// send the tuple parameters of an instantiated message template
         /// as arguments to C printf
 
@@ -141,7 +217,7 @@ namespace xy { namespace io {
         class print_tuple<1, tuple_type> {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
-                fprintf(fp, fmt, std::tr1::get<0>(t));
+                fprintf(fp, fmt, to_pod(std::tr1::get<0>(t)));
             }
         };
 
@@ -149,7 +225,7 @@ namespace xy { namespace io {
         class print_tuple<2, tuple_type> {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
-                fprintf(fp, fmt, std::tr1::get<0>(t), std::tr1::get<1>(t));
+                fprintf(fp, fmt, to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)));
             }
         };
 
@@ -158,7 +234,7 @@ namespace xy { namespace io {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
                 fprintf(fp, fmt,
-                    std::tr1::get<0>(t), std::tr1::get<1>(t), std::tr1::get<2>(t)
+                    to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)), to_pod(std::tr1::get<2>(t))
                 );
             }
         };
@@ -168,8 +244,8 @@ namespace xy { namespace io {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
                 fprintf(fp, fmt,
-                    std::tr1::get<0>(t), std::tr1::get<1>(t), std::tr1::get<2>(t),
-                    std::tr1::get<3>(t)
+                    to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)), to_pod(std::tr1::get<2>(t)),
+                    to_pod(std::tr1::get<3>(t))
                 );
             }
         };
@@ -179,8 +255,8 @@ namespace xy { namespace io {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
                 fprintf(fp, fmt,
-                    std::tr1::get<0>(t), std::tr1::get<1>(t), std::tr1::get<2>(t),
-                    std::tr1::get<3>(t), std::tr1::get<4>(t)
+                    to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)), to_pod(std::tr1::get<2>(t)),
+                    to_pod(std::tr1::get<3>(t)), to_pod(std::tr1::get<4>(t))
                 );
             }
         };
@@ -190,8 +266,8 @@ namespace xy { namespace io {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
                 fprintf(fp, fmt,
-                    std::tr1::get<0>(t), std::tr1::get<1>(t), std::tr1::get<2>(t),
-                    std::tr1::get<3>(t), std::tr1::get<4>(t), std::tr1::get<5>(t)
+                    to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)), to_pod(std::tr1::get<2>(t)),
+                    to_pod(std::tr1::get<3>(t)), to_pod(std::tr1::get<4>(t)), to_pod(std::tr1::get<5>(t))
                 );
             }
         };

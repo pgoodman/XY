@@ -59,7 +59,7 @@ namespace xy {
                     break;
                 }
 
-                // todo
+                begin->print(fp);
             }
         }
     }

@@ -30,6 +30,9 @@ namespace xy { namespace utf8 {
         bool next_state(uint8_t, codepoint &) throw();
         bool is_in_use(void) const throw();
         bool found_error(void) const throw();
+        void reset(void) throw();
+
+        static size_t length(const char *) throw();
     };
 
 }}

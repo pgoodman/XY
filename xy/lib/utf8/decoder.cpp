@@ -99,4 +99,27 @@ namespace xy { namespace utf8 {
     bool decoder::found_error(void) const throw() {
         return found_error_;
     }
+
+    void decoder::reset(void) throw() {
+        state = ACCEPT_STATE;
+        memset(chars, 0, array::size(chars));
+    }
+
+    size_t decoder::length(const char *str) throw() {
+        decoder d;
+        codepoint chr;
+        size_t j(0);
+
+        if(nullptr == str) {
+            return j;
+        }
+
+        for(; '\0' != *str; ) {
+            if(!d.next_state(*str++, chr)) {
+                continue;
+            }
+            ++j;
+        }
+        return j;
+    }
 }}

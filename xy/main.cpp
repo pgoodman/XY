@@ -21,6 +21,7 @@
 
 
 #include "xy/include/diagnostic_context.hpp"
+#include "xy/include/token.hpp"
 #include "xy/include/tokenizer.hpp"
 #include "xy/include/io/file.hpp"
 #include "xy/include/io/message.hpp"

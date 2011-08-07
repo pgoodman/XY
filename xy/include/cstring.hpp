@@ -10,13 +10,23 @@
 #ifndef XY_CSTRING_HPP_
 #define XY_CSTRING_HPP_
 
+#include <stdint.h>
+#include <cstring>
+
 namespace xy { namespace cstring {
 
     /// return a heap-allocated copy of a C-string
     char *copy(const char *str) throw();
+    char *copy(const uint8_t *str) throw();
 
     /// free a heap-allocated C string
     void free(const char *str) throw();
+    void free(const uint8_t *str) throw();
+
+    /// get the number of bytes in a c string, excluding the the null
+    /// byte.
+    size_t byte_length(const char *str) throw();
+    size_t byte_length(const uint8_t *str) throw();
 
 }}
 

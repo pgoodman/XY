@@ -12,6 +12,7 @@
 
 #include "xy/include/lexer.hpp"
 #include "xy/include/array.hpp"
+#include "xy/include/io/line_highlight.hpp"
 
 namespace xy {
 
@@ -40,7 +41,7 @@ namespace xy {
 
             for(; read_size == BLOCK_SIZE; ) {
 
-                read_size = f.read_block<BLOCK_SIZE>(scratch);
+                read_size = f.read_block(scratch);
                 if(0U == read_size) {
                     state = DONE_READING;
                     goto check_trailing_mb;
@@ -59,6 +60,9 @@ namespace xy {
                             io::c_file_line_col, ctx.top_file(),
                             line_tracker[curr], column_tracker[curr]
                         );
+                        ctx.diag.push(io::c_highlight, io::highlight_column(
+                            ctx.top_file(), line_tracker[curr], column_tracker[curr]
+                        ));
                     }
 
                     // we've read a codepoint
@@ -70,6 +74,7 @@ namespace xy {
                         if('\n' == first_chr) {
                             line_tracker[next] += 1;
                             column_tracker[next] = 1;
+                            seen_carriage_return = false;
                         } else {
 
                             // if we had a \r without having \r\n
@@ -92,6 +97,9 @@ namespace xy {
                                         io::c_file_line_col, ctx.top_file(),
                                         line_tracker[curr], column_tracker[curr]
                                     );
+                                    ctx.diag.push(io::c_highlight, io::highlight_column(
+                                        ctx.top_file(), line_tracker[curr], column_tracker[curr]
+                                    ));
                                     state = READ_NEXT_CODEPOINT;
                                     goto read_next_codepoint;
                                 }
@@ -127,6 +135,9 @@ namespace xy {
                 io::c_file_line_col, ctx.top_file(),
                 line_tracker[curr], column_tracker[curr]
             );
+            ctx.diag.push(io::c_highlight, io::highlight_column(
+                ctx.top_file(), line_tracker[curr], column_tracker[curr]
+            ));
         }
 
         return false;

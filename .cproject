@@ -29,6 +29,9 @@
 							<tool id="cdt.managedbuild.tool.macosx.c.linker.macosx.base.1261486255" name="MacOS X C Linker" superClass="cdt.managedbuild.tool.macosx.c.linker.macosx.base"/>
 							<tool id="cdt.managedbuild.tool.macosx.cpp.linker.macosx.base.229193085" name="MacOS X C++ Linker" superClass="cdt.managedbuild.tool.macosx.cpp.linker.macosx.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.macosx.lib.release.516621401" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.macosx.lib.release">
+								<option id="gnu.both.asm.option.include.paths.1725603366" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/XY/}&quot;"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.731547168" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.toolmacosx.lib.release.gnu.archiver.1512868223" name="GCC Archiver" superClass="cdt.managedbuild.toolmacosx.lib.release.gnu.archiver"/>
@@ -50,6 +53,9 @@
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.313932024" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="constexpr=const"/>
 									<listOptionValue builtIn="false" value="nullptr=0"/>
+								</option>
+								<option id="gnu.c.compiler.option.include.paths.1089770280" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/XY/}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1670839039" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

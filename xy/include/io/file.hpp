@@ -84,14 +84,8 @@ namespace xy { namespace io {
 
         const char *name(void) const throw();
 
-        template <const size_t BLOCK_SIZE, const size_t GIVEN_SIZE>
+        template <const size_t GIVEN_SIZE>
         size_t read_block(uint8_t (&block)[GIVEN_SIZE]) const throw() {
-            static_assert(
-                GIVEN_SIZE >= BLOCK_SIZE,
-                "The array passed to file<read_tag>::read_block() is not "
-                "large enough for the specified block size."
-            );
-
             memset(block, 0, array::size(block));
 
             ssize_t amount(::read(fd, block, array::size(block)));

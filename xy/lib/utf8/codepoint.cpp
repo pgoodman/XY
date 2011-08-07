@@ -48,11 +48,14 @@ namespace xy { namespace utf8 {
     }
 
     bool codepoint::is_ascii(void) const throw() {
-
         return data[0] < 128 && 0 == data[1];
     }
 
     const char *codepoint::to_cstring(void) const throw() {
         return data;
+    }
+
+    size_t codepoint::byte_length(void) const throw() {
+        return strlen(data);
     }
 }}

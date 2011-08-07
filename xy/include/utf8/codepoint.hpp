@@ -45,6 +45,8 @@ namespace xy { namespace utf8 {
 
         codepoint &operator=(const char) throw();
         codepoint &operator=(const codepoint &) throw();
+
+        size_t byte_length(void) const throw();
     };
 
     bool operator==(const char, const codepoint &) throw();

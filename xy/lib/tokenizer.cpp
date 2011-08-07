@@ -11,6 +11,7 @@
 #include <cstring>
 
 #include "xy/include/tokenizer.hpp"
+#include "xy/include/io/line_highlight.hpp"
 
 namespace xy {
 
@@ -350,29 +351,53 @@ namespace xy {
         ctx.diag.push(io::c_file_line_col,
             ctx.top_file(), ll.line(), ll.column()
         );
+        ctx.diag.push(io::c_highlight, io::highlight_column(
+            ctx.top_file(), ll.line(), ll.column()
+        ));
+        state = DONE;
+    }
+
+    void tokenizer::push_file_line_col_under(diagnostic_context &ctx, uint32_t start_col) throw() {
+        ctx.diag.push(io::c_file_line_col,
+            ctx.top_file(), ll.line(), ll.column()
+        );
+        ctx.diag.push(io::c_highlight, io::highlight_line(
+            ctx.top_file(), ll.line(), start_col, ll.column()
+        ));
+        state = DONE;
+    }
+
+    void tokenizer::push_file_line_col_left(diagnostic_context &ctx, uint32_t start_col) throw() {
+        ctx.diag.push(io::c_file_line_col,
+            ctx.top_file(), ll.line(), ll.column()
+        );
+        ctx.diag.push(io::c_highlight, io::highlight_left(
+            ctx.top_file(), ll.line(), start_col, ll.column()
+        ));
         state = DONE;
     }
 
     /// interpret a byte as a digit in an octal number
-    bool tokenizer::get_octal_digit(diagnostic_context &ctx, char *chr) throw() {
+    bool tokenizer::get_octal_digit(diagnostic_context &ctx, char *chr, uint32_t start_col) throw() {
 
         if(!cp.is_ascii()) {
             ctx.diag.push(io::e_invalid_octal_escape, cp.to_cstring());
-            push_file_line_col(ctx);
+            push_file_line_col_left(ctx, start_col);
             return false;
         }
 
         char digit = cp.to_cstring()[0];
         if(digit < '0' || '7' < digit) {
             ctx.diag.push(io::e_invalid_octal_escape, cp.to_cstring());
-            push_file_line_col(ctx);
+            push_file_line_col_left(ctx, start_col);
             return false;
         }
 
         int16_t new_val = (static_cast<int16_t>(*chr) * 8) + (digit - '0');
+
         if(new_val > 255) { // wrap-around
             ctx.diag.push(io::e_octal_escape_too_big, new_val, new_val);
-            push_file_line_col(ctx);
+            push_file_line_col_under(ctx, start_col);
             return false;
         }
         *chr = static_cast<char>(new_val);
@@ -380,17 +405,17 @@ namespace xy {
     }
 
     /// interpret a byte as a digit in a hexadecimal number.
-    bool tokenizer::get_hex_digit(diagnostic_context &ctx, char *chr) throw() {
+    bool tokenizer::get_hex_digit(diagnostic_context &ctx, char *chr, uint32_t start_col) throw() {
         if(!cp.is_ascii()) {
             ctx.diag.push(io::e_invalid_hex_escape, cp.to_cstring());
-            push_file_line_col(ctx);
+            push_file_line_col_left(ctx, start_col);
             return false;
         }
 
         char digit = tolower(cp.to_cstring()[0]);
         if(!isalnum(digit) || 'f' < digit) {
             ctx.diag.push(io::e_invalid_hex_escape, cp.to_cstring());
-            push_file_line_col(ctx);
+            push_file_line_col_left(ctx, start_col);
             return false;
         } else if('a' <= digit) {
             digit -= 'a' - ':';
@@ -615,6 +640,9 @@ namespace xy {
                             ctx.diag.push(io::c_file_line_col,
                                 ctx.top_file(), tok.line_, tok.col_
                             );
+                            ctx.diag.push(io::c_highlight, io::highlight_column(
+                                ctx.top_file(), tok.line_, tok.col_
+                            ));
                             state = DONE;
                             scratch[0] = '\0';
                             return false;
@@ -633,6 +661,7 @@ namespace xy {
 
                             // escape sequence
                             } else if('\\' == chr) {
+                                const uint32_t esc_start(ll.column());
                                 if(!ll.get_codepoint(f, ctx, cp)) {
                                     goto early_termination_of_string;
                                 } else if(!cp.is_ascii()) {
@@ -662,7 +691,7 @@ namespace xy {
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_octal_digit(ctx, &(scratch[i]))) {
+                                    if(!get_octal_digit(ctx, &(scratch[i]), esc_start)) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
@@ -670,7 +699,7 @@ namespace xy {
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_octal_digit(ctx, &(scratch[i]))) {
+                                    if(!get_octal_digit(ctx, &(scratch[i]), esc_start)) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
@@ -678,7 +707,7 @@ namespace xy {
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_octal_digit(ctx, &(scratch[i]))) {
+                                    if(!get_octal_digit(ctx, &(scratch[i]), esc_start)) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
@@ -691,7 +720,7 @@ namespace xy {
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_hex_digit(ctx, &(scratch[i]))) {
+                                    if(!get_hex_digit(ctx, &(scratch[i]), esc_start)) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
@@ -699,7 +728,7 @@ namespace xy {
                                     if(!ll.get_codepoint(f, ctx, cp)) {
                                         goto early_termination_of_string;
                                     }
-                                    if(!get_hex_digit(ctx, &(scratch[i]))) {
+                                    if(!get_hex_digit(ctx, &(scratch[i]), esc_start)) {
                                         state = DONE;
                                         scratch[0] = '\0';
                                         return false;
@@ -711,7 +740,7 @@ namespace xy {
                                     ctx.diag.push(io::e_invalid_escape,
                                         cp.to_cstring()[0]
                                     );
-                                    push_file_line_col(ctx);
+                                    push_file_line_col_left(ctx, esc_start);
                                     scratch[0] = '\0';
                                     return false;
                                 }
@@ -731,6 +760,9 @@ namespace xy {
                     ctx.diag.push(io::c_file_line_col,
                         ctx.top_file(), tok.line_, tok.col_
                     );
+                    ctx.diag.push(io::c_highlight, io::highlight_column(
+                        ctx.top_file(), tok.line_, tok.col_
+                    ));
                     state = DONE;
                     scratch[0] = '\0';
                     return false;
@@ -824,6 +856,9 @@ namespace xy {
                             ctx.diag.push(io::c_file_line_col,
                                 ctx.top_file(), tok.line_, tok.col_
                             );
+                            ctx.diag.push(io::c_highlight, io::highlight_column(
+                                ctx.top_file(), tok.line_, tok.col_
+                            ));
                             state = DONE;
                             scratch[0] = '\0';
                             return false;

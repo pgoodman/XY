@@ -62,6 +62,7 @@ OBJS += bin/lib/io/file.o
 OBJS += bin/lib/io/message.o
 OBJS += bin/lib/io/cwd.o
 OBJS += bin/lib/io/real_path.o
+OBJS += bin/lib/io/line_highlight.o
 OBJS += bin/lib/cstring.o
 OBJS += bin/lib/lexer.o
 OBJS += bin/lib/diagnostic_context.o
