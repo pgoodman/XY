@@ -64,9 +64,13 @@ namespace xy {
             "T_IF",                       // if
             "T_THEN",                     // then
             "T_ELSE",                     // else*/
+
             "T_LET",                      // let
             "T_DEF_FUNCTION",             // defun
             "T_DEF_TYPE",                 // deftype
+            "T_IMPORT",                   // import
+            "T_RETURN",                   // return
+            "T_YIELD",                    // yield
 
             "T_OPEN_PAREN",               // (
             "T_CLOSE_PAREN",              // )
@@ -91,12 +95,14 @@ namespace xy {
             "T_TILDE",                    // ~
             "T_ARROW",                    // ->
             "T_SEMICOLON",                // ;
+            "T_COLON",                    // :
             "T_AT",                       // @
 
             "T_LESS_THAN",                // <
             "T_GREATER_THAN",             // >
             "T_EQUAL",                    // =
             "T_NOT_EQUAL",                // /=
+            "T_ASSIGN",                   // :=
 
             "T_NEW_LINE",                 // \n
 

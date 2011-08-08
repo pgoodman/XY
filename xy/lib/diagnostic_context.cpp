@@ -13,31 +13,18 @@
 
 namespace xy {
 
-    diagnostic_context::diagnostic_context(void) throw()
-        : file_names()
+    diagnostic_context::diagnostic_context(const char *file_name_) throw()
+        : file_name(cstring::copy(file_name_))
         , diag()
-    {
-        file_names.reserve(20);
-    }
+    { }
 
     diagnostic_context::~diagnostic_context(void) throw() {
-        for(char *file_name : file_names) {
-            cstring::free(file_name);
-        }
-    }
-
-    void diagnostic_context::push_file(const char *file_name) throw() {
-        file_names.push_back(cstring::copy(file_name));
-    }
-
-    void diagnostic_context::pop_file(void) throw() {
-        const char *file_name(file_names.back());
         cstring::free(file_name);
-        file_names.pop_back();
+        file_name = nullptr;
     }
 
-    const char *diagnostic_context::top_file(void) const throw() {
-        return file_names.back();
+    const char *diagnostic_context::file(void) const throw() {
+        return file_name;
     }
 
     void diagnostic_context::print_diagnostics(FILE *fp) const throw() {

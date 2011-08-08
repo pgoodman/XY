@@ -57,11 +57,11 @@ namespace xy {
                     if(decoder.found_error()) {
                         ctx.diag.push(io::w_invalid_utf8_cp, chr.to_cstring());
                         ctx.diag.push(
-                            io::c_file_line_col, ctx.top_file(),
+                            io::c_file_line_col, ctx.file(),
                             line_tracker[curr], column_tracker[curr]
                         );
                         ctx.diag.push(io::c_highlight, io::highlight_column(
-                            ctx.top_file(), line_tracker[curr], column_tracker[curr]
+                            ctx.file(), line_tracker[curr], column_tracker[curr]
                         ));
                     }
 
@@ -94,11 +94,11 @@ namespace xy {
                                 if(!isprint(first_chr) && !isspace(first_chr)) {
                                     ctx.diag.push(io::e_non_graph_char, first_chr);
                                     ctx.diag.push(
-                                        io::c_file_line_col, ctx.top_file(),
+                                        io::c_file_line_col, ctx.file(),
                                         line_tracker[curr], column_tracker[curr]
                                     );
                                     ctx.diag.push(io::c_highlight, io::highlight_column(
-                                        ctx.top_file(), line_tracker[curr], column_tracker[curr]
+                                        ctx.file(), line_tracker[curr], column_tracker[curr]
                                     ));
                                     state = READ_NEXT_CODEPOINT;
                                     goto read_next_codepoint;
@@ -132,11 +132,11 @@ namespace xy {
         if(decoder.is_in_use()) {
             ctx.diag.push(io::e_invalid_trailing_utf8_cp);
             ctx.diag.push(
-                io::c_file_line_col, ctx.top_file(),
+                io::c_file_line_col, ctx.file(),
                 line_tracker[curr], column_tracker[curr]
             );
             ctx.diag.push(io::c_highlight, io::highlight_column(
-                ctx.top_file(), line_tracker[curr], column_tracker[curr]
+                ctx.file(), line_tracker[curr], column_tracker[curr]
             ));
         }
 

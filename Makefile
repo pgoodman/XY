@@ -68,6 +68,8 @@ OBJS += bin/lib/lexer.o
 OBJS += bin/lib/diagnostic_context.o
 OBJS += bin/lib/token.o
 OBJS += bin/lib/tokenizer.o
+OBJS += bin/lib/token_stream.o
+OBJS += bin/lib/parser.o
 
 OBJS += bin/deps/libdatrie/alpha-map.o
 OBJS += bin/deps/libdatrie/darray.o

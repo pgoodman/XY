@@ -7,7 +7,7 @@
  */
 
 #include <limits>
-#include <cstdio>
+//#include <cstdio>
 #include <cctype>
 
 #include "xy/include/io/line_highlight.hpp"
@@ -115,14 +115,17 @@ namespace xy { namespace io { namespace detail {
     highlight_column::~highlight_column(void) throw() { }
 
     /// build the underlined string
+    /// returns o, the index of next character that we can write to
+    /// takes a reference to p, the byte offset of column we want to
+    /// highlight in the first line of self.found_line.
     size_t highlight_column::get_line(
         io::file<io::read_tag> &f,
         const highlight_column &self,
         size_t &p
     ) {
 
-
-
+        // used for chunks from the file, and then constructing our
+        // unhighlighted string
         uint8_t scratch[BLOCK_SIZE]{'\0'};
 
         // something went wrong

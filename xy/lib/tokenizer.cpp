@@ -340,6 +340,9 @@ namespace xy {
             {"let",         4U, T_LET},
             {"defun",       6U, T_DEF_FUNCTION},
             {"deftype",     8U, T_DEF_TYPE},
+            {"import",      7U, T_IMPORT},
+            {"return",      7U, T_RETURN},
+            {"yield",       6U, T_YIELD},
         };
     }
 
@@ -354,7 +357,7 @@ namespace xy {
     /// diagnostic context's message queue.
     void tokenizer::push_file_line_col(diagnostic_context &ctx) throw() {
         ctx.diag.push(io::c_file_line_col,
-            ctx.top_file(), ll.line(), ll.column()
+            ctx.file(), ll.line(), ll.column()
         );
         state = DONE;
     }
@@ -362,7 +365,7 @@ namespace xy {
     void tokenizer::push_file_line_col_point(diagnostic_context &ctx) throw() {
         push_file_line_col(ctx);
         ctx.diag.push(io::c_highlight, io::highlight_column(
-            ctx.top_file(), ll.line(), ll.column()
+            ctx.file(), ll.line(), ll.column()
         ));
         state = DONE;
     }
@@ -370,7 +373,7 @@ namespace xy {
     void tokenizer::push_file_line_col_under(diagnostic_context &ctx, uint32_t start_col) throw() {
         push_file_line_col(ctx);
         ctx.diag.push(io::c_highlight, io::highlight_line(
-            ctx.top_file(), ll.line(), start_col, ll.column()
+            ctx.file(), ll.line(), start_col, ll.column()
         ));
         state = DONE;
     }
@@ -378,7 +381,7 @@ namespace xy {
     void tokenizer::push_file_line_col_left(diagnostic_context &ctx, uint32_t start_col) throw() {
         push_file_line_col(ctx);
         ctx.diag.push(io::c_highlight, io::highlight_left(
-            ctx.top_file(), ll.line(), start_col, ll.column()
+            ctx.file(), ll.line(), start_col, ll.column()
         ));
         state = DONE;
     }
@@ -442,6 +445,13 @@ namespace xy {
         char (&scratch)[MAX_TOKEN_LENGTH]
     ) throw() {
         token_type tt(T_INVALID);
+        size_t i(0);
+        bool (*digit_p)(char) = is_decimal;
+        int last_chr('\0');
+        uint32_t last_line(0);
+        uint32_t last_col(0);
+
+
         scratch[0] = '\0';
         tok.type_ = T_INVALID;
 
@@ -478,8 +488,31 @@ namespace xy {
                     return true;
                 }
 
+                // colon or assign
+                if(':' == chr) {
+                    tok.col_ = ll.column();
+                    tok.line_ = ll.line();
+                    tok.type_ = T_COLON;
+
+                    if(!ll.get_codepoint(f, ctx, cp) || cp.is_null()) {
+                        state = DONE;
+                        return true;
+                    } else if(!cp.is_ascii()) {
+                        state = HAVE_NON_ASCII_CODEPOINT;
+                        return true;
+                    }
+
+                    if('=' == cp.to_cstring()[0]) {
+                        state = READ_NEXT_CODEPOINT;
+                        tok.type_ = T_ASSIGN;
+                    } else {
+                        state = HAVE_ASCII_CODEPOINT;
+                    }
+
+                    return true;
+
                 // minus/dash or comment
-                if('-' == chr) {
+                } else if('-' == chr) {
                     tok.col_ = ll.column();
                     tok.line_ = ll.line();
                     tok.type_ = T_MINUS;
@@ -547,7 +580,6 @@ namespace xy {
 
                         std::vector<std::pair<uint32_t, uint32_t> > positions;
                         int num_to_close(1);
-                        int old_chr(chr);
 
                         positions.push_back(std::make_pair(ll.line(), ll.column() - 1));
 
@@ -572,10 +604,10 @@ namespace xy {
                                     continue;
                                 }
 
-                                old_chr = chr;
+                                last_chr = chr;
                                 chr = cp.to_cstring()[0];
 
-                                if('*' == old_chr && '-' == chr) {
+                                if('*' == last_chr && '-' == chr) {
                                     positions.pop_back();
                                     --num_to_close;
                                     if(0 == num_to_close) {
@@ -584,7 +616,7 @@ namespace xy {
                                         break;
                                     }
                                     continue;
-                                } else if('-' == old_chr && '*' == chr) {
+                                } else if('-' == last_chr && '*' == chr) {
                                     positions.push_back(std::make_pair(ll.line(), ll.column() - 1));
                                     ++num_to_close;
                                     continue;
@@ -603,13 +635,14 @@ namespace xy {
                         ctx.diag.push(io::e_unclosed_block_comment, num_to_close);
                         push_file_line_col(ctx);
 
+                        // report on all the unclosed block comments
                         for(; !positions.empty(); positions.pop_back()) {
                             ctx.diag.push(io::n_start_of_block_comment);
                             ctx.diag.push(io::c_file_line_col,
-                                ctx.top_file(), positions.back().first, positions.back().second
+                                ctx.file(), positions.back().first, positions.back().second
                             );
                             ctx.diag.push(io::c_highlight, io::highlight_column(
-                                ctx.top_file(), positions.back().first, positions.back().second
+                                ctx.file(), positions.back().first, positions.back().second
                             ));
                         }
 
@@ -652,16 +685,16 @@ namespace xy {
                     tok.type_ = T_STRING_LITERAL;
                     state = READ_NEXT_CODEPOINT;
 
-                    size_t i(0);
+                    i = 0;
                     for(; ll.get_codepoint(f, ctx, cp); ) {
 
                         if(i >= BUFFER_LENGTH) {
                             ctx.diag.push(io::e_string_too_long, BUFFER_LENGTH);
                             ctx.diag.push(io::c_file_line_col,
-                                ctx.top_file(), tok.line_, tok.col_
+                                ctx.file(), tok.line_, tok.col_
                             );
                             ctx.diag.push(io::c_highlight, io::highlight_column(
-                                ctx.top_file(), tok.line_, tok.col_
+                                ctx.file(), tok.line_, tok.col_
                             ));
                             state = DONE;
                             scratch[0] = '\0';
@@ -696,6 +729,8 @@ namespace xy {
                                 scratch[i] = '\0';
 
                                 switch(cp.to_cstring()[0]) {
+
+                                // basic escape characters
                                 case 'a': scratch[i] = '\x07'; break;
                                 case 'b': scratch[i] = '\x08'; break;
                                 case 'f': scratch[i] = '\x0C'; break;
@@ -756,6 +791,7 @@ namespace xy {
                                     i += 1;
                                     break;
 
+                                // unknown escape character
                                 default:
                                     ctx.diag.push(io::e_invalid_escape,
                                         cp.to_cstring()[0]
@@ -764,12 +800,15 @@ namespace xy {
                                     scratch[0] = '\0';
                                     return false;
                                 }
+
+                            // normal ascii in string
                             } else {
                                 scratch[i] = chr;
                             }
 
                             i += 1;
 
+                        // multibyte character in string
                         } else {
                             i += write_to_buff(&(scratch[i]), cp.to_cstring());
                         }
@@ -778,10 +817,10 @@ namespace xy {
                 early_termination_of_string:
                     ctx.diag.push(io::e_string_not_terminated);
                     ctx.diag.push(io::c_file_line_col,
-                        ctx.top_file(), tok.line_, tok.col_
+                        ctx.file(), tok.line_, tok.col_
                     );
                     ctx.diag.push(io::c_highlight, io::highlight_column(
-                        ctx.top_file(), tok.line_, tok.col_
+                        ctx.file(), tok.line_, tok.col_
                     ));
                     state = DONE;
                     scratch[0] = '\0';
@@ -797,13 +836,13 @@ namespace xy {
 
                 // integer or float
                 } else if(isdigit(chr)) {
+                    i = 1;
+                    state = READ_NEXT_CODEPOINT;
+
                     tok.line_ = ll.line();
                     tok.col_ = ll.column();
                     tok.type_ = T_INTEGER_LITERAL;
                     scratch[0] = chr;
-                    size_t i(1);
-                    bool (*digit_p)(char) = is_decimal;
-                    state = READ_NEXT_CODEPOINT;
 
                     for(; ll.get_codepoint(f, ctx, cp); ++i) {
                         if(cp.is_null()) {
@@ -817,6 +856,8 @@ namespace xy {
                         scratch[i] = chr;
 
                         if(!digit_p(chr)) {
+
+                            // decimal point, make sure there is only one.
                             if('.' == chr) {
                                 if(T_INTEGER_LITERAL == tok.type_) {
                                     if(is_decimal != digit_p) {
@@ -828,15 +869,39 @@ namespace xy {
                                     state = HAVE_ASCII_CODEPOINT;
                                     break;
                                 }
+
                             } else if('x' == chr && 1 == i && '0' == scratch[0]) {
                                 digit_p = is_hex;
                             } else if('o' == chr && 1 == i && '0' == scratch[0]) {
                                 digit_p = is_octal;
+
+                            // undo seeing the token as a floating point, and
+                            // instead shoot out two tokens.
+                            } else if('.' == last_chr) {
+                                tok.type_ = T_INTEGER_LITERAL;
+                                scratch[i - 1] = '\0';
+                                scratch[i] = '\0';
+                                state = HAVE_PERIOD_AFTER_INT;
+                                return true;
+
+        case HAVE_PERIOD_AFTER_INT:
+
+                                tok.type_ = T_PERIOD;
+                                tok.line_ = last_line;
+                                tok.col_ = last_col;
+                                scratch[0] = '\0';
+                                state = HAVE_ASCII_CODEPOINT;
+                                return true;
+
                             } else {
                                 state = HAVE_ASCII_CODEPOINT;
                                 break;
                             }
                         }
+
+                        last_chr = chr;
+                        last_line = ll.line();
+                        last_col = ll.column();
                     }
 
                     scratch[i] = '\0';
@@ -857,7 +922,7 @@ namespace xy {
 
                     state = READ_NEXT_CODEPOINT;
                     scratch[0] = static_cast<char>(chr);
-                    size_t i(1);
+                    i = 1;
 
                     for(; ll.get_codepoint(f, ctx, cp); ++i) {
                         if(cp.is_null()) {
@@ -874,10 +939,10 @@ namespace xy {
                                 scratch, NAME_LENGTH
                             );
                             ctx.diag.push(io::c_file_line_col,
-                                ctx.top_file(), tok.line_, tok.col_
+                                ctx.file(), tok.line_, tok.col_
                             );
                             ctx.diag.push(io::c_highlight, io::highlight_column(
-                                ctx.top_file(), tok.line_, tok.col_
+                                ctx.file(), tok.line_, tok.col_
                             ));
                             state = DONE;
                             scratch[0] = '\0';
@@ -903,9 +968,10 @@ namespace xy {
                             scratch[i] = static_cast<char>(chr);
                         }
                     }
+                    scratch[i] = '\0';
 
                     if(T_NAME == tok.type_) {
-                        for(size_t i(0); i < array::length(RESERVED_NAMES); ++i) {
+                        for(i = 0; i < array::length(RESERVED_NAMES); ++i) {
                             if(0 == strncmp(scratch, RESERVED_NAMES[i].str, RESERVED_NAMES[i].len)) {
                                 tok.type_ = RESERVED_NAMES[i].type;
                                 break;
@@ -913,7 +979,6 @@ namespace xy {
                         }
                     }
 
-                    scratch[i] = '\0';
                     return true;
 
                 }
