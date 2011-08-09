@@ -95,6 +95,7 @@ namespace xy {
         friend class tokenizer;
 
         token_type type_;
+        uint16_t num_columns_;
         uint32_t col_:24;
         uint32_t line_;
 
@@ -114,7 +115,11 @@ namespace xy {
 
         uint32_t column(void) const throw();
 
+        uint32_t num_columns(void) const throw();
+
         const char *name(void) const throw();
+
+        static const char *name(token_type) throw();
     };
 
 }

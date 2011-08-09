@@ -13,18 +13,21 @@ namespace xy {
 
     token::token(void) throw()
         : type_(T_INVALID)
+        , num_columns_(0)
         , col_(0)
         , line_(0)
     { }
 
     token::token(const token &o) throw()
         : type_(o.type_)
+        , num_columns_(o.num_columns_)
         , col_(o.col_)
         , line_(o.line_)
     { }
 
     token &token::operator=(const token &o) throw() {
         type_ = o.type_;
+        num_columns_ = o.num_columns_;
         line_ = o.line_;
         col_ = o.col_;
         return *this;
@@ -32,6 +35,7 @@ namespace xy {
 
     token &token::operator=(const token &&o) throw() {
         type_ = o.type_;
+        num_columns_ = o.num_columns_;
         line_ = o.line_;
         col_ = o.col_;
         return *this;
@@ -49,7 +53,11 @@ namespace xy {
         return col_;
     }
 
-    const char *token::name(void) const throw() {
+    uint32_t token::num_columns(void) const throw() {
+        return num_columns_;
+    }
+
+    const char *token::name(token_type type) throw() {
         static const char * const names[]{
             /*"T_BEGIN",                    // begin
             "T_END",                      // end
@@ -65,55 +73,59 @@ namespace xy {
             "T_THEN",                     // then
             "T_ELSE",                     // else*/
 
-            "T_LET",                      // let
-            "T_DEF_FUNCTION",             // defun
-            "T_DEF_TYPE",                 // deftype
-            "T_IMPORT",                   // import
-            "T_RETURN",                   // return
-            "T_YIELD",                    // yield
+            "'let' symbol",                      // let
+            "'defun' symbol",             // defun
+            "'deftype' symbol",                 // deftype
+            "'import' symbol",                   // import
+            "'return' symbol",                   // return
+            "'yield' symbol",                    // yield
 
-            "T_OPEN_PAREN",               // (
-            "T_CLOSE_PAREN",              // )
+            "left parenthesis",               // (
+            "right parenthesis",              // )
 
-            "T_OPEN_BRACKET",             // [
-            "T_CLOSE_BRACKET",            // ]
+            "left bracket",             // [
+            "right bracket",            // ]
 
-            "T_OPEN_BRACE",               // {
-            "T_CLOSE_BRACE",              // }
+            "left brace",               // {
+            "right brace",              // }
 
-            "T_PLUS",                     // +
-            "T_MINUS",                    // -
-            "T_ASTERISK",                 // *
-            "T_FORWARD_SLASH",            // /
-            "T_BACKWARD_SLASH",           // \\ '
-            "T_COMMA",                    // ,
-            "T_PERIOD",                   // .
-            "T_AMPERSAND",                // &
-            "T_PIPE",                     // |
-            "T_HAT",                      // ^
-            "T_PERCENT",                  // %
-            "T_TILDE",                    // ~
-            "T_ARROW",                    // ->
-            "T_SEMICOLON",                // ;
-            "T_COLON",                    // :
-            "T_AT",                       // @
+            "plus symbol",                     // +
+            "minus symbol",                    // -
+            "asterisk",                 // *
+            "forward slash",            // /
+            "backward slash",           // \\ '
+            "comma",                    // ,
+            "period",                   // .
+            "ampersand",                // &
+            "pipe",                     // |
+            "hat",                      // ^
+            "percent symbol",                  // %
+            "tilde",                    // ~
+            "arrow",                    // ->
+            "semicolon",                // ;
+            "colon",                    // :
+            "at symbol",                       // @
 
-            "T_LESS_THAN",                // <
-            "T_GREATER_THAN",             // >
-            "T_EQUAL",                    // =
-            "T_NOT_EQUAL",                // /=
-            "T_ASSIGN",                   // :=
+            "less-than symbol",                // <
+            "greater-than symbol",             // >
+            "equal symbol",                    // =
+            "not-equal symbol",                // /=
+            "assignment symbol",                   // :=
 
-            "T_NEW_LINE",                 // \n
+            "new line",                 // \n
 
-            "T_NAME",
-            "T_TYPE_NAME",
-            "T_STRING_LITERAL",
-            "T_INTEGER_LITERAL",
-            "T_RATIONAL_LITERAL",
+            "variable/function name",
+            "type name",
+            "string literal",
+            "integer literal",
+            "rational number literal",
 
-            "T_INVALID"
+            "invalid symbol"
         };
-        return names[type_];
+        return names[type];
+    }
+
+    const char *token::name(void) const throw() {
+        return token::name(type_);
     }
 }

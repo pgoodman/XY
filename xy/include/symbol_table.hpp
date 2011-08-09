@@ -9,6 +9,8 @@
 #ifndef SYMBOL_TABLE_HPP_
 #define SYMBOL_TABLE_HPP_
 
+
+
 namespace xy {
 
     class symbol_table {

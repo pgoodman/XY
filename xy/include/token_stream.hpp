@@ -21,6 +21,7 @@ namespace xy {
         virtual bool check(void) throw() = 0;
         virtual bool check(token_type) throw() = 0;
         virtual bool accept(void) throw() = 0;
+        virtual bool accept(token &) throw() = 0;
         virtual bool accept(token &, const char *&) throw() = 0;
         virtual void undo(void) throw() = 0;
     };

@@ -484,7 +484,11 @@ namespace xy { namespace io {
         } else if(detail::highlight_column::MARGIN < (to_col - from_col)) {
             from_col = to_col;
         }
-        return line_highlight(new detail::underline(file_name, line, from_col, to_col, '~', '~'));
+
+        const char right((from_col + 1) >= to_col ? ' ' : '~');
+        const char left(' ' == right ? '^' : '~');
+
+        return line_highlight(new detail::underline(file_name, line, from_col, to_col, left, right));
     }
 
     /// single line highlighter

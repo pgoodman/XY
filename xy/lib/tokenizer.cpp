@@ -451,9 +451,9 @@ namespace xy {
         uint32_t last_line(0);
         uint32_t last_col(0);
 
-
         scratch[0] = '\0';
         tok.type_ = T_INVALID;
+        tok.num_columns_ = 0;
 
         switch(state) {
         case READ_NEXT_CODEPOINT:
@@ -483,6 +483,7 @@ namespace xy {
                     tok.col_ = ll.column();
                     tok.line_ = ll.line();
                     tok.type_ = tt;
+                    tok.num_columns_ = 1;
 
                     state = READ_NEXT_CODEPOINT;
                     return true;
@@ -493,6 +494,7 @@ namespace xy {
                     tok.col_ = ll.column();
                     tok.line_ = ll.line();
                     tok.type_ = T_COLON;
+                    tok.num_columns_ = 1;
 
                     if(!ll.get_codepoint(f, ctx, cp) || cp.is_null()) {
                         state = DONE;
@@ -505,17 +507,19 @@ namespace xy {
                     if('=' == cp.to_cstring()[0]) {
                         state = READ_NEXT_CODEPOINT;
                         tok.type_ = T_ASSIGN;
+                        ++tok.num_columns_;
                     } else {
                         state = HAVE_ASCII_CODEPOINT;
                     }
 
                     return true;
 
-                // minus/dash or comment
+                // minus/dash, arrow, comment, or block comment
                 } else if('-' == chr) {
                     tok.col_ = ll.column();
                     tok.line_ = ll.line();
                     tok.type_ = T_MINUS;
+                    tok.num_columns_ = 1;
 
                     if(!ll.get_codepoint(f, ctx, cp) || cp.is_null()) {
                         state = DONE;
@@ -530,10 +534,12 @@ namespace xy {
                     if('>' == chr) {
                         state = READ_NEXT_CODEPOINT;
                         tok.type_ = T_ARROW;
+                        ++(tok.num_columns_);
 
                     // single-line comment
                     } else if('-' == chr) {
                         tok.type_ = T_NEW_LINE;
+                        tok.num_columns_ = 0;
                         state = READ_NEXT_CODEPOINT;
 
                         for(; ll.get_codepoint(f, ctx, cp); ) {
@@ -576,7 +582,8 @@ namespace xy {
 
                     // block comment
                     } else if('*' == chr) {
-                        tok.type_ = T_NEW_LINE;
+                        tok.type_ = T_INVALID;
+                        tok.num_columns_ = 0;
 
                         std::vector<std::pair<uint32_t, uint32_t> > positions;
                         int num_to_close(1);
@@ -590,7 +597,9 @@ namespace xy {
 
                             if(cp.is_ascii()) {
                                 chr = cp.to_cstring()[0];
-
+                                if('\r' == chr || '\n' == chr) {
+                                    tok.type_ = T_NEW_LINE;
+                                }
                                 if('*' != chr && '-' != chr) {
                                     continue;
                                 }
@@ -629,6 +638,14 @@ namespace xy {
                         }
 
                         if(0 == num_to_close) {
+
+                            // we didn't find any new lines in the block comment,
+                            // so don't report it as a new line token
+                            if(T_INVALID == tok.type_) {
+                                state = READ_NEXT_CODEPOINT;
+                                continue;
+                            }
+
                             return true;
                         }
 
@@ -650,7 +667,6 @@ namespace xy {
 
                     } else {
                         state = HAVE_ASCII_CODEPOINT;
-
                     }
                     return true;
 
@@ -659,6 +675,7 @@ namespace xy {
                     tok.line_ = ll.line();
                     tok.col_ = ll.column();
                     tok.type_ = T_NEW_LINE;
+                    tok.num_columns_ = 0;
                     state = READ_NEXT_CODEPOINT;
 
                     if(!ll.get_codepoint(f, ctx, cp)) {
@@ -684,6 +701,7 @@ namespace xy {
                     tok.col_ = ll.column();
                     tok.type_ = T_STRING_LITERAL;
                     state = READ_NEXT_CODEPOINT;
+                    tok.num_columns_ = 1;
 
                     i = 0;
                     for(; ll.get_codepoint(f, ctx, cp); ) {
@@ -703,6 +721,8 @@ namespace xy {
                         } else if(cp.is_null()) {
                             goto early_termination_of_string;
                         }
+
+                        ++(tok.num_columns_);
 
                         if(cp.is_ascii()) {
                             chr = cp.to_cstring()[0];
@@ -842,6 +862,7 @@ namespace xy {
                     tok.line_ = ll.line();
                     tok.col_ = ll.column();
                     tok.type_ = T_INTEGER_LITERAL;
+                    tok.num_columns_ = 1;
                     scratch[0] = chr;
 
                     for(; ll.get_codepoint(f, ctx, cp); ++i) {
@@ -859,19 +880,29 @@ namespace xy {
 
                             // decimal point, make sure there is only one.
                             if('.' == chr) {
+
                                 if(T_INTEGER_LITERAL == tok.type_) {
+
+                                    // found decimal point in non-decimal formatted
+                                    // int, e.g. 0xAB.C, which we won't accept
                                     if(is_decimal != digit_p) {
                                         state = HAVE_ASCII_CODEPOINT;
                                         break;
                                     }
                                     tok.type_ = T_RATIONAL_LITERAL;
+
+                                // this is the 2nd decimal point we've seen,
+                                // see it as a period for the next token round
                                 } else {
                                     state = HAVE_ASCII_CODEPOINT;
                                     break;
                                 }
 
+                            // hexadecimal integer, 0x
                             } else if('x' == chr && 1 == i && '0' == scratch[0]) {
                                 digit_p = is_hex;
+
+                            // octal integer, 0o
                             } else if('o' == chr && 1 == i && '0' == scratch[0]) {
                                 digit_p = is_octal;
 
@@ -902,6 +933,7 @@ namespace xy {
                         last_chr = chr;
                         last_line = ll.line();
                         last_col = ll.column();
+                        ++(tok.num_columns_);
                     }
 
                     scratch[i] = '\0';
@@ -914,6 +946,7 @@ namespace xy {
                     tok.line_ = ll.line();
                     tok.col_ = ll.column();
                     tok.type_ = T_NAME;
+                    tok.num_columns_ = 1;
 
                     // type name, starts with upper case
                     if(tolower(chr) != chr) {
@@ -966,6 +999,7 @@ namespace xy {
                         // collect another char
                         } else {
                             scratch[i] = static_cast<char>(chr);
+                            ++(tok.num_columns_);
                         }
                     }
                     scratch[i] = '\0';

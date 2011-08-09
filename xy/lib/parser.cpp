@@ -15,8 +15,6 @@
 #include "xy/include/io/file.hpp"
 #include "xy/include/io/line_highlight.hpp"
 
-#include "xy/include/utf8/decoder.hpp"
-
 namespace xy {
 
     /// expect a new line after somehting
@@ -26,15 +24,14 @@ namespace xy {
             return true;
         }
 
-        // get the previous line
-        stream.undo();
-        const char *data(nullptr);
+        // re-get the last seen token to calculate the number columns its
+        // representation requires
         token prev_tok;
+        stream.undo();
+        stream.accept(prev_tok);
+        const size_t col(prev_tok.column() + prev_tok.num_columns());
 
-        stream.accept(prev_tok, data);
-        size_t col(prev_tok.column() + utf8::decoder::length(data));
-
-        // diagnost pointing to immediately after this token
+        // diagnostic pointing to immediately after this token
         ctx.diag.push(io::e_required_new_line);
         ctx.diag.push(io::c_file_line_col, ctx.file(), prev_tok.line(), col);
         ctx.diag.push(io::c_highlight,
@@ -44,13 +41,43 @@ namespace xy {
         return false;
     }
 
+    /// error that we got an unexpected token after some first token that we
+    /// would normally use as a prefix
+    static bool unexpected_follow_symbol(
+        diagnostic_context &ctx, token &first, token &got, token_type expected
+    ) throw() {
+
+        ctx.diag.push(io::e_unexpected_follow_symbol,
+            got.name(), token::name(expected), first.name()
+        );
+        ctx.diag.push(io::c_file_line_col, ctx.file(), got.line(), got.column());
+        ctx.diag.push(io::c_highlight, io::highlight_line(
+            ctx.file(), got.line(), got.column(), got.column() + got.num_columns() - 1
+        ));
+        return false;
+    }
+
     /// parse a variable definition
-    //          let module := import "file/name.xy"
+    //          let file:name := import "file/name.xy"
+    //          let file:name:foo := (import "file/name.xy").foo
     //          let one := 1
-    //
+    //          let two : Int = 2
     bool parse_let(diagnostic_context &ctx, token_stream &stream) throw() {
         assert(stream.check(T_LET));
-        stream.accept();
+        token prev;
+        token curr;
+        stream.accept(prev);
+
+        if(!stream.check(T_NAME)) {
+            stream.accept(curr);
+            return unexpected_follow_symbol(ctx, prev, curr, T_NAME);
+        }
+
+        stream.accept(curr);
+
+        token var_loc;
+        const char *var_name(nullptr);
+        stream.accept(var_loc, var_name);
 
         return accept_expected_newline(ctx, stream);
     }
@@ -105,6 +132,7 @@ namespace xy {
                 last_parsed = parse_func_assign(ctx, stream);
 
             } else if(stream.check(T_NEW_LINE) || stream.check(T_STRING_LITERAL)) {
+                stream.accept();
                 continue;
 
             } else {
@@ -184,6 +212,16 @@ namespace xy {
         /// accept and move past the current token
         virtual bool accept(void) throw() {
             if(check()) {
+                curr = (curr + 1) % NUM_TOKENS;
+                --backed_up;
+                return true;
+            }
+            return false;
+        }
+
+        virtual bool accept(token &tok) throw() {
+            if(check()) {
+                tok = tokens[curr];
                 curr = (curr + 1) % NUM_TOKENS;
                 --backed_up;
                 return true;

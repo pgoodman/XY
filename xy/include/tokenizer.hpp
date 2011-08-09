@@ -46,6 +46,7 @@ namespace xy {
             HAVE_ASCII_CODEPOINT,
             HAVE_NON_ASCII_CODEPOINT,
             HAVE_PERIOD_AFTER_INT,
+
             DONE,
         } state;
 
