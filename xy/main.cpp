@@ -34,8 +34,8 @@ using namespace xy;
 
 
 int main(int argc, const char **argv) throw() {
-    diagnostic_context ctx(argv[1]);
     if(argc > 1) {
+        diagnostic_context ctx(argv[1]);
         if(!parse_file(ctx, argv[1])) {
             printf("Error parsing file '%s'\n", argv[1]);
         }

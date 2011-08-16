@@ -12,10 +12,11 @@
 
 #include <stdint.h>
 
-#include "xy/include/io/file.hpp"
 #include "xy/include/diagnostic_context.hpp"
 #include "xy/include/utf8/codepoint.hpp"
 #include "xy/include/utf8/decoder.hpp"
+
+#include "xy/include/support/byte_reader.hpp"
 
 namespace xy {
 
@@ -52,7 +53,7 @@ namespace xy {
         lexer(void) throw();
 
         bool get_codepoint(
-            io::file<io::read_tag> &f,
+            support::byte_reader &f,
             diagnostic_context &ctx,
             utf8::codepoint &cp
         ) throw();

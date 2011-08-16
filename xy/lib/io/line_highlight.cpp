@@ -10,6 +10,7 @@
 //#include <cstdio>
 #include <cctype>
 
+#include "xy/include/array.hpp"
 #include "xy/include/io/line_highlight.hpp"
 #include "xy/include/color.hpp"
 #include "xy/include/cstring.hpp"
@@ -53,7 +54,7 @@ namespace xy { namespace io { namespace detail {
 
         for(; read_size == BLOCK_SIZE; ) {
 
-            read_size = f.read_block(scratch);
+            read_size = f.read_block(scratch, array::size(scratch));
             if(0U == read_size) {
                 return false;
             }
@@ -196,7 +197,7 @@ namespace xy { namespace io { namespace detail {
                 break;
             }
 
-            self.read_size = f.read_block(scratch);
+            self.read_size = f.read_block(scratch, array::size(scratch));
         }
 
     process_line:
@@ -307,7 +308,7 @@ namespace xy { namespace io { namespace detail {
 
         // we've now got the line right :D
         const size_t byte_len(cstring::byte_length(&(scratch[n])));
-        size_t line_len(byte_len + n + 20);
+        size_t line_len((byte_len * 2) + 20);
 
         //printf("line n=%lu p=%lu byte_len=%lu line_len=%lu   '%s'\n", n, p, byte_len, line_len, &(scratch[n]));
         self.found_line = new char[line_len];

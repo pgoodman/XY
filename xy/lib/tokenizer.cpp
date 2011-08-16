@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "xy/include/tokenizer.hpp"
+#include "xy/include/array.hpp"
 #include "xy/include/io/line_highlight.hpp"
 
 namespace xy {
@@ -439,7 +440,7 @@ namespace xy {
     /// the token is one in which the lexed value is meaningful, e.g. an
     /// identifier name, then that value is stored in the scratch buffer.
     bool tokenizer::get_token(
-        io::file<io::read_tag> &f,
+        support::byte_reader &f,
         diagnostic_context &ctx,
         token &tok,
         char (&scratch)[MAX_TOKEN_LENGTH]

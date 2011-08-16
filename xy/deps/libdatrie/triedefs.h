@@ -76,11 +76,11 @@ typedef int32          TrieIndex;
 /**
  * @brief Type of value associated to trie entries
  */
-typedef char *          TrieData;
+typedef uint32          TrieData;
 /**
  * @brief Trie error data
  */
-#define TRIE_DATA_ERROR  NULL
+#define TRIE_DATA_ERROR  ((uint32) 0xFFFFFFFF)
 
 #ifdef __cplusplus
 }

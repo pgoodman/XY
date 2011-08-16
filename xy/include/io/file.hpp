@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <cstring>
 
-#include "xy/include/array.hpp"
+#include "xy/include/support/byte_reader.hpp"
 
 #ifndef O_BINARY
 #   define O_BINARY 0x00
@@ -67,7 +67,7 @@ namespace xy { namespace io {
 
     /// represents an open file in read-only mode.
     template<>
-    class file<read_tag> {
+    class file<read_tag> : public support::byte_reader {
     private:
 
         friend class read;
@@ -80,15 +80,14 @@ namespace xy { namespace io {
 
     public:
 
-        ~file(void) throw();
+        virtual ~file(void) throw();
 
         const char *name(void) const throw();
 
-        template <const size_t GIVEN_SIZE>
-        size_t read_block(uint8_t (&block)[GIVEN_SIZE]) const throw() {
-            memset(block, 0, array::size(block));
+        virtual size_t read_block(uint8_t *block, const size_t GIVEN_SIZE) const throw() {
+            memset(block, 0, GIVEN_SIZE);
 
-            ssize_t amount(::read(fd, block, array::size(block)));
+            ssize_t amount(::read(fd, block, GIVEN_SIZE));
 
             if(amount < 0) {
                 // TODO report error

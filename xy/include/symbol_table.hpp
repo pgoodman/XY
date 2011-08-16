@@ -9,11 +9,25 @@
 #ifndef SYMBOL_TABLE_HPP_
 #define SYMBOL_TABLE_HPP_
 
-
+#include "xy/include/support/name_map.hpp"
 
 namespace xy {
 
+    namespace stab {
+
+        class entry {
+        public:
+
+        };
+
+    }
+
     class symbol_table {
+    private:
+
+        support::name_map names;
+
+    public:
 
     };
 

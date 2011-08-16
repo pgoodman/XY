@@ -327,21 +327,6 @@ alpha_map_char_to_trie_str (const AlphaMap *alpha_map, const AlphaChar *str)
     return trie_str;
 }
 
-AlphaChar *
-alpha_map_trie_to_char_str (const AlphaMap *alpha_map, const TrieChar *str)
-{
-    AlphaChar  *alpha_str, *p;
-
-    alpha_str = (AlphaChar *) malloc ((strlen ((const char *)str) + 1)
-                                      * sizeof (AlphaChar));
-    for (p = alpha_str; *str; p++, str++) {
-        *p = (AlphaChar) alpha_map_trie_to_char (alpha_map, *str);
-    }
-    *p = 0;
-
-    return alpha_str;
-}
-
 /*
 vi:ts=4:ai:expandtab
 */

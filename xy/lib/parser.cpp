@@ -148,109 +148,6 @@ namespace xy {
     /// -----------------------------------------------------------------------
     /// -----------------------------------------------------------------------
 
-    /// token stream for a file
-    class file_token_stream : public token_stream {
-    private:
-
-        enum {
-            NUM_BACKUP = 2,
-            NUM_TOKENS = NUM_BACKUP + 1,
-        };
-
-        diagnostic_context &ctx;
-        tokenizer &tt;
-        io::file<io::read_tag> &f;
-
-        char scratch[NUM_TOKENS][MAX_TOKEN_LENGTH];
-        token tokens[NUM_TOKENS];
-        size_t num_seen;
-        unsigned backed_up;
-        unsigned curr;
-
-    public:
-
-        file_token_stream(
-            diagnostic_context &ctx_,
-            tokenizer &tt_,
-            io::file<io::read_tag> &f_
-        ) throw()
-            : token_stream()
-            , ctx(ctx_)
-            , tt(tt_)
-            , f(f_)
-            , num_seen(0)
-            , backed_up(0)
-            , curr(0)
-        {
-            memset(scratch[0], 0, array::size(scratch[0]));
-            memset(scratch[1], 0, array::size(scratch[1]));
-        }
-
-        virtual ~file_token_stream(void) throw() { }
-
-        /// check if we have a token
-        virtual bool check(void) throw() {
-            if(0 == backed_up) {
-                if(!tt.get_token(f, ctx, tokens[curr], scratch[curr])) {
-                    return false;
-                }
-                ++backed_up;
-                ++num_seen;
-            }
-            return true;
-        }
-
-        /// check if we have a token and if the current token has a specific
-        /// type
-        virtual bool check(token_type type_) throw() {
-            if(check()) {
-                return type_ == tokens[curr % NUM_TOKENS].type();
-            }
-            return false;
-        }
-
-        /// accept and move past the current token
-        virtual bool accept(void) throw() {
-            if(check()) {
-                curr = (curr + 1) % NUM_TOKENS;
-                --backed_up;
-                return true;
-            }
-            return false;
-        }
-
-        virtual bool accept(token &tok) throw() {
-            if(check()) {
-                tok = tokens[curr];
-                curr = (curr + 1) % NUM_TOKENS;
-                --backed_up;
-                return true;
-            }
-            return false;
-        }
-
-        /// bind the current token, accept it, and move past
-        virtual bool accept(token &tok, const char *&data) throw() {
-            if(check()) {
-                tok = tokens[curr];
-                data = scratch[curr];
-
-                curr = (curr + 1) % NUM_TOKENS;
-                --backed_up;
-                return true;
-            }
-            return false;
-        }
-
-        /// undo the acceptance of a token
-        virtual void undo(void) throw() {
-            if(num_seen > 0 && backed_up < NUM_BACKUP) {
-                ++backed_up;
-                curr = (curr + NUM_TOKENS - 1) % NUM_TOKENS;
-            }
-        }
-    };
-
     /// parse an open file
     static void parse_open_file(
         io::file<xy::io::read_tag> &ff,
@@ -258,7 +155,7 @@ namespace xy {
         tokenizer &tt,
         bool &ret
     ) {
-        file_token_stream stream(ctx, tt, ff);
+        token_stream stream(ctx, tt, ff);
         ret = parse(ctx, stream);
     }
 

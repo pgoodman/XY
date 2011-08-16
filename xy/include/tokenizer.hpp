@@ -14,6 +14,7 @@
 #include "xy/include/lexer.hpp"
 #include "xy/include/diagnostic_context.hpp"
 #include "xy/include/utf8/codepoint.hpp"
+#include "xy/include/support/byte_reader.hpp"
 
 namespace xy {
 
@@ -65,7 +66,7 @@ namespace xy {
 
         /// get the next token
         bool get_token(
-            io::file<io::read_tag> &f,
+            support::byte_reader &f,
             diagnostic_context &ctx,
             token &tok,
             char (&scratch)[MAX_TOKEN_LENGTH]

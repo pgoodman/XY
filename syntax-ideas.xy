@@ -1,0 +1,56 @@
+def new T :: T -> give &T
+def free T :: &T -> Unit
+def share T :: take &T -> shared &T
+
+def acquire T :: shared &T
+def release T :: shared &T -> Nothing
+
+def LinkedList :: Type -> Type
+    record(T) {
+        union {&LinkedList(T), Tail} next;
+        &T item;
+    }
+
+--- parses the tokens of expr into a representation of
+--- a C struct and returns a functor that is able to read
+--- from a CStruct as if it's an XY record
+def CStruct :: @ -> Type
+    function(expr) {
+
+        --- calculate the size of the struct
+
+        return functor {
+            
+        }
+    }
+
+--- looks at def of linked list and assigned inference
+--- type to T
+def reverse <T> :: &LinkedList(T) -> &LinkedList(T)
+    function(ls) {
+        
+    }
+
+--- union members don't have names; forces pattern matching
+--- if a union member type doesn't exist then a new type is
+--- made.
+def Maybe :: Type -> Type
+    union(T) {
+        T,
+        Nothing
+    }
+
+let Person := record {
+    String name;
+    Unit(mm) height;
+}
+
+--- type aliasing
+let Int32 := Int;
+
+--- forward declaration, followed by actual definition
+def multiply :: Int32 -> Int32 -> Int64
+
+function multiply(a, b) {
+    return a * b
+}

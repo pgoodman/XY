@@ -4,7 +4,11 @@
 
 ROOT_DIR = ./
 
-DEFAULT_CXX = /Users/petergoodman/Code/build/llvm/Debug+Asserts/bin/clang++
+CLANG_CXX = /Users/petergoodman/Code/build/llvm/Debug+Asserts/bin/clang++
+INTEL_CXX = icpc
+GNU_CXX = g++
+
+DEFAULT_CXX = ${CLANG_CXX}
 DEFAULT_CC = /Users/petergoodman/Code/build/llvm/Debug+Asserts/bin/clang
 
 CXX = ${DEFAULT_CXX}
@@ -24,7 +28,7 @@ CC_FLAGS = -O0 -g -ansi -I${ROOT_DIR} -std=c99
 GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align -Wno-long-long 
 
 # are we compiling with the g++?
-ifeq (${CXX}, g++)
+ifeq (${CXX}, ${GNU_CXX})
 	#CXX_FEATURES += -flto
 	CXX_FEATURES += -fno-stack-protector
 	CXX_WARN_FLAGS += -Wshadow -Wpointer-arith \
@@ -38,7 +42,7 @@ ifeq (${CXX}, g++)
 endif
 
 # are we compiling with icc?
-ifeq (${CXX}, icpc)
+ifeq (${CXX}, ${INTEL_CXX})
 	GNU_COMPATIBLE_FLAGS = 
 	CXX_FEATURES += -fno-stack-protector
 	CXX_WARN_FLAGS = -diag-disable 279
@@ -47,7 +51,7 @@ ifeq (${CXX}, icpc)
 endif
 
 # are we compiling with clang++?
-ifeq (${CXX}, clang++)
+ifeq (${CXX}, ${CLANG_CXX})
 	CXX_FEATURES += -fcatch-undefined-behavior -finline-functions
 	CXX_WARN_FLAGS += -Winline
 endif
@@ -58,18 +62,18 @@ CC_FLAGS += ${CC_WARN_FLAGS} ${CC_FEATURES} ${GNU_COMPATIBLE_FLAGS}
 OBJS = 
 OBJS += bin/lib/utf8/codepoint.o
 OBJS += bin/lib/utf8/decoder.o 
+OBJS += bin/lib/support/byte_reader.o
 OBJS += bin/lib/io/file.o
 OBJS += bin/lib/io/message.o
 OBJS += bin/lib/io/cwd.o
 OBJS += bin/lib/io/real_path.o
 OBJS += bin/lib/io/line_highlight.o
 OBJS += bin/lib/cstring.o
-OBJS += bin/lib/lexer.o
 OBJS += bin/lib/diagnostic_context.o
+OBJS += bin/lib/lexer.o
 OBJS += bin/lib/token.o
 OBJS += bin/lib/tokenizer.o
 OBJS += bin/lib/token_stream.o
-OBJS += bin/lib/parser.o
 
 OBJS += bin/deps/libdatrie/alpha-map.o
 OBJS += bin/deps/libdatrie/darray.o
@@ -77,6 +81,9 @@ OBJS += bin/deps/libdatrie/tail.o
 OBJS += bin/deps/libdatrie/trie.o
 
 OBJS += bin/lib/support/name_map.o
+OBJS += bin/lib/type.o
+OBJS += bin/lib/symbol_table.o
+OBJS += bin/lib/parser.o
 
 OBJS += bin/main.o 
 OUT = bin/xy

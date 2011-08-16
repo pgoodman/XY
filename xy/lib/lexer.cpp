@@ -31,7 +31,7 @@ namespace xy {
     }
 
     bool lexer::get_codepoint(
-        io::file<io::read_tag> &f,
+        support::byte_reader &f,
         diagnostic_context &ctx,
         utf8::codepoint &cp
     )  throw() {
@@ -41,7 +41,7 @@ namespace xy {
 
             for(; read_size == BLOCK_SIZE; ) {
 
-                read_size = f.read_block(scratch);
+                read_size = f.read_block(scratch, array::size(scratch));
                 if(0U == read_size) {
                     state = DONE_READING;
                     goto check_trailing_mb;

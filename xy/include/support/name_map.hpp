@@ -9,6 +9,8 @@
 #ifndef NAME_MAP_HPP_
 #define NAME_MAP_HPP_
 
+#include <stdint.h>
+
 extern "C" {
     struct _Trie;
     struct _AlphaMap;
@@ -23,9 +25,17 @@ namespace xy { namespace support {
     private:
         friend class name_map;
 
-        const char *name;
+        struct mapped_name_impl {
+            unsigned slot:12; // offset into the block
+            unsigned length:5; // length of the name
+            unsigned block_id:15; // id of the block
+        } data;
 
-        mapped_name(const char *name_) throw();
+        static_assert(sizeof(uint32_t) >= sizeof(mapped_name_impl),
+            "A mapped name must fit into 32 bits."
+        );
+
+        mapped_name(const mapped_name_impl &data_) throw();
 
     public:
 
@@ -34,25 +44,38 @@ namespace xy { namespace support {
         ~mapped_name(void) throw();
 
         mapped_name &operator=(const mapped_name &) throw();
+        bool operator==(const mapped_name &) const throw();
+        bool operator!=(const mapped_name &) const throw();
     };
 
     /// a mapping of names to mapped_name.
+    /// names in this map can be no longer than 32 bytes.
     class name_map {
     private:
 
         struct name_block {
         public:
-            char block[4096U];
-            size_t capacity;
-            name_block *next;
+            char slots[4096U];
+            unsigned next_offset;
+            unsigned id;
+            unsigned capacity;
         };
 
+        // trie data structures
         struct _AlphaMap *alpha_map;
         struct _Trie *trie;
-        name_block *blocks;
+
+        // array of pointers to blocks
+        name_block **blocks;
+
+        // most current block id, used as an index into the blocks array
+        int block_id;
+
+        // how many block ids the blocks array can hold
+        uint16_t capacity;
 
         /// add a name into a block (where a block is a large array).
-        char *add_to_block(const char *) throw();
+        mapped_name::mapped_name_impl add_to_block(const char *) throw();
 
     public:
 
@@ -70,7 +93,7 @@ namespace xy { namespace support {
         ///
         ///    map_name("foo") == map_name(unmap_name(map_name("foo")))
         ///
-        const char *unmap_name(mapped_name name) const throw();
+        const char *unmap_name(const mapped_name &name) const throw();
     };
 
 }}
