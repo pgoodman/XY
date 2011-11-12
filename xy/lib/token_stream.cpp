@@ -68,6 +68,9 @@ namespace xy {
             curr = (curr + 1) % NUM_TOKENS;
             --backed_up;
             return true;
+        } else {
+            tok.type_ = T_EOF;
+            tok.num_columns_ = 1;
         }
         return false;
     }
@@ -81,6 +84,9 @@ namespace xy {
             curr = (curr + 1) % NUM_TOKENS;
             --backed_up;
             return true;
+        } else {
+            tok.type_ = T_EOF;
+            tok.num_columns_ = 1;
         }
         return false;
     }

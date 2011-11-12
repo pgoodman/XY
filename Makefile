@@ -3,6 +3,7 @@
 #
 
 ROOT_DIR = ./
+INIT_LIST_V1_PARENT_DIR = /Developer/SDKs/MacOSX10.7.sdk/usr/include/c++/
 
 CLANG_CXX = /Users/petergoodman/Code/build/llvm/Debug+Asserts/bin/clang++
 INTEL_CXX = icpc
@@ -25,7 +26,7 @@ CC_WARN_FLAGS = -Wall -Werror -Wno-unused-function
 CC_WARN_FLAGS += -Wcast-qual -Wno-format-security
 CC_FLAGS = -O0 -g -ansi -I${ROOT_DIR} -std=c99
 
-GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align -Wno-long-long 
+GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align -Wno-long-long
 
 # are we compiling with the g++?
 ifeq (${CXX}, ${GNU_CXX})
@@ -82,7 +83,9 @@ OBJS += bin/deps/libdatrie/trie.o
 
 OBJS += bin/lib/support/name_map.o
 OBJS += bin/lib/type.o
+OBJS += bin/lib/type_system.o
 OBJS += bin/lib/symbol_table.o
+OBJS += bin/lib/parse_tree.o
 OBJS += bin/lib/parser.o
 
 OBJS += bin/main.o 

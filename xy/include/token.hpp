@@ -31,8 +31,6 @@ namespace xy {
         T_THEN,                     // then
         T_ELSE,                     // else*/
         T_LET,                      // let
-        T_DEF_FUNCTION,             // defun
-        T_DEF_TYPE,                 // deftype
         T_IMPORT,                   // import
         T_RETURN,                   // return
         T_YIELD,                    // yield
@@ -59,7 +57,7 @@ namespace xy {
         T_PERCENT,                  // %
         T_TILDE,                    // ~
         T_ARROW,                    // ->
-        T_COLON,                    // :
+        //T_COLON,                    // :
         T_SEMICOLON,                // ;
         T_AT,                       // @
 
@@ -68,8 +66,9 @@ namespace xy {
         T_EQUAL,                    // =
         T_NOT_EQUAL,                // /=   .
         T_ASSIGN,                   // :=
+        T_DECLARE,                  // ::
 
-        T_NEW_LINE,                 // \n   .
+        //T_NEW_LINE,                 // \n   .
 
         T_NAME,
         T_TYPE_NAME,
@@ -77,6 +76,7 @@ namespace xy {
         T_INTEGER_LITERAL,
         T_RATIONAL_LITERAL,
 
+        T_EOF,
         T_INVALID
     } token_type;
 
@@ -87,12 +87,14 @@ namespace xy {
 
     // forward declaration
     class tokenizer;
+    class token_stream;
 
     /// represents a single lexical unit (e.g. a word). This stores the kind of
     /// the word and the position of the word inside its file.
     class token {
     private:
         friend class tokenizer;
+        friend class token_stream;
 
         token_type type_;
         uint16_t num_columns_;
@@ -114,6 +116,8 @@ namespace xy {
         uint32_t line(void) const throw();
 
         uint32_t column(void) const throw();
+
+        uint32_t end_column(void) const throw();
 
         uint32_t num_columns(void) const throw();
 

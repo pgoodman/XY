@@ -13,7 +13,7 @@ namespace xy {
 
     token::token(void) throw()
         : type_(T_INVALID)
-        , num_columns_(0)
+        , num_columns_(1)
         , col_(0)
         , line_(0)
     { }
@@ -53,6 +53,10 @@ namespace xy {
         return col_;
     }
 
+    uint32_t token::end_column(void) const throw() {
+        return col_ + num_columns_ - 1;
+    }
+
     uint32_t token::num_columns(void) const throw() {
         return num_columns_;
     }
@@ -74,8 +78,6 @@ namespace xy {
             "T_ELSE",                     // else*/
 
             "'let' symbol",                      // let
-            "'defun' symbol",             // defun
-            "'deftype' symbol",                 // deftype
             "'import' symbol",                   // import
             "'return' symbol",                   // return
             "'yield' symbol",                    // yield
@@ -103,7 +105,7 @@ namespace xy {
             "tilde",                    // ~
             "arrow",                    // ->
             "semicolon",                // ;
-            "colon",                    // :
+            //"colon",                    // :
             "at symbol",                       // @
 
             "less-than symbol",                // <
@@ -111,8 +113,9 @@ namespace xy {
             "equal symbol",                    // =
             "not-equal symbol",                // /=
             "assignment symbol",                   // :=
+            "declaration symbol",       // ::
 
-            "new line",                 // \n
+            //"new line",                 // \n
 
             "variable/function name",
             "type name",
@@ -120,7 +123,14 @@ namespace xy {
             "integer literal",
             "rational number literal",
 
-            "invalid symbol"
+            "end of file",
+            "invalid symbol",
+            "???1",
+            "???2",
+            "???3",
+            "???4",
+            "???5",
+            "???6",
         };
         return names[type];
     }

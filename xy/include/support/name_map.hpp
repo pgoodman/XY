@@ -46,6 +46,7 @@ namespace xy { namespace support {
         mapped_name &operator=(const mapped_name &) throw();
         bool operator==(const mapped_name &) const throw();
         bool operator!=(const mapped_name &) const throw();
+        bool operator<(const mapped_name &) const throw();
     };
 
     /// a mapping of names to mapped_name.

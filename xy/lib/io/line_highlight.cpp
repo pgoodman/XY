@@ -7,7 +7,7 @@
  */
 
 #include <limits>
-//#include <cstdio>
+#include <cstdio>
 #include <cctype>
 
 #include "xy/include/array.hpp"
@@ -87,7 +87,7 @@ namespace xy { namespace io { namespace detail {
                         ++i;
                         return true;
                     }
-                } else if('\r' == chr) {
+                } if('\r' == chr) {
                     seen_carriage_return = true;
                 } else if('\0' == chr) {
                     return false;
@@ -135,7 +135,7 @@ namespace xy { namespace io { namespace detail {
             return 0;
         }
 
-        char buff[MAX_NUM_BYTES]{'\0'};
+        char buff[MAX_NUM_BYTES + TAB_SIZE]{'\0'};
         uint32_t col(1);
         size_t j(0);
         utf8::codepoint chr;
@@ -183,6 +183,14 @@ namespace xy { namespace io { namespace detail {
                     buff[j % MAX_NUM_BYTES] = '\0';
                     //printf("buff[%lu] <nl> = 000\n", j % MAX_NUM_BYTES);
                     goto process_line;
+
+                // replace tabs with four spaces
+                } else if('\t' == chr) {
+                    buff[j % MAX_NUM_BYTES] = ' ';
+                    buff[++j % MAX_NUM_BYTES] = ' ';
+                    buff[++j % MAX_NUM_BYTES] = ' ';
+                    buff[j % MAX_NUM_BYTES] = ' ';
+                    col += TAB_SIZE - 1;
                 }
 
                 ++col;

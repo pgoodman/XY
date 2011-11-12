@@ -11,7 +11,7 @@
 namespace xy {
 
     type::~type(void) { }
-    named_type::~named_type(void) { }
+    name_type::~name_type(void) { }
     alias_type::~alias_type(void) { }
     cover_type::~cover_type(void) { }
     product_type::~product_type(void) { }
@@ -30,29 +30,40 @@ namespace xy {
     type::type(void) throw()
         : line(0)
         , column(0)
-        , file_name(nullptr)
+        , file_id(0)
+        , is_new(true)
+        , rep()
+    { }
+
+#if 0
+    type::type(void) throw()
+        : line(0)
+        , column(0)
+        , file_id(0)
         , handle(nullptr)
     { }
 
     type::type(type_handle *handle_) throw()
         : line(0)
         , column(0)
-        , file_name(nullptr)
+        , file_id(0)
         , handle(handle_)
     { }
 
-    type::type(uint32_t line_, uint32_t column_, const char *file_name_,
+    type::type(uint32_t line_, uint32_t column_, uint16_t file_id_,
                type_handle *handle_) throw()
         : line(line_)
         , column(column_)
-        , file_name(file_name_)
+        , file_id(file_id_)
         , handle(handle_)
     { }
+#endif
 
     type_kind type::get_kind(void) const throw() {
         return kind::TYPE;
     }
 
+#if 0
     /// type equivalence
     bool type::is_equivalent(const type *that) const throw() {
         if(this == that) {
@@ -100,8 +111,8 @@ namespace xy {
         }
 
         case kind::NAMED:
-            return reinterpret_cast<const named_type *>(this)->name
-                == reinterpret_cast<const named_type *>(that)->name;
+            return reinterpret_cast<const name_type *>(this)->name
+                == reinterpret_cast<const name_type *>(that)->name;
 
         case kind::REFERENCE:
             return reinterpret_cast<const reference_type *>(this)->to_type->is_equivalent(
@@ -113,12 +124,16 @@ namespace xy {
                 reinterpret_cast<const token_expression_type *>(that)->expected_type
             );
 
+        case kind::META_TYPE:
+            return true;
+
         default:
             break;
         }
 
         return false;
     }
+
 
     bool type::is_subtype(const type *that) const throw() {
         if(this == that) {
@@ -130,47 +145,60 @@ namespace xy {
     }
 
     //--------------------------------------------------------------------------
-
-    named_type::named_type(void) throw()
+    kind_equivalent_meta_type::kind_equivalent_meta_type(type_kind kind_) throw()
         : type()
-        , name()
+        , kind(kind_)
     { }
+#endif
 
-    named_type::named_type(type_handle *handle_, type_name name_) throw()
-        : type(handle_)
-        , name(name_)
-    { }
-
-    named_type::named_type(uint32_t line_, uint32_t col_, const char *file_name_,
-                           type_handle *handle_, type_name name_) throw()
-        : type(line_, col_, file_name_, handle_)
-        , name(name_)
-    { }
-
-    type_kind named_type::get_kind(void) const throw() {
-        return kind::NAMED;
+    kind_equivalent_meta_type::~kind_equivalent_meta_type(void) throw() { }
+#if 0
+    bool kind_equivalent_meta_type::is_subtype(const type *) const throw() {
+        return false;
     }
 
     //--------------------------------------------------------------------------
 
+    name_type::name_type(void) throw()
+        : type()
+        , name()
+    { }
+
+    name_type::name_type(type_handle *handle_, type_name name_) throw()
+        : type(handle_)
+        , name(name_)
+    { }
+
+    name_type::name_type(uint32_t line_, uint32_t col_, uint16_t file_id_,
+                           type_handle *handle_, type_name name_) throw()
+        : type(line_, col_, file_id_, handle_)
+        , name(name_)
+    { }
+#endif
+    type_kind name_type::get_kind(void) const throw() {
+        return kind::NAMED;
+    }
+
+    //--------------------------------------------------------------------------
+#if 0
     alias_type::alias_type(void) throw()
-        : named_type()
+        : name_type()
         , aliased_type(nullptr)
     { }
 
     alias_type::alias_type(type_handle *handle_, type_name name_, type *aliased_type_) throw()
-        : named_type(handle_, name_)
+        : name_type(handle_, name_)
         , aliased_type(aliased_type_)
     { }
 
-    alias_type::alias_type(uint32_t line_, uint32_t col_, const char *file_name_,
+    alias_type::alias_type(uint32_t line_, uint32_t col_, uint16_t file_id_,
                            type_handle *handle_, type_name name_, type *aliased_type_) throw()
-        : named_type(line_, col_, file_name_, handle_, name_)
+        : name_type(line_, col_, file_id_, handle_, name_)
         , aliased_type(aliased_type_)
     { }
-
+#endif
     //--------------------------------------------------------------------------
-
+#if 0
     /// type equivalence for product types (tuples, records)
     bool product_type::is_equivalent(const type *that) const throw() {
         if(this == that) {
@@ -180,7 +208,7 @@ namespace xy {
         const type_kind that_kind(that->get_kind());
 
         if(nullptr == that
-        || (kind::TUPLE != that_kind && kind::RECORD != that_kind)) {
+        || (kind::PRODUCT != that_kind && kind::PRODUCT != that_kind)) {
             return false;
 
         } else if(nullptr != this->handle && nullptr != that->handle) {
@@ -202,7 +230,7 @@ namespace xy {
 
         return true;
     }
-
+#endif
     //--------------------------------------------------------------------------
 
     type_kind alias_type::get_kind(void) const throw() {
@@ -218,13 +246,13 @@ namespace xy {
     //--------------------------------------------------------------------------
 
     type_kind tuple_type::get_kind(void) const throw() {
-        return kind::TUPLE;
+        return kind::PRODUCT;
     }
 
     //--------------------------------------------------------------------------
 
     type_kind record_type::get_kind(void) const throw() {
-        return kind::RECORD;
+        return kind::PRODUCT;
     }
 
     //--------------------------------------------------------------------------
@@ -233,6 +261,7 @@ namespace xy {
         return kind::SUM;
     }
 
+#if 0
     /// type equivalence for sum types (e.g. a C union)
     bool sum_type::is_equivalent(const type *that) const throw() {
         if(this == that) {
@@ -266,6 +295,7 @@ namespace xy {
 
         return true;
     }
+#endif
 
     //--------------------------------------------------------------------------
 
@@ -280,7 +310,7 @@ namespace xy {
     }
 
     //--------------------------------------------------------------------------
-
+#if 0
     integer_type::integer_type(type_handle *handle_, bool is_signed_,
                                uint8_t align_, uint8_t width_) throw()
         : type(handle_)
@@ -288,6 +318,7 @@ namespace xy {
         , align(align_)
         , width(width_)
     { }
+#endif
 
     type_kind integer_type::get_kind(void) const throw() {
         return kind::INTEGER;
@@ -300,12 +331,12 @@ namespace xy {
     }
 
     //--------------------------------------------------------------------------
-
+#if 0
     token_list_type::token_list_type(type_handle *handle_, bool eval_list_) throw()
         : type(handle_)
         , eval_list(eval_list_)
     { }
-
+#endif
     type_kind token_list_type::get_kind(void) const throw() {
         return kind::TOKEN_LIST;
     }
@@ -317,30 +348,29 @@ namespace xy {
     }
 
     //--------------------------------------------------------------------------
-
+#if 0
     namespace builtin {
+#if 0
         namespace {
-            static type_handle ROOT{1, 1, reinterpret_cast<type **>(&TYPE), &TYPE, type_name()};
-            static type_handle TOKEN_LIST_HANDLE{1, 2, reinterpret_cast<type **>(&TYPE), &TOKEN_LIST, type_name()};
-            static type_handle EVALD_TOKEN_LIST_HANDLE{1, 3, reinterpret_cast<type **>(&TYPE), &EVALD_TOKEN_LIST, type_name()};
-            static type_handle INTEGRAL_HANDLE{1, 4, reinterpret_cast<type **>(&TYPE), &INTEGRAL, type_name()};
+            static type_handle ROOT{1, support::small_set<type *>(&TYPE), support::small_set<type *>(&TYPE, &TOKEN_LIST, &EVALD_TOKEN_LIST, &INTEGRAL), &TYPE, type_name()};
+            static type_handle TOKEN_LIST_HANDLE{2, support::small_set<type *>(&TYPE), support::small_set<type *>(), &TOKEN_LIST, type_name()};
+            static type_handle EVALD_TOKEN_LIST_HANDLE{3, support::small_set<type *>(&TYPE), support::small_set<type *>(), &EVALD_TOKEN_LIST, type_name()};
+            static type_handle INTEGRAL_HANDLE{4, support::small_set<type *>(&TYPE), support::small_set<type *>(&INT_64, &UINT_64), &INTEGRAL, type_name()};
 
-            static type_handle INT_64_HANDLE{1, 5, reinterpret_cast<type **>(&INTEGRAL), &INT_64, type_name()};
-            static type_handle UINT_64_HANDLE{1, 6, reinterpret_cast<type **>(&INTEGRAL), &UINT_64, type_name()};
+            static type_handle INT_64_HANDLE{5, support::small_set<type *>(&INTEGRAL), support::small_set<type *>(&INT_32, &UINT_32), &INT_64, type_name()};
+            static type_handle UINT_64_HANDLE{6, support::small_set<type *>(&INTEGRAL), support::small_set<type *>(&UINT_32), &UINT_64, type_name()};
 
-            static type_handle INT_32_HANDLE{1, 7, reinterpret_cast<type **>(&INT_64), &INT_32, type_name()};
-            static type *uint32_parents[]{&UINT_64, &INT_64};
-            static type_handle UINT_32_HANDLE{1, 8, uint32_parents, &UINT_32, type_name()};
+            static type_handle INT_32_HANDLE{7, support::small_set<type *>(&INT_64), support::small_set<type *>(&INT_16, &UINT_16), &INT_32, type_name()};
+            static type_handle UINT_32_HANDLE{8, support::small_set<type *>(&INT_64, &UINT_64), support::small_set<type *>(&UINT_16), &UINT_32, type_name()};
 
-            static type_handle INT_16_HANDLE{1, 9, reinterpret_cast<type **>(&INT_32), &INT_16, type_name()};
-            static type *uint16_parents[]{&UINT_32, &INT_32};
-            static type_handle UINT_16_HANDLE{1, 10, uint16_parents, &UINT_16, type_name()};
+            static type_handle INT_16_HANDLE{9, support::small_set<type *>(&INT_32), support::small_set<type *>(&INT_8, &UINT_8), &INT_16, type_name()};
+            static type_handle UINT_16_HANDLE{10, support::small_set<type *>(&INT_32, &UINT_32), support::small_set<type *>(&UINT_8), &UINT_16, type_name()};
 
-            static type_handle INT_8_HANDLE{1, 11, reinterpret_cast<type **>(&INT_16), &INT_8, type_name()};
-            static type *uint8_parents[]{&UINT_16, &INT_16};
-            static type_handle UINT_8_HANDLE{1, 12, uint8_parents, &UINT_8, type_name()};
+            static type_handle INT_8_HANDLE{11, support::small_set<type *>(&INT_16), support::small_set<type *>(), &INT_8, type_name()};
+            static type_handle UINT_8_HANDLE{12, support::small_set<type *>(&INT_16, &UINT_16), support::small_set<type *>(), &UINT_8, type_name()};
         }
-
+#endif
+#if 0
         type TYPE(&ROOT);
 
         token_list_type TOKEN_LIST(&TOKEN_LIST_HANDLE, false);
@@ -357,6 +387,7 @@ namespace xy {
         integer_type UINT_16(&UINT_16_HANDLE, false, 2, 2);
         integer_type UINT_32(&UINT_32_HANDLE, false, 4, 4);
         integer_type UINT_64(&UINT_64_HANDLE, false, 8, 4);
+#endif
     }
-
+#endif
 }

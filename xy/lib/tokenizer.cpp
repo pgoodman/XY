@@ -173,7 +173,7 @@ namespace xy {
             T_INVALID, //  7     ^G
             T_INVALID, //  8     ^H
             T_INVALID, //  9     ^I
-            T_NEW_LINE, //  10     ^J
+            T_INVALID, //  10     ^J // T_NEW_LINE
             T_INVALID, //  11     ^K
             T_INVALID, //  12     ^L
             T_INVALID, //  13     ^M
@@ -339,8 +339,6 @@ namespace xy {
             {"then",        5U, T_THEN},
             {"else",        5U, T_ELSE},*/
             {"let",         4U, T_LET},
-            {"defun",       6U, T_DEF_FUNCTION},
-            {"deftype",     8U, T_DEF_TYPE},
             {"import",      7U, T_IMPORT},
             {"return",      7U, T_RETURN},
             {"yield",       6U, T_YIELD},
@@ -490,30 +488,35 @@ namespace xy {
                     return true;
                 }
 
-                // colon or assign
+                // colon-colon ::, assign :=
                 if(':' == chr) {
                     tok.col_ = ll.column();
                     tok.line_ = ll.line();
-                    tok.type_ = T_COLON;
+                    tok.type_ = T_INVALID;
                     tok.num_columns_ = 1;
 
                     if(!ll.get_codepoint(f, ctx, cp) || cp.is_null()) {
                         state = DONE;
-                        return true;
+                        return false;
                     } else if(!cp.is_ascii()) {
                         state = HAVE_NON_ASCII_CODEPOINT;
-                        return true;
+                        return false;
                     }
 
                     if('=' == cp.to_cstring()[0]) {
                         state = READ_NEXT_CODEPOINT;
                         tok.type_ = T_ASSIGN;
                         ++tok.num_columns_;
+                        return true;
+                    } else if(':' == cp.to_cstring()[0]) {
+                        state = READ_NEXT_CODEPOINT;
+                        tok.type_ = T_DECLARE;
+                        ++tok.num_columns_;
+                        return true;
                     } else {
                         state = HAVE_ASCII_CODEPOINT;
+                        return false;
                     }
-
-                    return true;
 
                 // minus/dash, arrow, comment, or block comment
                 } else if('-' == chr) {
@@ -539,8 +542,9 @@ namespace xy {
 
                     // single-line comment
                     } else if('-' == chr) {
-                        tok.type_ = T_NEW_LINE;
-                        tok.num_columns_ = 0;
+                        //tok.type_ = T_NEW_LINE;
+                        //tok.num_columns_ = 0;
+                        tok.type_ = T_INVALID;
                         state = READ_NEXT_CODEPOINT;
 
                         for(; ll.get_codepoint(f, ctx, cp); ) {
@@ -598,9 +602,9 @@ namespace xy {
 
                             if(cp.is_ascii()) {
                                 chr = cp.to_cstring()[0];
-                                if('\r' == chr || '\n' == chr) {
-                                    tok.type_ = T_NEW_LINE;
-                                }
+                                //if('\r' == chr || '\n' == chr) {
+                                //    tok.type_ = T_NEW_LINE;
+                                //}
                                 if('*' != chr && '-' != chr) {
                                     continue;
                                 }
@@ -675,7 +679,8 @@ namespace xy {
                 } else if('\r' == chr) {
                     tok.line_ = ll.line();
                     tok.col_ = ll.column();
-                    tok.type_ = T_NEW_LINE;
+                    //tok.type_ = T_NEW_LINE;
+                    tok.type_ = T_INVALID;
                     tok.num_columns_ = 0;
                     state = READ_NEXT_CODEPOINT;
 
@@ -693,7 +698,7 @@ namespace xy {
                         }
                     }
 
-                    return true;
+                    //return true;
 
                 // string literal
                 } else if('"' == chr) {

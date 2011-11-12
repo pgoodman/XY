@@ -24,6 +24,8 @@
 #include "xy/include/mpl/equal.hpp"
 #include "xy/include/mpl/remove_const.hpp"
 
+#include "xy/include/support/unsafe_cast.hpp"
+
 namespace xy { namespace io {
 
 #ifdef XY_MSG

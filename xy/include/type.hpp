@@ -11,13 +11,19 @@
 
 #include <stdint.h>
 #include <vector>
+#include <functional>
+#include <utility>
 
 #include "xy/include/support/name_map.hpp"
+#include "xy/include/support/small_set.hpp"
+#include "xy/include/support/disjoint_set.hpp"
 
 namespace xy {
 
+    class type_system;
+
     struct type;
-    struct named_type;
+    struct name_type;
     struct alias_type;
     struct cover_type;
     struct product_type;
@@ -30,6 +36,11 @@ namespace xy {
     struct array_type;
     struct token_list_type;
     struct token_expression_type;
+    typedef uint16_t type_id;
+
+    /// represents a placeholder for a type that is equivalent with any type of
+    /// the same kind
+    struct kind_equivalent_meta_type;
 
     namespace builtin {
         enum {
@@ -43,15 +54,15 @@ namespace xy {
             NAMED,
             ALIAS,
             COVER,
-            TUPLE,
-            RECORD,
+            PRODUCT,
             SUM,
             FUNCTION,
             REFERENCE,
             INTEGER,
             ARRAY,
             TOKEN_LIST,
-            TOKEN_EXPRESSION
+            TOKEN_EXPRESSION,
+            META_TYPE
         };
     }
 
@@ -59,26 +70,35 @@ namespace xy {
     typedef support::mapped_name type_name;
     typedef uint16_t type_id;
 
+#if 0
     // serves as a representative for multiple equivalent types.
     struct type_handle {
     public:
-        uint16_t num_parents;
 
+        /*
         // the id for this type
         type_id id;
 
-        type **parent;
+        support::small_set<type *> super_types;
+        support::small_set<type *> sub_types;
+        */
+
+        support::disjoint_set<type> rep;
+
         type *original_type;
 
         // name of the original version of the type, if the type had a name.
         type_name original_name;
     };
+#endif
 
     /// root type structure
     struct type {
     protected:
 
-        friend struct named_type;
+        friend class type_system;
+
+        friend struct name_type;
         friend struct alias_type;
         friend struct cover_type;
         friend struct product_type;
@@ -91,51 +111,74 @@ namespace xy {
         friend struct array_type;
         friend struct token_list_type;
         friend struct token_expression_type;
+        friend struct kind_equivalent_meta_type;
 
         // where this came from
         uint32_t line;
         uint32_t column;
-        const char *file_name;
+        uint16_t file_id;
+        bool is_new;
 
         // this type's handle
-        type_handle *handle;
+        //type_handle *handle;
+
+        support::disjoint_set<type> rep;
 
     public:
         type(void) throw();
-        type(type_handle *handle_) throw();
-        type(uint32_t line_, uint32_t col_, const char *file_name_,
-             type_handle *handle_) throw();
+
+        //type(uint32_t line_=0, uint32_t col_=0, uint16_t file_id_=0) throw();
+
+        //type(type_handle *handle_) throw();
+        //type(uint32_t line_, uint32_t col_, uint16_t file_id_,
+        //     type_handle *handle_) throw();
 
         virtual ~type(void) throw();
         virtual type_kind get_kind(void) const throw();
 
-        virtual bool is_equivalent(const type *that) const throw();
-        virtual bool is_subtype(const type *that) const throw();
+        //virtual bool is_equivalent(const type *that) const throw();
+        //virtual bool is_subtype(const type *that) const throw();
+    };
+
+    struct kind_equivalent_meta_type : public type {
+    public:
+        const type_kind kind;
+
+        kind_equivalent_meta_type(type_kind kind_) throw();
+        virtual ~kind_equivalent_meta_type(void) throw();
+
+        //virtual bool is_subtype(const type *that) const throw();
     };
 
     /// a type with a name
-    struct named_type : public type {
+    struct name_type : public type {
     public:
         type_name name;
 
-        named_type(void) throw();
-        named_type(type_handle *handle_, type_name name_) throw();
-        named_type(uint32_t line_, uint32_t col_, const char *file_name_,
-                   type_handle *handle_, type_name name_) throw();
+        //name_type(uint32_t line_=0, uint32_t col_=0, uint16_t file_id_=0) throw();
+        //name_type(type_name name_, uint32_t line_=0, uint32_t col_=0, uint16_t file_id_=0) throw();
 
-        virtual ~named_type(void) throw();
+        //name_type(void) throw();
+        //name_type(type_handle *handle_, type_name name_) throw();
+        //name_type(uint32_t line_, uint32_t col_, uint16_t file_id_,
+        //           type_handle *handle_, type_name name_) throw();
+
+        virtual ~name_type(void) throw();
         virtual type_kind get_kind(void) const throw();
     };
 
     /// an equivalent name for an anonymous type.
-    struct alias_type : public named_type {
+    struct alias_type : public name_type {
     public:
         type *aliased_type;
 
-        alias_type(void) throw();
-        alias_type(type_handle *handle_, type_name name_, type *aliased_type_) throw();
-        alias_type(uint32_t line_, uint32_t col_, const char *file_name_,
-                   type_handle *handle_, type_name name_, type *aliased_type_) throw();
+        //alias_type(type *aliased_type_=nullptr, uint32_t line_=0, uint32_t col_=0, uint16_t file_id_=0) throw();
+        //alias_type(type_name name_, type *aliased_type_=nullptr, uint32_t line_=0, uint32_t col_=0, uint16_t file_id_=0) throw();
+
+        //alias_type(void) throw();
+        //alias_type(type_handle *handle_, type_name name_, type *aliased_type_) throw();
+        //alias_type(uint32_t line_, uint32_t col_, uint16_t file_id_,
+        //           type_handle *handle_, type_name name_, type *aliased_type_) throw();
 
         virtual ~alias_type(void) throw();
         virtual type_kind get_kind(void) const throw();
@@ -156,7 +199,7 @@ namespace xy {
 
         std::vector<type *> types;
 
-        virtual bool is_equivalent(const type *that) const throw();
+        //virtual bool is_equivalent(const type *that) const throw();
         virtual ~product_type(void) throw();
 
     };
@@ -189,7 +232,7 @@ namespace xy {
 
         virtual ~sum_type(void) throw();
         virtual type_kind get_kind(void) const throw();
-        virtual bool is_equivalent(const type *that) const throw();
+        //virtual bool is_equivalent(const type *that) const throw();
 
         bool add(type *) throw();
     };
@@ -225,8 +268,9 @@ namespace xy {
         const uint8_t align;
         const uint8_t width;
 
-        integer_type(type_handle *handle_, bool is_signed_, uint8_t align_,
-                     uint8_t width_) throw();
+        //integer_type(type_handle *handle_, bool is_signed_, uint8_t align_,
+        //             uint8_t width_) throw();
+
         virtual ~integer_type(void) throw();
         virtual type_kind get_kind(void) const throw();
     };
@@ -244,9 +288,9 @@ namespace xy {
     /// type representing a list of tokens
     struct token_list_type : public type {
     public:
-        const bool eval_list;
+        //const bool eval_list;
 
-        token_list_type(type_handle *handle_, bool eval_list_) throw();
+        //token_list_type(type_handle *handle_, bool eval_list_) throw();
 
         virtual ~token_list_type(void) throw();
         virtual type_kind get_kind(void) const throw();
@@ -262,8 +306,9 @@ namespace xy {
         virtual ~token_expression_type(void) throw();
         virtual type_kind get_kind(void) const throw();
     };
-
+#if 0
     namespace builtin {
+
         extern token_list_type TOKEN_LIST;
         extern token_list_type EVALD_TOKEN_LIST;
 
@@ -280,7 +325,73 @@ namespace xy {
         extern integer_type UINT_64;
 
         extern type TYPE;
+
+        /*
+         * TYPE,
+            NAMED,
+            ALIAS,
+            COVER,
+            PRODUCT,
+            SUM,
+            FUNCTION,
+            REFERENCE,
+            INTEGER,
+            ARRAY,
+            TOKEN_LIST,
+            TOKEN_EXPRESSION,
+            META_TYPE
+         */
+
+        extern kind_equivalent_meta_type META_KIND_TYPE;
+        extern kind_equivalent_meta_type META_KIND_NAMED;
+        extern kind_equivalent_meta_type META_KIND_ALIAS;
+        extern kind_equivalent_meta_type META_KIND_COVER;
     }
+#endif
 }
+#if 0
+namespace std {
+    template <>
+    struct less<xy::type_handle *> : binary_function <xy::type_handle *,xy::type_handle *,bool> {
+    public:
+        bool operator() (const xy::type_handle *x, const xy::type_handle *y) const {
+            return x->id < y->id;
+        }
+    };
+
+    /*
+    namespace tr1 {
+        template <>
+        struct hash<std::vector<xy::type *> *>
+            : public std::unary_function<std::vector<xy::type *> *, std::size_t>
+        {
+        public:
+            std::size_t operator()(const std::vector<xy::type *> *types) const {
+                enum {
+                    NUM_STATIC_IDS = 16
+                };
+                xy::type_id ids_static[NUM_STATIC_IDS];
+                xy::type_id *ids(nullptr);
+                const size_t num_ids(types->size());
+                if(num_ids > num_ids) {
+                    ids = new xy::type_id[num_ids];
+                } else {
+                    ids = &(ids_static[0]);
+                }
+
+                for(size_t i(0); i < num_ids; ++i) {
+                    ids[i] = ((*types)[i])->handle->id;
+                }
+
+                if(num_ids > num_ids) {
+                    delete [] ids;
+                }
+                ids = nullptr;
+            }
+        };
+    }
+    */
+}
+#endif
 
 #endif /* TYPE_HPP_ */

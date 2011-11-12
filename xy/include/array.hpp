@@ -21,7 +21,7 @@ namespace xy { namespace array {
         typename T,
         const size_t GIVEN_LENGTH
     >
-    inline constexpr auto slice(T (&arr)[GIVEN_LENGTH]) throw() -> T (&)[SLICE_LENGTH] {
+    inline auto slice(T (&arr)[GIVEN_LENGTH]) throw() -> constexpr T (&)[SLICE_LENGTH] {
         static_assert(
             GIVEN_LENGTH >= SLICE_LENGTH,
             "The requested array slice is contains more slots than the "
@@ -46,14 +46,19 @@ namespace xy { namespace array {
 
     /// length of an array
     template <typename T, const size_t LENGTH>
-    inline constexpr auto length(T (&)[LENGTH]) throw() -> size_t {
+    inline auto length(T (&)[LENGTH]) throw() -> constexpr size_t {
         return LENGTH;
     }
 
     /// size of an array
     template <typename T, const size_t LENGTH>
-    inline constexpr auto size(T (&)[LENGTH]) throw() -> size_t {
+    inline auto size(T (&)[LENGTH]) throw() -> constexpr size_t {
         return sizeof(T) * LENGTH;
+    }
+
+    template <typename T, const size_t LENGTH>
+    inline T &last(T (&arr)[LENGTH]) throw() {
+        return arr[LENGTH - 1U];
     }
 
 }}

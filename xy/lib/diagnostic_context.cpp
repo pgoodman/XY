@@ -18,6 +18,7 @@ namespace xy {
         , diag()
     { }
 
+
     diagnostic_context::~diagnostic_context(void) throw() {
         cstring::free(file_name);
         file_name = nullptr;

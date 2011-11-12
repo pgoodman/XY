@@ -14,12 +14,14 @@ namespace xy { namespace mpl {
     template <typename T>
     class remove_const {
     public:
+        typedef T result;
         typedef T type;
     };
 
     template <typename T>
     class remove_const<const T> {
     public:
+        typedef T result;
         typedef T type;
     };
 }}

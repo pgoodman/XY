@@ -1,4 +1,20 @@
+<<<<<<< HEAD
 
+=======
+let foo, bar := (10 + 12) * 3, 11
+let baz := foo(bar)
+
+-*
+
+def new T :: T -> give &T
+def free T :: &T -> Unit
+def share T :: take &T -> shared &T
+
+def acquire T :: shared &T
+def release T :: shared &T -> Nothing
+*-
+
+>>>>>>> Working on parser, types, etc.
 let LinkedList :: Type -> Type
     record(T) {
         union {&LinkedList(T), Tail} next;

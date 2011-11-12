@@ -48,6 +48,9 @@ namespace xy { namespace support {
     bool mapped_name::operator!=(const mapped_name &that) const throw() {
         return 0 != memcmp(this, &that, sizeof *this);
     }
+    bool mapped_name::operator<(const mapped_name &that) const throw() {
+        return *reinterpret_cast<const uint32_t *>(this) < *reinterpret_cast<const uint32_t *>(&that);
+    }
 
     name_map::name_map(void) throw()
         : alpha_map(nullptr)

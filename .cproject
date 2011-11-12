@@ -29,7 +29,7 @@
 							<tool id="cdt.managedbuild.tool.macosx.c.linker.macosx.base.1261486255" name="MacOS X C Linker" superClass="cdt.managedbuild.tool.macosx.c.linker.macosx.base"/>
 							<tool id="cdt.managedbuild.tool.macosx.cpp.linker.macosx.base.229193085" name="MacOS X C++ Linker" superClass="cdt.managedbuild.tool.macosx.cpp.linker.macosx.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.macosx.lib.release.516621401" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.macosx.lib.release">
-								<option id="gnu.both.asm.option.include.paths.1725603366" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+								<option id="gnu.both.asm.option.include.paths.1725603366" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/XY/}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.731547168" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
@@ -44,6 +44,7 @@
 								</option>
 								<option id="gnu.cpp.compiler.option.include.paths.1886190822" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/XY/}&quot;"/>
+									<listOptionValue builtIn="false" value="/Developer/SDKs/MacOSX10.7.sdk/usr/include/c++/"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.528960932" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -54,8 +55,9 @@
 									<listOptionValue builtIn="false" value="constexpr=const"/>
 									<listOptionValue builtIn="false" value="nullptr=0"/>
 								</option>
-								<option id="gnu.c.compiler.option.include.paths.1089770280" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+								<option id="gnu.c.compiler.option.include.paths.1089770280" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/XY/}&quot;"/>
+									<listOptionValue builtIn="false" value="/Developer/SDKs/MacOSX10.7.sdk/usr/include/c++/"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1670839039" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

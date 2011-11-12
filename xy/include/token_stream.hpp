@@ -17,8 +17,12 @@
 
 namespace xy {
 
+    class parser;
+
     class token_stream {
     private:
+
+        friend class parser;
 
         enum {
             NUM_BACKUP = 2,

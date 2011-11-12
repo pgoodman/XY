@@ -11,6 +11,7 @@
 #define XY_FILE_HPP_
 
 #include <fcntl.h>
+#include <unistd.h>
 #include <stdint.h>
 #include <cstring>
 

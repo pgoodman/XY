@@ -6,6 +6,16 @@
  *     Version: $Id$
  */
 
+#include "xy/include/symbol_table.hpp"
 
+namespace xy {
 
+    void symbol_table::push_context(void) throw() {
 
+    }
+
+    void symbol_table::pop_context(void) throw() {
+
+    }
+
+}
