@@ -48,5 +48,12 @@ namespace xy { namespace cstring {
         for(; '\0' != str[i]; ++i) { }
         return i;
     }
-
 }}
+
+#if XY_HOST_LINUX
+extern "C" {
+#   include "xy/deps/openbsd/strlcat.c"
+#   include "xy/deps/openbsd/strlcpy.c"
+}
+#endif
+

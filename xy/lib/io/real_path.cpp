@@ -1,3 +1,36 @@
+
+#include "xy/include/io/real_path.hpp"
+#include "xy/include/cstring.hpp"
+
+#include <sys/param.h>
+#include <sys/stat.h>
+
+#ifdef PATH_MAX
+#undef PATH_MAX
+#endif
+
+#define PATH_MAX xy::io::REAL_PATH_MAX_LEN
+extern "C" {
+#   include "xy/deps/openbsd/realpath.c"
+}
+
+namespace xy { namespace io {
+    /*
+     * char *realpath(const char *path, char resolved[REAL_PATH_MAX_LEN]);
+     *
+     * Find the real name of path, by removing all ".", ".." and symlink
+     * components.  Returns (resolved) on success, or (nullptr) on failure,
+     * in which case the path which caused trouble is left in (resolved).
+     */
+    char *
+    get_real_path(const char *path, char (&resolved)[REAL_PATH_MAX_LEN])
+    {
+        return realpath(path, &(resolved[0]));
+    }
+}}
+
+#if 0
+
 /*      $OpenBSD: realpath.c,v 1.13 2005/08/08 08:05:37 espie Exp $ */
 /*
  * Copyright (c) 2003 Constantin S. Svintsoff <kostik@iclub.nsu.ru>
@@ -31,15 +64,17 @@
 
 #if !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH)
 
-#include "xy/include/io/real_path.hpp"
-#include "xy/include/io/cwd.hpp"
-
 #include <sys/stat.h>
 
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "xy/include/io/real_path.hpp"
+#include "xy/include/io/cwd.hpp"
+
+#include "xy/include/cstring.hpp"
 
 namespace xy { namespace io {
 
@@ -199,3 +234,4 @@ namespace xy { namespace io {
 
 }}
 #endif /* !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH) */
+#endif
