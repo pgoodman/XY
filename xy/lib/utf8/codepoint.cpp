@@ -21,7 +21,7 @@ namespace xy { namespace utf8 {
     }
 
     bool operator==(const char c, const codepoint &cp) throw() {
-        return reinterpret_cast<uint8_t>(c) == cp.data[0] && '\0' == cp.data[1];
+        return c == reinterpret_cast<const char *>(cp.data)[0] && '\0' == cp.data[1];
     }
 
     bool codepoint::operator==(const codepoint &o) const throw() {
