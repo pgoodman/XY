@@ -23,6 +23,8 @@
 #include "xy/include/mpl/bool.hpp"
 #include "xy/include/mpl/equal.hpp"
 #include "xy/include/mpl/remove_const.hpp"
+#include "xy/include/mpl/if_.hpp"
+#include "xy/include/mpl/is_pointer.hpp"
 
 #include "xy/include/support/unsafe_cast.hpp"
 
@@ -142,8 +144,12 @@ namespace xy { namespace io {
     template <>                                                 \
     class as_pod<T> {                                           \
     public:                                                     \
-        typedef const mpl::remove_const<T>::type type; \
-        static type convert(type &v) throw() {                  \
+        typedef mpl::remove_const<T>::type type;                \
+        typedef mpl::if_<mpl::is_pointer<type>,                 \
+            const type,                                         \
+            type                                                \
+        >::result return_type;                                  \
+        static return_type convert(const type &v) throw() {     \
             return v;                                           \
         }                                                       \
     };
