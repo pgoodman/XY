@@ -35,7 +35,9 @@ namespace xy {
     bool token_stream::check(void) throw() {
         if(0 == backed_up) {
             if(!tt.get_token(f, ctx, tokens[curr], scratch[curr])) {
-                return false;
+                if(T_EOF != tokens[curr].type_) {
+                    return false;
+                }
             }
             ++backed_up;
             ++num_seen;
@@ -68,10 +70,10 @@ namespace xy {
             curr = (curr + 1) % NUM_TOKENS;
             --backed_up;
             return true;
-        } else {
+        } /*else {
             tok.type_ = T_EOF;
             tok.num_columns_ = 1;
-        }
+        } */
         return false;
     }
 
@@ -84,10 +86,10 @@ namespace xy {
             curr = (curr + 1) % NUM_TOKENS;
             --backed_up;
             return true;
-        } else {
+        } /*else {
             tok.type_ = T_EOF;
             tok.num_columns_ = 1;
-        }
+        }*/
         return false;
     }
 

@@ -468,6 +468,9 @@ namespace xy { namespace io {
 
         /// check if we have any messages of a particular type
         bool has_message(message_type) const throw();
+
+        /// take control of all of the messages of another queue
+        void subsume(message_queue &other) throw();
     };
 
 }}

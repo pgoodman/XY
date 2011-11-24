@@ -39,7 +39,7 @@ int main(int argc, const char **argv) throw() {
         if(!parser::parse_file(ctx, argv[1])) {
             printf("Error parsing file '%s'\n", argv[1]);
         }
-        if(ctx.diag.has_message()) {
+        if(ctx.has_message()) {
             ctx.print_diagnostics(stderr);
             return false;
         }

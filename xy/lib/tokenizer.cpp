@@ -224,7 +224,7 @@ namespace xy {
             T_INVALID, //  58     :
             T_SEMICOLON, //  59     ;
             T_LESS_THAN, //  60     <
-            T_EQUAL, //  61     =
+            T_INVALID, //  61     =
             T_GREATER_THAN, //  62     >
             T_INVALID, //  63     ?
             T_AT, //  64     @
@@ -342,6 +342,9 @@ namespace xy {
             {"import",      7U, T_IMPORT},
             {"return",      7U, T_RETURN},
             {"yield",       6U, T_YIELD},
+            {"union",       6U, T_UNION},
+            {"record",      7U, T_RECORD},
+            {"function",    9U, T_FUNCTION},
         };
     }
 
@@ -355,7 +358,7 @@ namespace xy {
     /// push the file, line, and column information as a message into the
     /// diagnostic context's message queue.
     void tokenizer::push_file_line_col(diagnostic_context &ctx) throw() {
-        ctx.diag.push(io::c_file_line_col,
+        ctx.report(io::c_file_line_col,
             ctx.file(), ll.line(), ll.column()
         );
         state = DONE;
@@ -363,7 +366,7 @@ namespace xy {
 
     void tokenizer::push_file_line_col_point(diagnostic_context &ctx) throw() {
         push_file_line_col(ctx);
-        ctx.diag.push(io::c_highlight, io::highlight_column(
+        ctx.report(io::c_highlight, io::highlight_column(
             ctx.file(), ll.line(), ll.column()
         ));
         state = DONE;
@@ -371,7 +374,7 @@ namespace xy {
 
     void tokenizer::push_file_line_col_under(diagnostic_context &ctx, uint32_t start_col) throw() {
         push_file_line_col(ctx);
-        ctx.diag.push(io::c_highlight, io::highlight_line(
+        ctx.report(io::c_highlight, io::highlight_line(
             ctx.file(), ll.line(), start_col, ll.column()
         ));
         state = DONE;
@@ -379,7 +382,7 @@ namespace xy {
 
     void tokenizer::push_file_line_col_left(diagnostic_context &ctx, uint32_t start_col) throw() {
         push_file_line_col(ctx);
-        ctx.diag.push(io::c_highlight, io::highlight_left(
+        ctx.report(io::c_highlight, io::highlight_left(
             ctx.file(), ll.line(), start_col, ll.column()
         ));
         state = DONE;
@@ -389,14 +392,14 @@ namespace xy {
     bool tokenizer::get_octal_digit(diagnostic_context &ctx, char *chr, uint32_t start_col) throw() {
 
         if(!cp.is_ascii()) {
-            ctx.diag.push(io::e_invalid_octal_escape, cp.to_cstring());
+            ctx.report(io::e_invalid_octal_escape, cp.to_cstring());
             push_file_line_col_left(ctx, start_col);
             return false;
         }
 
         char digit = cp.to_cstring()[0];
         if(digit < '0' || '7' < digit) {
-            ctx.diag.push(io::e_invalid_octal_escape, cp.to_cstring());
+            ctx.report(io::e_invalid_octal_escape, cp.to_cstring());
             push_file_line_col_left(ctx, start_col);
             return false;
         }
@@ -404,7 +407,7 @@ namespace xy {
         int16_t new_val = (static_cast<int16_t>(*chr) * 8) + (digit - '0');
 
         if(new_val > 255) { // wrap-around
-            ctx.diag.push(io::e_octal_escape_too_big, new_val, new_val);
+            ctx.report(io::e_octal_escape_too_big, new_val, new_val);
             push_file_line_col_under(ctx, start_col);
             return false;
         }
@@ -415,14 +418,14 @@ namespace xy {
     /// interpret a byte as a digit in a hexadecimal number.
     bool tokenizer::get_hex_digit(diagnostic_context &ctx, char *chr, uint32_t start_col) throw() {
         if(!cp.is_ascii()) {
-            ctx.diag.push(io::e_invalid_hex_escape, cp.to_cstring());
+            ctx.report(io::e_invalid_hex_escape, cp.to_cstring());
             push_file_line_col_left(ctx, start_col);
             return false;
         }
 
         char digit = tolower(cp.to_cstring()[0]);
         if(!isalnum(digit) || 'f' < digit) {
-            ctx.diag.push(io::e_invalid_hex_escape, cp.to_cstring());
+            ctx.report(io::e_invalid_hex_escape, cp.to_cstring());
             push_file_line_col_left(ctx, start_col);
             return false;
         } else if('a' <= digit) {
@@ -466,7 +469,7 @@ namespace xy {
 
                 if(!cp.is_ascii()) {
         case HAVE_NON_ASCII_CODEPOINT:
-                    ctx.diag.push(io::e_mb_not_in_string, cp.to_cstring());
+                    ctx.report(io::e_mb_not_in_string, cp.to_cstring());
                     push_file_line_col_point(ctx);
                     return false;
                 }
@@ -488,8 +491,28 @@ namespace xy {
                     return true;
                 }
 
-                // colon-colon ::, assign :=
-                if(':' == chr) {
+                // equals (=) or double arrow (=>)
+                if('=' == chr) {
+
+                    tok.col_ = ll.column();
+                    tok.line_ = ll.line();
+                    tok.type_ = T_EQUAL;
+                    tok.num_columns_ = 1;
+
+                    if(!ll.get_codepoint(f, ctx, cp) || cp.is_null()) {
+                        state = DONE;
+                    } else if(!cp.is_ascii()) {
+                        state = HAVE_NON_ASCII_CODEPOINT;
+                    } else if('>' == cp.to_cstring()[0]) {
+                        tok.num_columns_ = 2;
+                        tok.type_ = T_DOUBLE_ARROW;
+                    } else {
+                        state = HAVE_ASCII_CODEPOINT;
+                    }
+                    return true;
+
+                // colon-colon (::), assign (:=)
+                } else if(':' == chr) {
                     tok.col_ = ll.column();
                     tok.line_ = ll.line();
                     tok.type_ = T_INVALID;
@@ -654,16 +677,16 @@ namespace xy {
                             return true;
                         }
 
-                        ctx.diag.push(io::e_unclosed_block_comment, num_to_close);
+                        ctx.report(io::e_unclosed_block_comment, num_to_close);
                         push_file_line_col(ctx);
 
                         // report on all the unclosed block comments
                         for(; !positions.empty(); positions.pop_back()) {
-                            ctx.diag.push(io::n_start_of_block_comment);
-                            ctx.diag.push(io::c_file_line_col,
+                            ctx.report(io::n_start_of_block_comment);
+                            ctx.report(io::c_file_line_col,
                                 ctx.file(), positions.back().first, positions.back().second
                             );
-                            ctx.diag.push(io::c_highlight, io::highlight_column(
+                            ctx.report(io::c_highlight, io::highlight_column(
                                 ctx.file(), positions.back().first, positions.back().second
                             ));
                         }
@@ -713,11 +736,11 @@ namespace xy {
                     for(; ll.get_codepoint(f, ctx, cp); ) {
 
                         if(i >= BUFFER_LENGTH) {
-                            ctx.diag.push(io::e_string_too_long, BUFFER_LENGTH);
-                            ctx.diag.push(io::c_file_line_col,
+                            ctx.report(io::e_string_too_long, BUFFER_LENGTH);
+                            ctx.report(io::c_file_line_col,
                                 ctx.file(), tok.line_, tok.col_
                             );
-                            ctx.diag.push(io::c_highlight, io::highlight_column(
+                            ctx.report(io::c_highlight, io::highlight_column(
                                 ctx.file(), tok.line_, tok.col_
                             ));
                             state = DONE;
@@ -744,7 +767,7 @@ namespace xy {
                                 if(!ll.get_codepoint(f, ctx, cp)) {
                                     goto early_termination_of_string;
                                 } else if(!cp.is_ascii()) {
-                                    ctx.diag.push(io::e_mb_escape_string,
+                                    ctx.report(io::e_mb_escape_string,
                                         cp.to_cstring()
                                     );
                                     push_file_line_col_point(ctx);
@@ -819,7 +842,7 @@ namespace xy {
 
                                 // unknown escape character
                                 default:
-                                    ctx.diag.push(io::e_invalid_escape,
+                                    ctx.report(io::e_invalid_escape,
                                         cp.to_cstring()[0]
                                     );
                                     push_file_line_col_left(ctx, esc_start);
@@ -841,11 +864,11 @@ namespace xy {
                     }
 
                 early_termination_of_string:
-                    ctx.diag.push(io::e_string_not_terminated);
-                    ctx.diag.push(io::c_file_line_col,
+                    ctx.report(io::e_string_not_terminated);
+                    ctx.report(io::c_file_line_col,
                         ctx.file(), tok.line_, tok.col_
                     );
-                    ctx.diag.push(io::c_highlight, io::highlight_column(
+                    ctx.report(io::c_highlight, io::highlight_column(
                         ctx.file(), tok.line_, tok.col_
                     ));
                     state = DONE;
@@ -974,13 +997,13 @@ namespace xy {
 
                         if(i >= NAME_LENGTH) {
                             scratch[i] = '\0';
-                            ctx.diag.push(io::e_name_too_long,
+                            ctx.report(io::e_name_too_long,
                                 scratch, NAME_LENGTH
                             );
-                            ctx.diag.push(io::c_file_line_col,
+                            ctx.report(io::c_file_line_col,
                                 ctx.file(), tok.line_, tok.col_
                             );
-                            ctx.diag.push(io::c_highlight, io::highlight_column(
+                            ctx.report(io::c_highlight, io::highlight_column(
                                 ctx.file(), tok.line_, tok.col_
                             ));
                             state = DONE;
@@ -992,7 +1015,7 @@ namespace xy {
 
                         // error, character not allowed in a name
                         if(SCA_ERROR == NAME_CHAR[chr]) {
-                            ctx.diag.push(io::e_bad_char_in_name, chr);
+                            ctx.report(io::e_bad_char_in_name, chr);
                             push_file_line_col_point(ctx);
                             scratch[0] = '\0';
                             return false;
@@ -1023,7 +1046,9 @@ namespace xy {
 
                 }
             }
-        case DONE: break;
+        case DONE:
+            tok.type_ = T_EOF;
+            break;
         }
 
         return false;

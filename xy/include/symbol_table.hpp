@@ -59,6 +59,9 @@ namespace xy {
 
         void push_context(void) throw();
 
+        support::mapped_name operator[](const char *name) throw();
+        const char *operator[](support::mapped_name name) throw();
+
         void pop_context(void) throw();
 
     };

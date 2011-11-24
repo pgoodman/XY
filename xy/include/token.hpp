@@ -34,6 +34,9 @@ namespace xy {
         T_IMPORT,                   // import
         T_RETURN,                   // return
         T_YIELD,                    // yield
+        T_UNION,
+        T_RECORD,
+        T_FUNCTION,
 
         T_OPEN_PAREN,               // (
         T_CLOSE_PAREN,              // )
@@ -64,6 +67,7 @@ namespace xy {
         T_LESS_THAN,                // <
         T_GREATER_THAN,             // >
         T_EQUAL,                    // =
+        T_DOUBLE_ARROW,             // =>
         T_NOT_EQUAL,                // /=   .
         T_ASSIGN,                   // :=
         T_DECLARE,                  // ::

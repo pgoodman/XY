@@ -81,6 +81,9 @@ namespace xy {
             "'import' symbol",                   // import
             "'return' symbol",                   // return
             "'yield' symbol",                    // yield
+            "'union' symbol",
+            "'record' symbol",
+            "'function' symbol",
 
             "left parenthesis",               // (
             "right parenthesis",              // )
@@ -111,6 +114,7 @@ namespace xy {
             "less-than symbol",                // <
             "greater-than symbol",             // >
             "equal symbol",                    // =
+            "double-arrow",
             "not-equal symbol",                // /=
             "assignment symbol",                   // :=
             "declaration symbol",       // ::

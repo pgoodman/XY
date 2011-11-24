@@ -61,6 +61,22 @@ namespace xy { namespace array {
         return arr[LENGTH - 1U];
     }
 
+    template <typename T, const size_t LENGTH_D, const size_t LENGTH_S>
+    inline void copy(T (&dest)[LENGTH_D], T (&source)[LENGTH_S]) throw() {
+        static_assert(LENGTH_D <= LENGTH_S,
+            "The destination array must be no bigger than the source array."
+        );
+        for(size_t i(0); i < LENGTH_D; ++i) {
+            dest[i] = source[i];
+        }
+    }
+
+    template <typename T, const size_t LENGTH>
+    inline void initialize(T (&arr)[LENGTH], T &&val) throw() {
+        for(size_t i(0); i < LENGTH; ++i) {
+            arr[i] = val;
+        }
+    }
 }}
 
 #endif /* XY_ARRAY_HPP_ */

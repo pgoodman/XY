@@ -44,7 +44,7 @@ let reverse <T> :: &LinkedList(T) -> &LinkedList(T)
 --- union members don't have names; forces pattern matching
 --- if a union member type doesn't exist then a new type is
 --- made.
-let Maybe :: Type -> Type
+let Maybe :: Type -> Type := 
     union(T) {
         T,
         Nothing

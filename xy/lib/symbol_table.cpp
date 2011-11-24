@@ -18,4 +18,12 @@ namespace xy {
 
     }
 
+    support::mapped_name symbol_table::operator[](const char *name) throw() {
+        return names.map_name(name);
+    }
+
+    const char *symbol_table::operator[](const support::mapped_name name) throw() {
+        return names.unmap_name(name);
+    }
+
 }

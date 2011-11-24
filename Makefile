@@ -85,7 +85,6 @@ OBJS += bin/lib/support/name_map.o
 OBJS += bin/lib/type.o
 OBJS += bin/lib/type_system.o
 OBJS += bin/lib/symbol_table.o
-OBJS += bin/lib/parse_tree.o
 OBJS += bin/lib/parser.o
 
 OBJS += bin/main.o 

@@ -94,7 +94,7 @@ namespace xy { namespace io {
         , last(&LAST_MESSAGE)
         , num_messages(0)
     {
-        memset(seen, 0, array::size(seen));
+        array::initialize(seen, false);
     }
 
     message_queue::~message_queue(void) throw() {
@@ -118,5 +118,27 @@ namespace xy { namespace io {
 
     bool message_queue::has_message(message_type type) const throw() {
         return seen[type];
+    }
+
+    void message_queue::subsume(message_queue &other) throw() {
+        if(&LAST_MESSAGE == first) {
+            first = other.first;
+            last = other.last;
+        } else {
+            last->next = other.first;
+            last = other.last;
+
+        }
+
+        num_messages += other.num_messages;
+        for(unsigned i(0); i < array::length(seen); ++i) {
+            seen[i] = seen[i] || other.seen[i];
+        }
+
+        // clear out the other queue
+        other.first = &LAST_MESSAGE;
+        other.last = &LAST_MESSAGE;
+        other.num_messages = 0;
+        array::initialize(other.seen, false);
     }
 }}

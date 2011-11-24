@@ -12,27 +12,44 @@
 #include "xy/include/parser.hpp"
 #include "xy/include/tokenizer.hpp"
 #include "xy/include/array.hpp"
+#include "xy/include/cstring.hpp"
 
 #include "xy/include/io/line_highlight.hpp"
 
 namespace xy {
 
-    const parser::expression_parser parser::expression_parsers[]{
+    ast *pop(std::vector<ast *> &stack) throw() {
+        ast *back(stack.back());
+        stack.pop_back();
+        return back;
+    }
+
+    const parser::precedence_parser parser::expression_parsers[]{
 
         {10,    T_NAME,             &parser::parse_literal,         &parser::parse_fail_s},
-        {10,    T_TYPE_NAME,        &parser::parse_literal,         &parser::parse_fail_s},
+        {10,    T_TYPE_NAME,        &parser::parse_type_name,       &parser::parse_fail_s},
         {10,    T_STRING_LITERAL,   &parser::parse_literal,         &parser::parse_fail_s},
         {10,    T_INTEGER_LITERAL,  &parser::parse_literal,         &parser::parse_fail_s},
         {10,    T_RATIONAL_LITERAL, &parser::parse_literal,         &parser::parse_fail_s},
 
+        // logical/bitwise operators
+        {200,   T_AMPERSAND,        &parser::parse_fail_p,          &parser::parse_infix},
+        {190,   T_HAT,              &parser::parse_fail_p,          &parser::parse_infix},
+        {180,   T_PIPE,             &parser::parse_fail_p,          &parser::parse_infix},
+        {180,   T_DOUBLE_ARROW,     &parser::parse_fail_p,          &parser::parse_infix},
+
         {100,   T_OPEN_PAREN,       &parser::parse_paren_expression,&parser::parse_application},
         {100,   T_OPEN_BRACKET,     &parser::parse_array_literal,   &parser::parse_array_access},
-        {100,   T_OPEN_BRACE,       &parser::parse_record_literal,  &parser::parse_fail_s},
+        {100,   T_OPEN_BRACE,       &parser::parse_record_literal,  &parser::parse_type_instantiation},
+
+        // method-like
         {100,   T_PERIOD,           &parser::parse_fail_p,          &parser::parse_infix},
 
         {80,    T_ASTERISK,         &parser::parse_fail_p,          &parser::parse_infix},
         {80,    T_FORWARD_SLASH,    &parser::parse_prefix,          &parser::parse_infix},
         {80,    T_PERCENT,          &parser::parse_fail_p,          &parser::parse_infix},
+
+        {75,    T_ARROW,            &parser::parse_fail_p,          &parser::parse_infix},
 
         {70,    T_PLUS,             &parser::parse_fail_p,          &parser::parse_infix},
         {70,    T_MINUS,            &parser::parse_prefix,          &parser::parse_infix},
@@ -45,18 +62,32 @@ namespace xy {
         {255,   T_INVALID,          &parser::parse_fail_p,          &parser::parse_fail_s},
     };
 
-    const parser::expression_parser *parser::get_sub_parser(const token &tok) {
-        for(const expression_parser &p : expression_parsers) {
-            if(p.pivot == tok.type()) {
-                return &p;
+    const parser::precedence_parser parser::type_parsers[]{
+        //{10,    T_FUNCTION,         &parser::parse_type_function,   &parser::parse_fail_s},
+        {100,   T_OPEN_PAREN,       &parser::parse_type_group,      &parser::parse_type_params},
+        {80,    T_ASTERISK,         &parser::parse_fail_p,          &parser::parse_infix_type_operator<arrow_type_decl>},
+        {75,    T_ARROW,            &parser::parse_fail_p,          &parser::parse_infix_type_operator<product_type_decl>},
+        {70,    T_PLUS,             &parser::parse_fail_p,          &parser::parse_infix_type_operator<sum_type_decl>},
+
+        {10,    T_TYPE_NAME,        &parser::parse_type_name,       &parser::parse_fail_s},
+        {10,    T_UNION,            &parser::parse_union,           &parser::parse_fail_s},
+        {10,    T_RECORD,           &parser::parse_record,          &parser::parse_fail_s},
+
+        {255,   T_INVALID,          &parser::parse_fail_p,          &parser::parse_fail_s},
+    };
+
+    const parser::precedence_parser *parser::get_precedence_parser(const parser::precedence_parser *parsers, const token &tok) {
+        for(; T_INVALID != parsers->pivot; ++parsers) {
+            if(parsers->pivot == tok.type()) {
+                break;
             }
         }
-        return nullptr;
+        return parsers;
     }
 
     /// parse an expression
     bool parser::parse_paren_expression(const token &, const char *) throw() {
-        if(!parse_expression(0)) {
+        if(!parse(expression_parsers, 0)) {
             return false;
         }
 
@@ -64,98 +95,350 @@ namespace xy {
     }
 
     /// top-down operator precedence parser
-    bool parser::parse_expression(uint8_t prec) throw() {
+    bool parser::parse(const parser::precedence_parser *parsers, uint8_t rbp) throw() {
+
+#define INDENT \
+    indent[++indent_index] = '\t';
+
+#define DEDENT \
+    indent[indent_index--] = '\0';
+
+        static char indent[]{'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+        static int indent_index(-1);
+
+        INDENT
+
         token curr;
         const char *curr_data;
 
+        printf("%srbp is %u\n", indent, rbp);
+
         if(!stream.accept(curr, curr_data)) {
+            DEDENT
             return false;
         }
 
-        const expression_parser *prev_parser(get_sub_parser(curr));
+        printf("%sa: got token %s with data '%s' at line %u, col %u\n", indent, curr.name(), curr_data, curr.line(), curr.column());
+
+        const precedence_parser *prev_parser(get_precedence_parser(parsers, curr));
+
+        printf("%s---parser is %s\n", indent, token::name(prev_parser->pivot));
 
         // no supported parser or failed to parse
-        if(nullptr == prev_parser || !(this->*(prev_parser->prefix))(curr, curr_data)) {
+        if(!(this->*(prev_parser->prefix))(curr, curr_data)) {
+            DEDENT
             return false;
         }
 
-        printf("parsed with %s = '%s'\n", curr.name(), curr_data);
+        printf("%s---parsed prefix.\n", indent);
 
         // get the parser for the next token
         stream.accept(curr, curr_data);
-        const expression_parser *curr_parser(get_sub_parser(curr));
+        printf("%sb: got token %s with data '%s' at line %u, col %u\n", indent, curr.name(), curr_data, curr.line(), curr.column());
+        const precedence_parser *curr_parser(get_precedence_parser(parsers, curr));
+        printf("%s---parser is %s with left precedence %u\n", indent, token::name(curr_parser->pivot), curr_parser->precedence);
 
         // parsing won't get us anywhere, but we've successfully parsed
         // something already.
-        if(nullptr == curr_parser
-        || &parser::parse_fail_s == curr_parser->postfix) {
-            printf("undid with %s = '%s'\n", curr.name(), curr_data);
+        if(&parser::parse_fail_s == curr_parser->postfix) {
             stream.undo();
+            DEDENT
             return true;
         }
 
-        printf("trying to continue with %s = '%s'\n", curr.name(), curr_data);
+        for(; rbp < curr_parser->precedence; ) {
 
-        for(; prec < curr_parser->precedence; ) {
+            printf("%s---parsing suffix with right precedence %u\n", indent, curr_parser->precedence & ~1);
 
             // failed the sub-parse
-            if(!(this->*(curr_parser->postfix))(curr_parser->precedence & -1, curr, curr_data)) {
+            if(!(this->*(curr_parser->postfix))(curr_parser->precedence & ~1, curr, curr_data)) {
+                DEDENT
                 return false;
             }
+
+            printf("%s---parsed suffix.\n", indent);
 
             // we extended this parse :D who cares if there's another token or
             // not? let's leave that to the caller :D
             if(!stream.accept(curr, curr_data)) {
+                DEDENT
                 return true;
             }
 
-            curr_parser = get_sub_parser(curr);
-            if(nullptr == curr_parser
-            || &parser::parse_fail_s == curr_parser->postfix) {
+            printf("%sc: got token %s with data '%s' at line %u, col %u\n", indent, curr.name(), curr_data, curr.line(), curr.column());
+
+            curr_parser = get_precedence_parser(parsers, curr);
+
+            printf("%s---parser is %s with left precedence %u\n", indent, token::name(curr_parser->pivot), curr_parser->precedence);
+
+            if(&parser::parse_fail_s == curr_parser->postfix) {
                 stream.undo();
+                DEDENT
                 return true;
             }
         }
 
-        printf("existing tdop loop\n");
+        printf("%sinput precedence %u was not less than token precedence %u \n", indent, rbp, curr_parser->precedence);
 
         // we exited the loop, i.e. we had something that could be parsed but
         // whose precedence level is incorrect, i.e. should be handled by
         // someone else, so unread the token.
         stream.undo();
 
+        DEDENT
+
         return true;
     }
 
-    /// parse a function call
-    bool parser::parse_application(uint8_t prec, const token &, const char *) throw() {
-        (void) prec;
+    /// parse a function call or template instantiation
+    bool parser::parse_application(uint8_t, const token &, const char *) throw() {
+        ast *node(pop(stack));
+
+        if(nullptr == node) {
+            return false;
+        }
+
+        expression *function(node->reinterpret<expression>());
+
+        if(nullptr == function) {
+            // TODO error?
+            return false;
+        }
+
+        stack.push_back(new function_call_expr{function, {}});
         return false;
     }
 
-    bool parser::parse_array_access(uint8_t prec, const token &, const char *) throw() {
-        (void) prec;
-        return false;
+    /// parse the { ...} parse of a type instantiation, e.g. Int{1}, or Array(Int, 3){1,2,3}.
+    bool parser::parse_type_instantiation(uint8_t, const token &tok, const char *) throw() {
+
+        if(!stack.back()->is_instance<type_decl>()) {
+            printf("arrow decl id is %lu\n", arrow_type_decl::static_id());
+            printf("sum decl id is %lu\n", sum_type_decl::static_id());
+            printf("product decl id is %lu\n", product_type_decl::static_id());
+            printf("type decl id is %lu\n", type_decl::static_id());
+            printf("id is: %lu\n", stack.back()->type_id());
+
+            return report_simple(io::e_not_a_type_for_instance, tok);
+        }
+
+        bool consume_comma(false);
+        type_instance_expr *inst(new type_instance_expr{nullptr, pop(stack)->reinterpret<type_decl>(), {}});
+        token expr_begin;
+        ast *val(nullptr);
+
+        for(; !stream.check(T_CLOSE_BRACE); consume_comma = true) {
+            if(consume_comma && !consume(T_COMMA)) {
+                return false;
+            }
+
+            if(stream.check(T_CLOSE_BRACE)) {
+                break;
+            }
+
+            // just so that we know the position of where the expression was
+            // meant to begin
+            stream.accept(expr_begin);
+            stream.undo();
+
+            if(!parse(expression_parsers, 0)) {
+                return false;
+            }
+
+            val = pop(stack);
+
+            // we didn't get an expression
+            if(!val->is_instance<expression>()) {
+                return report_simple(io::e_not_an_expression_for_type_instance, expr_begin);
+            }
+
+            // collect the sub-expression :D
+            inst->values.push_back(val->reinterpret<expression>());
+        }
+
+        return consume(T_CLOSE_BRACE);
     }
 
-    bool parser::parse_infix(uint8_t prec, const token &, const char *) throw() {
-        return parse_expression(prec);
+    bool parser::parse_array_access(uint8_t, const token &tok, const char *) throw() {
+        expression *left(pop(stack)->reinterpret<expression>());
+
+        if(nullptr == left) {
+            return report_simple(io::e_array_access_on_non_expr, tok);
+        }
+
+        if(!parse(expression_parsers, 0) || !consume(T_CLOSE_BRACKET)) {
+            return false;
+        }
+
+        expression *right(pop(stack)->reinterpret<expression>());
+
+        if(nullptr == right) {
+            return report_simple(io::e_array_access_on_non_expr, tok);
+        }
+
+        stack.push_back(new array_access_expr{nullptr, left, right});
+
+        return true;
+    }
+
+    bool parser::parse_infix(uint8_t prec, const token &tok, const char *data) throw() {
+
+        printf("in the infix parser!\n");
+        printf("expr id is %lu\n", expression::static_id());
+        printf("int literal id is %lu\n", integer_literal_expr::static_id());
+        printf("type decl id is %lu\n", type_decl::static_id());
+        printf("id is: %lu\n", stack.back()->type_id());
+
+        // looks like we're parsing an inline type declaration
+        if(stack.back()->is_instance<type_decl>()) {
+            printf("parsing a type decl\n");
+            switch(tok.type()) {
+            case T_ARROW: return parse_infix_type_operator<arrow_type_decl>(prec, tok, data);
+            case T_PLUS: return parse_infix_type_operator<sum_type_decl>(prec, tok, data);
+            case T_ASTERISK: return parse_infix_type_operator<product_type_decl>(prec, tok, data);
+            default:
+                return report_simple(io::e_bad_type_operator, tok);
+            }
+        }
+
+        // arrow in expression context
+        if(T_ARROW == tok.type()) {
+            return report_simple(io::e_arrow_in_expr_context, tok);
+        }
+
+        // parse the right thing
+        printf("parse_infix: parsing right param\n");
+
+        if(!parse(expression_parsers, prec)) {
+            return false;
+        }
+
+        expression *right(pop(stack)->reinterpret<expression>());
+        expression *left(pop(stack)->reinterpret<expression>());
+
+        stack.push_back(new infix_expr{nullptr, left, right, tok.type()});
+
+        return true;
     }
 
     bool parser::parse_prefix(const token &, const char *) throw() {
         return false;
     }
 
+    /// parse something that looks like an array literal. This might actually
+    /// end up parsing a inline type declaration if the first thing in the
+    /// array literal is a type declararion, making this an array type
+    /// declaration.
     bool parser::parse_array_literal(const token &, const char *) throw() {
-        return false;
+
+        // empty array
+        if(stream.check(T_CLOSE_BRACKET)) {
+            stream.accept();
+            stack.push_back(new array_expr{{}});
+            return true;
+        }
+
+        if(!parse(expression_parsers, 0)) {
+            return false;
+        }
+
+        ast *first(pop(stack));
+
+        if(first->is_instance<type_decl>()) {
+            stack.push_back(new array_type_decl{first->reinterpret<type_decl>()});
+            return consume(T_CLOSE_BRACKET);
+
+        } else if(first->is_instance<expression>()) {
+            array_expr *arr(new array_expr{nullptr, {first->reinterpret<expression>()}});
+            token expr_head;
+            for(; !stream.check(T_CLOSE_BRACKET);) {
+                if(!consume(T_COMMA)) {
+                    return false;
+                }
+
+                if(stream.check(T_CLOSE_BRACKET)) {
+                    break;
+                }
+
+                stream.accept(expr_head);
+                stream.undo();
+
+                if(!parse(expression_parsers, 0)) {
+                    return false;
+                }
+
+                first = pop(stack);
+
+                // add the array element into the array
+                if(first->is_instance<expression>()) {
+                    arr->elements.push_back(first->reinterpret<expression>());
+
+                // found a non-expression array element
+                } else {
+                    return report_simple(io::e_array_element_must_be_expr, expr_head);
+                }
+            }
+
+            stack.push_back(arr);
+
+            return consume(T_CLOSE_BRACKET);
+        } else {
+            return false;
+        }
     }
 
     bool parser::parse_record_literal(const token &, const char *) throw() {
         return false;
     }
 
-    bool parser::parse_literal(const token &, const char *ss) throw() {
-        printf("parsed '%s'\n", ss);
+    bool parser::parse_literal(const token &tok, const char *data) throw() {
+        switch(tok.type()) {
+        case T_INTEGER_LITERAL:
+            stack.push_back(new integer_literal_expr{nullptr, cstring::copy(data)});
+            return true;
+        case T_STRING_LITERAL:
+            stack.push_back(new string_literal_expr{nullptr, cstring::copy(data)});
+            return true;
+        case T_RATIONAL_LITERAL:
+            stack.push_back(new rational_literal_expr{nullptr, cstring::copy(data)});
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    bool parser::parse_type_name(const token &, const char *name) throw() {
+        stack.push_back(new named_type_decl{stab[name]});
+        return true;
+    }
+    bool parser::parse_union(const token &, const char *) throw() {
+        return true;
+    }
+    bool parser::parse_record(const token &, const char *) throw() {
+        return true;
+    }
+    bool parser::parse_type_function(const token &, const char *) throw() {
+        return true;
+    }
+    bool parser::parse_type_group(const token &, const char *) throw() {
+        return true;
+    }
+    bool parser::parse_type_params(uint8_t, const token &, const char *) throw() {
+        return true;
+    }
+
+    /*
+    bool parser::parse_sum_type(uint8_t, const token &, const char *) throw() {
+        return true;
+    }
+    bool parser::parse_product_type(uint8_t, const token &, const char *) throw() {
+        return true;
+    }*/
+
+    bool parser::parse_ref_type(const token &, const char *) throw() {
+        return true;
+    }
+    bool parser::parse_array_type(const token &, const char *) throw() {
         return true;
     }
 
@@ -167,71 +450,14 @@ namespace xy {
         return false;
     }
 
-    /// expect a new line after somehting
-    /*bool parser::accept_expected_newline(void) throw() {
-        if(stream.check(T_NEW_LINE)) {
-            stream.accept();
-            return true;
-        }
-
-        // re-get the last seen token to calculate the number columns its
-        // representation requires
-        token prev_tok;
-        stream.undo();
-        stream.accept(prev_tok);
-        const size_t col(prev_tok.column() + prev_tok.num_columns());
-
-        // diagnostic pointing to immediately after this token
-        ctx.diag.push(io::e_required_new_line);
-        ctx.diag.push(io::c_file_line_col, ctx.file(), prev_tok.line(), col);
-        ctx.diag.push(io::c_highlight,
-            io::highlight_column(ctx.file(), prev_tok.line(), col)
-        );
-
-        return false;
-    }*/
-
-    /// error that we got an unexpected token after some first token that we
-    /// would normally use as a prefix
-    bool parser::unexpected_follow_symbol(
-        token &first, token &got, token_type expected
-    ) throw() {
-
-        ctx.diag.push(io::e_unexpected_follow_symbol,
-            got.name(), token::name(expected), first.name()
-        );
-        ctx.diag.push(io::c_file_line_col, ctx.file(), got.line(), got.column());
-        ctx.diag.push(io::c_highlight, io::highlight_line(
-            ctx.file(), got.line(), got.column(), got.end_column()
-        ));
-        return false;
-    }
-
-    /// error that we got an unexpected token after some first token that we
-    /// would normally use as a prefix
-    bool parser::unexpected_follow_symbol_2(
-        token &first, token &got, token_type expected1, token_type expected2
-    ) throw() {
-
-        ctx.diag.push(io::e_unexpected_follow_symbol_2,
-            got.name(), token::name(expected1), token::name(expected2), first.name()
-        );
-        ctx.diag.push(io::c_file_line_col, ctx.file(), got.line(), got.column());
-        ctx.diag.push(io::c_highlight, io::highlight_line(
-            ctx.file(), got.line(), got.column(), got.end_column()
-        ));
-        return false;
-    }
-
     /// go get a comma-separated list of names, e.g. variable names or type
     /// names
     bool parser::parse_name_list(
         token_type expected,
-        std::vector<std::string> &names
+        std::vector<std::pair<token, support::mapped_name> > &names
     ) throw() {
         token prev_token, got;
         const char *name_buff;
-        std::string name;
 
         for(bool check_comma(false); ; check_comma = true) {
 
@@ -242,7 +468,7 @@ namespace xy {
                 } else if(!stream.check(T_COMMA)) {
                     stream.accept(got);
                     stream.undo();
-                    unexpected_follow_symbol_2(prev_token, got, T_COMMA, T_ASSIGN);
+                    report_unexpected_follow_symbol_2(prev_token, got, T_COMMA, T_ASSIGN);
                     return false;
                 } else {
                     stream.accept(prev_token);
@@ -254,14 +480,13 @@ namespace xy {
                 assert(check_comma);
 
                 stream.accept(got);
-                unexpected_follow_symbol(prev_token, got, expected);
+                report_unexpected_follow_symbol(prev_token, got, expected);
                 return false;
             }
 
             // collect the name
             stream.accept(prev_token, name_buff);
-            name = name_buff;
-            names.push_back(name);
+            names.push_back(std::make_pair(prev_token, stab[name_buff]));
         }
 
         return true;
@@ -280,50 +505,70 @@ namespace xy {
         assert(stream.check(T_LET));
         token prev;
         token curr;
-        std::vector<std::string> names;
+        std::vector<std::pair<token, support::mapped_name> > names;
         bool check_sep(false);
+        unsigned last_seen(0);
 
         stream.accept(prev);
 
         if(!stream.check(T_NAME) && !stream.check(T_TYPE_NAME)){
             stream.accept(curr);
-            return unexpected_follow_symbol_2(prev, curr, T_NAME, T_TYPE_NAME);
+            return report_unexpected_follow_symbol_2(prev, curr, T_NAME, T_TYPE_NAME);
 
         // variable/func declaration
         } else if(stream.check(T_NAME)) {
-            if(!parse_name_list(T_NAME, names)) {
+            if(!parse_name_list(T_NAME, names) || !consume(T_ASSIGN)) {
                 return false;
             }
 
-            assert(stream.check(T_ASSIGN));
-            stream.accept(prev);
-
             // for each variable name
-            for(std::string &name : names) {
-
-                printf("about to look for sep\n");
-
+            for(auto &name_pair : names) {
                 if(check_sep && !consume(T_COMMA)) {
-                    printf("didn't get the comma ??\n");
-                    return false;
+                    break;
                 }
 
-                printf("parsing expression for name '%s'\n", name.c_str());
-                if(!parse_expression(0)) {
-                    printf("failed to parse :(\n");
-                    return false;
+                if(!parse(expression_parsers, 0)) {
+                    break;
                 }
+
+                (void) name_pair; // TODO
 
                 check_sep = true;
+                ++last_seen;
+            }
+
+            if(last_seen < names.size()) {
+                ctx.report_here(names[last_seen].first, io::e_missing_expr_in_let, stab[names[last_seen].second]);
+                return false;
             }
 
         // type declaration
         } else {
-            if(!parse_name_list(T_TYPE_NAME, names)) {
+            if(!parse_name_list(T_TYPE_NAME, names) || !consume(T_ASSIGN)) {
                 return false;
             }
 
-            //is_type_decl = true;
+            // for each variable name
+            for(auto &name_pair : names) {
+                if(check_sep && !consume(T_COMMA)) {
+                    break;
+                }
+
+                // TODO
+                if(!parse(type_parsers, 0)) {
+                    break;
+                }
+
+                (void) name_pair; // TODO
+
+                check_sep = true;
+                ++last_seen;
+            }
+
+            if(last_seen < names.size()) {
+                ctx.report_here(names[last_seen].first, io::e_missing_type_decl_in_let, stab[names[last_seen].second]);
+                return false;
+            }
         }
 
         return true;
@@ -334,9 +579,9 @@ namespace xy {
             token got;
             stream.accept(got);
 
-            ctx.diag.push(io::e_unexpected_symbol, got.name(), token::name(expected));
-            ctx.diag.push(io::c_file_line_col, ctx.file(), got.line(), got.column());
-            ctx.diag.push(io::c_highlight, io::highlight_line(
+            ctx.report(io::e_expected_different_symbol, got.name(), token::name(expected));
+            ctx.report(io::c_file_line_col, ctx.file(), got.line(), got.column());
+            ctx.report(io::c_highlight, io::highlight_line(
                 ctx.file(), got.line(), got.column(), got.end_column()
             ));
 
@@ -351,6 +596,7 @@ namespace xy {
         : ctx(ctx_)
         , stab()
         , stream(stream_)
+        , stack()
     { }
 
     /// parse a stream of tokens
@@ -369,37 +615,84 @@ namespace xy {
                 stream.accept();
             }
 
+            // done parsing this file
+            if(stream.check(T_EOF)) {
+                break;
+            }
+
             // variable definition
-            if(stream.check(T_LET)) {
+            else if(stream.check(T_LET)) {
                 last_parsed = p.parse_let();
 
-            // unexpected token
+            // report_unexpected token
             } else if(stream.check() ){
                 token got;
                 stream.accept(got);
 
-                ctx.diag.push(io::e_unexpected_symbol, got.name());
-                ctx.diag.push(io::c_file_line_col, ctx.file(), got.line(), got.column());
-                ctx.diag.push(io::c_highlight, io::highlight_line(
-                    ctx.file(), got.line(), got.column(), got.end_column()
-                ));
+                p.report_simple(io::e_unexpected_symbol, got);
 
                 break;
             } else {
                 break;
             }
-
         }
 
-        if(ctx.diag.has_message(io::message_type::error)
-        || ctx.diag.has_message(io::message_type::recoverable_error)
-        || ctx.diag.has_message(io::message_type::failed_assertion)) {
+        p.consume(T_EOF);
+
+        if(ctx.has_message(io::message_type::error)
+        || ctx.has_message(io::message_type::recoverable_error)
+        || ctx.has_message(io::message_type::failed_assertion)) {
             return false;
         }
 
         p.stab.pop_context();
 
         return true;
+    }
+
+    /// -----------------------------------------------------------------------
+    /// -----------------------------------------------------------------------
+    /// -----------------------------------------------------------------------
+
+    bool parser::report_simple(io::message_id id, const token &got) throw() {
+        ctx.report(id, got.name());
+        ctx.report(io::c_file_line_col, ctx.file(), got.line(), got.column());
+        ctx.report(io::c_highlight, io::highlight_line(
+            ctx.file(), got.line(), got.column(), got.end_column()
+        ));
+        return false;
+    }
+
+    /// error that we got an report_unexpected token after some first token that we
+    /// would normally use as a prefix
+    bool parser::report_unexpected_follow_symbol(
+        const token &first, const token &got, token_type expected
+    ) throw() {
+
+        ctx.report(io::e_unexpected_follow_symbol,
+            got.name(), token::name(expected), first.name()
+        );
+        ctx.report(io::c_file_line_col, ctx.file(), got.line(), got.column());
+        ctx.report(io::c_highlight, io::highlight_line(
+            ctx.file(), got.line(), got.column(), got.end_column()
+        ));
+        return false;
+    }
+
+    /// error that we got an report_unexpected token after some first token that we
+    /// would normally use as a prefix
+    bool parser::report_unexpected_follow_symbol_2(
+        const token &first, const token &got, token_type expected1, token_type expected2
+    ) throw() {
+
+        ctx.report(io::e_unexpected_follow_symbol_2,
+            got.name(), token::name(expected1), token::name(expected2), first.name()
+        );
+        ctx.report(io::c_file_line_col, ctx.file(), got.line(), got.column());
+        ctx.report(io::c_highlight, io::highlight_line(
+            ctx.file(), got.line(), got.column(), got.end_column()
+        ));
+        return false;
     }
 
     /// -----------------------------------------------------------------------
@@ -418,7 +711,7 @@ namespace xy {
         bool ret(false);
 
         if(!io::read::open_file(file_name, parser::parse_open_file, ctx, ret)) {
-            ctx.diag.push(io::e_open_file, file_name);
+            ctx.report(io::e_open_file, file_name);
         }
         return ret;
     }
