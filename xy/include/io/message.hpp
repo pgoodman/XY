@@ -25,6 +25,7 @@
 #include "xy/include/mpl/remove_const.hpp"
 #include "xy/include/mpl/if_.hpp"
 #include "xy/include/mpl/is_pointer.hpp"
+#include "xy/include/mpl/is_const.hpp"
 
 #include "xy/include/support/unsafe_cast.hpp"
 
@@ -146,7 +147,10 @@ namespace xy { namespace io {
     public:                                                     \
         typedef mpl::remove_const<T>::type type;                \
         typedef mpl::if_<mpl::is_pointer<type>,                 \
-            const type,                                         \
+            mpl::if_<mpl::is_const<T>,                          \
+                const type,                                     \
+                type                                            \
+            >::result,                                          \
             type                                                \
         >::result return_type;                                  \
         static return_type convert(const type &v) throw() {     \
