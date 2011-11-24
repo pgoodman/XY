@@ -52,10 +52,10 @@ namespace xy { namespace utf8 {
     }
 
     const char *codepoint::to_cstring(void) const throw() {
-        return data;
+        return reinterpret_cast<const char *>(data);
     }
 
     size_t codepoint::byte_length(void) const throw() {
-        return strlen(data);
+        return strlen(reinterpret_cast<const char *>(data));
     }
 }}

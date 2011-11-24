@@ -24,7 +24,7 @@ namespace xy { namespace utf8 {
 
         typedef void private_tag;
 
-        char data[5];
+        uint8_t data[5];
 
         void init_from_byte_array(uint8_t *);
 
