@@ -49,7 +49,7 @@ namespace xy { namespace io {
         failed_assertion = 4,
         special = 5,
 
-        sentinel_type = 6,
+        sentinel_type = 6
     } message_type;
 
     /// represents a single diagnostic message template. Each message has a

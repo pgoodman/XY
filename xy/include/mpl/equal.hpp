@@ -18,7 +18,7 @@ namespace xy { namespace mpl {
     class equal {
     public:
         typedef false_tag result;
-        constexpr operator bool (void) {
+        operator bool (void) {
             return false;
         }
     };
@@ -27,7 +27,7 @@ namespace xy { namespace mpl {
     class equal<A *, A *> {
     public:
         typedef true_tag result;
-        constexpr operator bool (void) {
+        operator bool (void) {
             return true;
         }
     };
@@ -36,7 +36,7 @@ namespace xy { namespace mpl {
     class equal<A, A> {
     public:
         typedef true_tag result;
-        constexpr operator bool (void) {
+        operator bool (void) {
             return true;
         }
     };
@@ -57,7 +57,7 @@ namespace xy { namespace mpl {
     class const_equal {
     public:
         typedef false_tag result;
-        constexpr operator bool (void) {
+        operator bool (void) {
             return false;
         }
     };
@@ -66,7 +66,7 @@ namespace xy { namespace mpl {
     class const_equal<A *, A *> {
     public:
         typedef true_tag result;
-        constexpr operator bool (void) {
+        operator bool (void) {
             return true;
         }
     };
@@ -75,7 +75,7 @@ namespace xy { namespace mpl {
     class const_equal<A, A> {
     public:
         typedef true_tag result;
-        constexpr operator bool (void) {
+        operator bool (void) {
             return true;
         }
     };
@@ -90,7 +90,7 @@ namespace xy { namespace mpl {
     class const_equal<const A, B> {
     public:
         typedef false_tag result;
-        constexpr operator bool (void) {
+        operator bool (void) {
             return false;
         }
     };
@@ -99,18 +99,18 @@ namespace xy { namespace mpl {
     class const_equal<A, const B> {
     public:
         typedef false_tag result;
-        constexpr operator bool (void) {
+        operator bool (void) {
             return false;
         }
     };
 
     template <typename A, typename B>
-    constexpr bool equal_p(void) {
+    bool equal_p(void) {
         return equal<A,B>();
     }
 
     template <typename A, typename B>
-    constexpr bool const_equal_p(void) {
+    bool const_equal_p(void) {
         return const_equal<A,B>();
     }
 }}
