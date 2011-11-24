@@ -30,9 +30,9 @@ namespace xy { namespace utf8 {
 
     public:
 
-        codepoint(void);
-        codepoint(const char);
-        codepoint(const codepoint &);
+        codepoint(void) throw();
+        codepoint(const char) throw();
+        codepoint(const codepoint &) throw();
 
         friend bool operator==(const char, const codepoint &) throw();
 

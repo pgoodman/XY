@@ -34,9 +34,9 @@ namespace xy { namespace io {
 
         protected:
 
-            enum {
+            enum : unsigned {
                 BLOCK_SIZE = 4096U,
-                LINE_NUM_CPS = 80U,
+                LINE_NUM_CPS = 80U
             };
 
             mutable char *file_name;
@@ -74,12 +74,12 @@ namespace xy { namespace io {
 
         public:
 
-            enum {
+            enum : unsigned {
                 MAX_LINE_NUM_BYTES = LINE_NUM_CPS * 4U,
                 MAX_NUM_BYTES = LINE_NUM_CPS * 4U + 1U,
                 MARGIN = (LINE_NUM_CPS / 2) - 2,
                 MAX_BYTES_PER_MARGIN = MARGIN * 4,
-                TAB_SIZE = 4
+                TAB_SIZE = 4U
             };
 
             highlight_column(const char *file_name_, uint32_t line_, uint32_t col_) throw();
