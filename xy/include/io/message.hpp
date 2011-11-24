@@ -142,7 +142,7 @@ namespace xy { namespace io {
     template <>                                                 \
     class as_pod<T> {                                           \
     public:                                                     \
-        typedef const typename mpl::remove_const<T>::type type; \
+        typedef const mpl::remove_const<T>::type type; \
         static type convert(type &v) throw() {                  \
             return v;                                           \
         }                                                       \
