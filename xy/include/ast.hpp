@@ -153,11 +153,11 @@ namespace xy {
 
         struct type_instance_expr : public support::ast_impl<type_instance_expr, expression> {
         public:
-            type_decl *type_decl;
+            type_decl *declaration;
             std::vector<expression *> values;
 
             virtual ~type_instance_expr(void) throw() {
-                support::delete_ast(type_decl);
+                support::delete_ast(declaration);
                 support::delete_ast_vector(values);
             }
         };
