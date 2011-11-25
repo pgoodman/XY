@@ -33,8 +33,10 @@ namespace xy { namespace cstring {
 }}
 
 #if XY_HOST_LINUX
-size_t   strlcat(char *, const char *, size_t);
-size_t   strlcpy(char *, const char *, size_t);
+extern "C" {
+    size_t strlcat(char *, const char *, size_t);
+    size_t strlcpy(char *, const char *, size_t);
+}
 #endif
 
 #endif /* XY_CSTRING_HPP_ */
