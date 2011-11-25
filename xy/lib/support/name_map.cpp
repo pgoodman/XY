@@ -9,6 +9,8 @@
 #include <cstring>
 
 #include "xy/include/support/name_map.hpp"
+#include "xy/include/support/unsafe_cast.hpp"
+
 #include "xy/include/array.hpp"
 #include "xy/include/cstring.hpp"
 
@@ -17,14 +19,14 @@
 
 namespace xy { namespace support {
 
+    static const unsigned DATA_FILL[] = {~0U, ~0U, ~0U};
+
     mapped_name::mapped_name(const mapped_name_impl &data_) throw()
         : data(data_)
     { }
 
     mapped_name::mapped_name(void) throw() {
-        data.block_id = ~0;
-        data.length = ~0;
-        data.slot = ~0;
+        memcpy(&data, &(DATA_FILL[0]), sizeof data);
     }
 
     mapped_name::mapped_name(const mapped_name &that) throw()
@@ -32,9 +34,7 @@ namespace xy { namespace support {
     { }
 
     mapped_name::~mapped_name(void) throw() {
-        data.block_id = ~0;
-        data.length = ~0;
-        data.slot = ~0;
+        memcpy(&data, &(DATA_FILL[0]), sizeof data);
     }
 
     mapped_name &mapped_name::operator=(const mapped_name &that) throw() {
@@ -128,11 +128,11 @@ namespace xy { namespace support {
     /// map a name
     mapped_name name_map::map_name(const char *name) throw() {
         mapped_name data;
-        if(trie_retrieve(trie, name, reinterpret_cast<uint32_t *>(&data))) {
+        if(trie_retrieve(trie, name, support::unsafe_cast<uint32_t *>(&data))) {
             return mapped_name(data);
         } else {
             data = add_to_block(name);
-            trie_store(trie, name, *reinterpret_cast<uint32_t *>(&data));
+            trie_store(trie, name, *support::unsafe_cast<uint32_t *>(&data));
             return mapped_name(data);
         }
     }
