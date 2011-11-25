@@ -13,6 +13,17 @@
 extern "C" {
 #endif
 
+#include "xy/deps/libdatrie/string.h"
+
+/* hack to allow "empty" translation unit */
+static void useless2(void);
+static void useless1(void) {
+    (void) useless2;
+}
+static void useless2(void) {
+    (void) useless1;
+}
+
 #if XY_HOST_LINUX
 #   if !XY_LINUX_HAS_STRDUP
 #       include "xy/deps/openbsd/strdup.c"
