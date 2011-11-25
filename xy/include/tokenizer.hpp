@@ -48,7 +48,7 @@ namespace xy {
             HAVE_NON_ASCII_CODEPOINT,
             HAVE_PERIOD_AFTER_INT,
 
-            DONE,
+            DONE
         } state;
 
     private:

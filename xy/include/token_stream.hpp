@@ -26,7 +26,7 @@ namespace xy {
 
         enum {
             NUM_BACKUP = 2,
-            NUM_TOKENS = NUM_BACKUP + 1,
+            NUM_TOKENS = NUM_BACKUP + 1
         };
 
         diagnostic_context &ctx;

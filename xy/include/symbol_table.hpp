@@ -22,7 +22,7 @@ namespace xy {
 
         typedef enum {
             ST_VAR_NAME,
-            ST_TYPE_NAME,
+            ST_TYPE_NAME
         } entry_type;
 
         // forward declarations

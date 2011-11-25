@@ -15,7 +15,7 @@ namespace xy { namespace mpl {
     class is_const {
     public:
         typedef false_tag result;
-        enum {
+        enum : bool {
             RESULT = false
         };
     };
@@ -24,7 +24,7 @@ namespace xy { namespace mpl {
     class is_const<const T> {
     public:
         typedef true_tag result;
-        enum {
+        enum : bool {
             RESULT = true
         };
     };

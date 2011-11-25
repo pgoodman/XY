@@ -45,7 +45,7 @@ namespace xy {
         enum {
             READ_BLOCK,
             DONE_READING,
-            READ_NEXT_CODEPOINT,
+            READ_NEXT_CODEPOINT
         } state;
 
     public:

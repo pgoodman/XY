@@ -17,7 +17,7 @@ namespace xy { namespace mpl {
     class is_pointer {
     public:
         typedef false_tag result;
-        enum {
+        enum : bool {
             RESULT = false
         };
     };
@@ -26,7 +26,7 @@ namespace xy { namespace mpl {
     class is_pointer<T *> {
     public:
         typedef true_tag result;
-        enum {
+        enum : bool {
             RESULT = true
         };
     };
