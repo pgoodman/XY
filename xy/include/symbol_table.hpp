@@ -37,7 +37,7 @@ namespace xy {
 
             support::mapped_name name;
             entry_type name_type;
-            type *type;
+            type *type_;
         };
 
         // a set of entries in the symbol table.
