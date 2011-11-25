@@ -33,7 +33,7 @@ namespace xy {
         tokenizer &tt;
         support::byte_reader &f;
 
-        char scratch[NUM_TOKENS][MAX_TOKEN_LENGTH];
+        char scratch[NUM_TOKENS][token::MAX_LENGTH];
         token tokens[NUM_TOKENS];
         size_t num_seen;
         unsigned backed_up;

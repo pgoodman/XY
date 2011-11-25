@@ -25,13 +25,14 @@ namespace xy {
         int chr;
         utf8::codepoint cp;
 
-        static_assert(20U < MAX_TOKEN_LENGTH,
+        static_assert(20U < token::MAX_LENGTH,
             "The maximum length of a token must be larger than 20 bytes. This "
             "requirement is to allow a bit of overflow to occur."
         );
 
-        enum {
+        enum : unsigned {
             NAME_LENGTH = 32U,
+            MAX_TOKEN_LENGTH = token::MAX_LENGTH,
             BUFFER_LENGTH = MAX_TOKEN_LENGTH - 20U
         };
 

@@ -84,10 +84,7 @@ namespace xy {
         T_INVALID
     } token_type;
 
-    /// the maximum byte length of any given token
-    enum {
-        MAX_TOKEN_LENGTH = 4096U
-    };
+
 
     // forward declaration
     class tokenizer;
@@ -106,6 +103,11 @@ namespace xy {
         uint32_t line_;
 
     public:
+
+        /// the maximum byte length of any given token
+        enum : unsigned {
+            MAX_LENGTH = 4096U
+        };
 
         token(void) throw();
 

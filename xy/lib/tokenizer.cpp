@@ -22,7 +22,7 @@ namespace xy {
         typedef enum : char {
             SCA_ERROR,
             SCA_BARRIER,
-            SCA_OK,
+            SCA_OK
         } suffix_char_action;
 
         /// how the tokenizer should behave when it encounters a specific ASCII
@@ -321,11 +321,12 @@ namespace xy {
         }
 
         /// a names to token type mapping of reserved keywords in the language
-        static struct {
+        typedef struct {
             const char * const str;
             const size_t len;
             const token_type type;
-        } RESERVED_NAMES[]{
+        } reserved_name;
+        static reserved_name RESERVED_NAMES[]{
             /*{"take",        5U, T_TAKE},
             {"give",        5U, T_GIVE},
             {"shared",      7U, T_SHARED},
@@ -736,7 +737,7 @@ namespace xy {
                     for(; ll.get_codepoint(f, ctx, cp); ) {
 
                         if(i >= BUFFER_LENGTH) {
-                            ctx.report(io::e_string_too_long, BUFFER_LENGTH);
+                            ctx.report(io::e_string_too_long, static_cast<unsigned>(BUFFER_LENGTH));
                             ctx.report(io::c_file_line_col,
                                 ctx.file(), tok.line_, tok.col_
                             );
@@ -998,7 +999,7 @@ namespace xy {
                         if(i >= NAME_LENGTH) {
                             scratch[i] = '\0';
                             ctx.report(io::e_name_too_long,
-                                scratch, NAME_LENGTH
+                                scratch, static_cast<unsigned>(NAME_LENGTH)
                             );
                             ctx.report(io::c_file_line_col,
                                 ctx.file(), tok.line_, tok.col_
