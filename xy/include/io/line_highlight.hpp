@@ -77,9 +77,10 @@ namespace xy { namespace io {
             enum : unsigned {
                 MAX_LINE_NUM_BYTES = LINE_NUM_CPS * 4U,
                 MAX_NUM_BYTES = LINE_NUM_CPS * 4U + 1U,
-                MARGIN = (LINE_NUM_CPS / 2) - 2,
-                MAX_BYTES_PER_MARGIN = MARGIN * 4,
-                TAB_SIZE = 4U
+                MARGIN = (LINE_NUM_CPS / 2U) - 2U,
+                MAX_BYTES_PER_MARGIN = MARGIN * 4U,
+                TAB_SIZE = 4U,
+                BLOCK_SIZE = line_highlight_strategy::BLOCK_SIZE
             };
 
             highlight_column(const char *file_name_, uint32_t line_, uint32_t col_) throw();
