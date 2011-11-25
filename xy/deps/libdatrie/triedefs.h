@@ -58,7 +58,7 @@ typedef char  TrieChar;
  * @brief Trie terminator character
  */
 #define TRIE_CHAR_TERM    '\0'
-#define TRIE_CHAR_MAX     255
+#define TRIE_CHAR_MAX     ((TrieChar) 0xFF)
 
 /**
  * @brief Type of Trie index
