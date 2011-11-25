@@ -16,6 +16,13 @@
 #include <tr1/type_traits>
 #include <cstdio>
 #include <cstring>
+
+// forward declaration for clang on linux where type_info is missing for
+// exceptions
+namespace std {
+    class type_info;
+}
+
 #include <iterator>
 
 #include "xy/include/cstring.hpp"

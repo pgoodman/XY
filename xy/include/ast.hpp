@@ -27,7 +27,7 @@ namespace xy {
 
     typedef size_t ast_type;
 
-    namespace {
+    namespace support {
 
         template <typename T, typename O=void>
         struct ast_impl;
@@ -109,7 +109,7 @@ namespace xy {
         }
     }
 
-    struct ast : public ast_impl<ast> {
+    struct ast : public support::ast_impl<ast> {
     public:
 
         virtual ~ast(void) throw() { }
@@ -133,78 +133,78 @@ namespace xy {
     struct statement;
     struct type_decl;
 
-    struct expression : public ast_impl<expression, ast> {
+    struct expression : public support::ast_impl<expression, ast> {
     public:
         type *type_;
 
         virtual ~expression(void) throw() { }
     };
 
-        struct function_call_expr : public ast_impl<function_call_expr, expression> {
+        struct function_call_expr : public support::ast_impl<function_call_expr, expression> {
         public:
             expression *function;
             std::vector<expression *> parameters;
 
             virtual ~function_call_expr(void) throw() {
-                delete_ast(function);
-                delete_ast_vector(parameters);
+                support::delete_ast(function);
+                support::delete_ast_vector(parameters);
             }
         };
 
-        struct type_instance_expr : public ast_impl<type_instance_expr, expression> {
+        struct type_instance_expr : public support::ast_impl<type_instance_expr, expression> {
         public:
             type_decl *type_decl;
             std::vector<expression *> values;
 
             virtual ~type_instance_expr(void) throw() {
-                delete_ast(type_decl);
-                delete_ast_vector(values);
+                support::delete_ast(type_decl);
+                support::delete_ast_vector(values);
             }
         };
 
-        struct array_access_expr : public ast_impl<array_access_expr, expression> {
+        struct array_access_expr : public support::ast_impl<array_access_expr, expression> {
         public:
             expression *array;
             expression *index;
 
             virtual ~array_access_expr(void) throw() {
-                delete_ast(array);
-                delete_ast(index);
+                support::delete_ast(array);
+                support::delete_ast(index);
             }
         };
 
-        struct infix_expr : public ast_impl<infix_expr, expression> {
+        struct infix_expr : public support::ast_impl<infix_expr, expression> {
         public:
             expression *left;
             expression *right;
             token_type op;
 
             virtual ~infix_expr(void) throw() {
-                delete_ast(left);
-                delete_ast(right);
+                support::delete_ast(left);
+                support::delete_ast(right);
             }
         };
 
-        struct prefix_expr : public ast_impl<prefix_expr, expression> {
+        struct prefix_expr : public support::ast_impl<prefix_expr, expression> {
         public:
             expression *right;
             token_type op;
 
             virtual ~prefix_expr(void) throw() {
-                delete_ast(right);
+                support::delete_ast(right);
             }
         };
 
-        struct array_expr : public ast_impl<array_expr, expression> {
+        struct array_expr : public support::ast_impl<array_expr, expression> {
         public:
             std::vector<expression *> elements;
 
             virtual ~array_expr(void) throw() {
-                delete_ast_vector(elements);
+                support::delete_ast_vector(elements);
             }
         };
 
-        struct literal_expr : public ast_impl<literal_expr, expression> {
+        struct literal_expr : public support::ast_impl<literal_expr, expression> {
         public:
             const char *data;
 
@@ -214,104 +214,104 @@ namespace xy {
             }
         };
 
-            struct integer_literal_expr : public ast_impl<integer_literal_expr, literal_expr> {
+            struct integer_literal_expr : public support::ast_impl<integer_literal_expr, literal_expr> {
             public:
                 virtual ~integer_literal_expr(void) throw() { }
             };
 
-            struct rational_literal_expr : public ast_impl<rational_literal_expr, literal_expr> {
+            struct rational_literal_expr : public support::ast_impl<rational_literal_expr, literal_expr> {
             public:
                 virtual ~rational_literal_expr(void) throw() { }
             };
 
-            struct string_literal_expr : public ast_impl<string_literal_expr, literal_expr> {
+            struct string_literal_expr : public support::ast_impl<string_literal_expr, literal_expr> {
             public:
                 virtual ~string_literal_expr(void) throw() { }
             };
 
-    struct statement_list : public ast_impl<statement_list, ast> {
+    struct statement_list : public support::ast_impl<statement_list, ast> {
     public:
         std::vector<statement *> statements;
 
         virtual ~statement_list(void) throw() {
-            delete_ast_vector(statements);
+            support::delete_ast_vector(statements);
         }
     };
 
-    struct statement : public ast_impl<statement, ast> {
+    struct statement : public support::ast_impl<statement, ast> {
     public:
         virtual ~statement(void) throw() { }
     };
 
-        struct type_def : public ast_impl<type_def, statement> {
+        struct type_def : public support::ast_impl<type_def, statement> {
         public:
             support::mapped_name name;
             type_decl *declaration;
             type_decl *func;
 
             virtual ~type_def(void) throw() {
-                delete_ast(declaration);
-                delete_ast(func);
+                support::delete_ast(declaration);
+                support::delete_ast(func);
             }
         };
 
-        struct var_def : public ast_impl<var_def, statement> {
+        struct var_def : public support::ast_impl<var_def, statement> {
         public:
             support::mapped_name name;
             expression *value;
 
             virtual ~var_def(void) throw() {
-                delete_ast(value);
+                support::delete_ast(value);
             }
         };
 
-        struct return_stmt : public ast_impl<return_stmt, statement> {
+        struct return_stmt : public support::ast_impl<return_stmt, statement> {
             expression *value;
 
             virtual ~return_stmt(void) throw() {
-                delete_ast(value);
+                support::delete_ast(value);
             }
         };
 
-    struct type_decl : public ast_impl<type_decl, ast> {
+    struct type_decl : public support::ast_impl<type_decl, ast> {
         virtual ~type_decl(void) throw() { }
     };
 
-        struct named_type_decl : public ast_impl<named_type_decl, type_decl> {
+        struct named_type_decl : public support::ast_impl<named_type_decl, type_decl> {
         public:
             support::mapped_name name;
 
             virtual ~named_type_decl(void) throw() { }
         };
 
-        struct array_type_decl : public ast_impl<array_type_decl, type_decl> {
+        struct array_type_decl : public support::ast_impl<array_type_decl, type_decl> {
         public:
             type_decl *inner_type;
 
             virtual ~array_type_decl(void) throw() {
-                delete_ast(inner_type);
+                support::delete_ast(inner_type);
             }
         };
 
-        struct reference_type_decl : public ast_impl<reference_type_decl, type_decl> {
+        struct reference_type_decl : public support::ast_impl<reference_type_decl, type_decl> {
         public:
             type_decl *inner_type;
 
             virtual ~reference_type_decl(void) throw() {
-                delete_ast(inner_type);
+                support::delete_ast(inner_type);
             }
         };
 
-        struct binary_type_decl : public ast_impl<binary_type_decl, type_decl> {
+        struct binary_type_decl : public support::ast_impl<binary_type_decl, type_decl> {
         public:
             std::vector<type_decl *> types;
 
             virtual ~binary_type_decl(void) throw() {
-                delete_ast_vector(types);
+                support::delete_ast_vector(types);
             }
         };
 
-            struct sum_type_decl : public ast_impl<sum_type_decl, binary_type_decl> {
+            struct sum_type_decl : public support::ast_impl<sum_type_decl, binary_type_decl> {
             public:
                 std::vector<support::mapped_name> params;
                 std::vector<support::mapped_name> fields;
@@ -319,17 +319,17 @@ namespace xy {
                 virtual ~sum_type_decl(void) throw() { }
             };
 
-            struct product_type_decl : public ast_impl<product_type_decl, binary_type_decl> {
+            struct product_type_decl : public support::ast_impl<product_type_decl, binary_type_decl> {
             public:
                 std::vector<support::mapped_name> params;
                 std::vector<support::mapped_name> fields;
 
                 virtual ~product_type_decl(void) throw() {
-                    delete_ast_vector(types);
+                    support::delete_ast_vector(types);
                 }
             };
 
-            struct arrow_type_decl : public ast_impl<arrow_type_decl, binary_type_decl> {
+            struct arrow_type_decl : public support::ast_impl<arrow_type_decl, binary_type_decl> {
             public:
                 virtual ~arrow_type_decl(void) throw() { }
             };
