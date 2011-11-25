@@ -53,7 +53,7 @@ typedef char         AlphaChar;
 /**
  * @brief Trie character type for key
  */
-typedef unsigned char  TrieChar;
+typedef char  TrieChar;
 /**
  * @brief Trie terminator character
  */
