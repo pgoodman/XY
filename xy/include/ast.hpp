@@ -98,9 +98,11 @@ namespace xy {
 
         template <typename T>
         void delete_ast_vector(std::vector<T *> &vec) throw() {
-            for(T *type : vec) {
-                if(nullptr != type) {
-                    delete type;
+            //for(T *type : vec) {
+            for(size_t i(0); i < vec.size(); ++i) {
+                if(nullptr != vec[i]) {
+                    delete vec[i];
+                    vec[i] = nullptr;
                 }
             }
             vec.clear();
