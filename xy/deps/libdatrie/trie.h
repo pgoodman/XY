@@ -27,12 +27,12 @@
 #ifndef __TRIE_H
 #define __TRIE_H
 
+#include "xy/deps/libdatrie/triedefs.h"
+#include "xy/deps/libdatrie/alpha-map.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "xy/deps/libdatrie/triedefs.h"
-#include "xy/deps/libdatrie/alpha-map.h"
 
 /**
  * @file trie.h

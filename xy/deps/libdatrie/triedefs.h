@@ -31,9 +31,9 @@
 extern "C" {
 #endif
 
-#include <string.h>
-
+#include "xy/deps/libdatrie/string.h"
 #include "xy/deps/libdatrie/typedefs.h"
+
 
 /**
  * @file triedefs.h

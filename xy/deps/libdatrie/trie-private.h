@@ -27,11 +27,11 @@
 #ifndef __TRIE_PRIVATE_H
 #define __TRIE_PRIVATE_H
 
+#include "xy/deps/libdatrie/typedefs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "xy/deps/libdatrie/typedefs.h"
 
 /**
  * @file trie-private.h

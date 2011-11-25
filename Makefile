@@ -76,6 +76,7 @@ OBJS += bin/lib/token.o
 OBJS += bin/lib/tokenizer.o
 OBJS += bin/lib/token_stream.o
 
+OBJS += bin/deps/libdatrie/string.o
 OBJS += bin/deps/libdatrie/alpha-map.o
 OBJS += bin/deps/libdatrie/darray.o
 OBJS += bin/deps/libdatrie/tail.o

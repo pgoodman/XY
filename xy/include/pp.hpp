@@ -15,5 +15,10 @@
 #   define XY_HOST_LINUX 0
 #endif
 
+#if _SVID_SOURCE || _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || /* Since glibc 2.12: */ _POSIX_C_SOURCE >= 200809L
+#   define XY_LINUX_HAS_STRDUP 1
+#else
+#   define XY_LINUX_HAS_STRDUP 0
+#endif
 
 #endif /* XY_PP_HPP_ */

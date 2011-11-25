@@ -27,11 +27,11 @@
 #ifndef __TAIL_H
 #define __TAIL_H
 
+#include "xy/deps/libdatrie/triedefs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "xy/deps/libdatrie/triedefs.h"
 
 /**
  * @file tail.h
