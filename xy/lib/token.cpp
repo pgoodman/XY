@@ -62,7 +62,7 @@ namespace xy {
     }
 
     const char *token::name(token_type type) throw() {
-        static const char * const names[]{
+        static const char * const names[] = {
             /*"T_BEGIN",                    // begin
             "T_END",                      // end
             //"T_NOT",                      // not

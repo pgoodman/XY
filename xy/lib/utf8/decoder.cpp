@@ -57,7 +57,7 @@ namespace {
         SINK_STATE = 12
     };
 
-    static uint8_t REPLACEMENT_CHARACTER[]{0xFF,0xFD,0,0,0};
+    static uint8_t REPLACEMENT_CHARACTER[] = {0xFF,0xFD,0,0,0};
 }
 
 namespace xy { namespace utf8 {

@@ -17,7 +17,7 @@
 
 namespace xy { namespace io { namespace detail {
 
-    static char NULL_STRING[]{'\0'};
+    static char NULL_STRING[] = {'\0'};
 
     /// initialize the line highlighting strategy
     line_highlight_strategy::line_highlight_strategy(const char *file_name_, uint32_t line_) throw()

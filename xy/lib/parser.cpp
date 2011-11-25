@@ -24,7 +24,7 @@ namespace xy {
         return back;
     }
 
-    const parser::precedence_parser parser::expression_parsers[]{
+    const parser::precedence_parser parser::expression_parsers[] = {
 
         {10,    T_NAME,             &parser::parse_literal,         &parser::parse_fail_s},
         {10,    T_TYPE_NAME,        &parser::parse_type_name,       &parser::parse_fail_s},
@@ -62,7 +62,7 @@ namespace xy {
         {255,   T_INVALID,          &parser::parse_fail_p,          &parser::parse_fail_s},
     };
 
-    const parser::precedence_parser parser::type_parsers[]{
+    const parser::precedence_parser parser::type_parsers[] = {
         //{10,    T_FUNCTION,         &parser::parse_type_function,   &parser::parse_fail_s},
         {100,   T_OPEN_PAREN,       &parser::parse_type_group,      &parser::parse_type_params},
         {80,    T_ASTERISK,         &parser::parse_fail_p,          &parser::parse_infix_type_operator<arrow_type_decl>},
@@ -103,7 +103,7 @@ namespace xy {
 #define DEDENT \
     indent[indent_index--] = '\0';
 
-        static char indent[]{'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+        static char indent[] = {'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
         static int indent_index(-1);
 
         INDENT

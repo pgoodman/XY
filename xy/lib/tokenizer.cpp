@@ -30,7 +30,7 @@ namespace xy {
         /// signals the end of the name, an OK signals that the character should
         /// be appended to the name, and an ERROR represents an unexpected
         /// character.
-        static const suffix_char_action NAME_CHAR[]{
+        static const suffix_char_action NAME_CHAR[] = {
             SCA_BARRIER, //  0    ^@    .
             SCA_ERROR, //  1    ^A    .
             SCA_ERROR, //  2    ^B    .
@@ -162,7 +162,7 @@ namespace xy {
         };
 
         /// tokens that can be matched by a single ASCII character
-        static const token_type SINGLE_CHAR_TOKENS[]{
+        static const token_type SINGLE_CHAR_TOKENS[] = {
             T_INVALID, //  0     ^@
             T_INVALID, //  1     ^A
             T_INVALID, //  2     ^B
@@ -326,7 +326,7 @@ namespace xy {
             const size_t len;
             const token_type type;
         } reserved_name;
-        static reserved_name RESERVED_NAMES[]{
+        static reserved_name RESERVED_NAMES[] = {
             /*{"take",        5U, T_TAKE},
             {"give",        5U, T_GIVE},
             {"shared",      7U, T_SHARED},
