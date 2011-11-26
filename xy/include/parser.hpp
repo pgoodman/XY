@@ -137,11 +137,12 @@ namespace xy {
         type_decl *right(pop(stack)->reinterpret<type_decl>());
         type_operator *op_decl(left->reinterpret<type_operator>());
 
-        if(nullptr != op_decl) {
-            op_decl->types.push_back(right);
-        } else {
-            op_decl = new type_operator{{left, right}};
+        if(nullptr == op_decl) {
+            op_decl = new type_operator;
+            op_decl->types.push_back(left);
         }
+
+        op_decl->types.push_back(right);
 
         stack.push_back(op_decl);
         return true;

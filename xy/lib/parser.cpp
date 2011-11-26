@@ -205,7 +205,7 @@ namespace xy {
             return false;
         }
 
-        stack.push_back(new function_call_expr{function, {}});
+        stack.push_back(new function_call_expr(function));
         return false;
     }
 
@@ -223,7 +223,7 @@ namespace xy {
         }
 
         bool consume_comma(false);
-        type_instance_expr *inst(new type_instance_expr{nullptr, pop(stack)->reinterpret<type_decl>(), {}});
+        type_instance_expr *inst(new type_instance_expr(pop(stack)->reinterpret<type_decl>()));
         token expr_begin;
         ast *val(nullptr);
 
@@ -276,7 +276,7 @@ namespace xy {
             return report_simple(io::e_array_access_on_non_expr, tok);
         }
 
-        stack.push_back(new array_access_expr{nullptr, left, right});
+        stack.push_back(new array_access_expr(left, right));
 
         return true;
     }
@@ -316,7 +316,7 @@ namespace xy {
         expression *right(pop(stack)->reinterpret<expression>());
         expression *left(pop(stack)->reinterpret<expression>());
 
-        stack.push_back(new infix_expr{nullptr, left, right, tok.type()});
+        stack.push_back(new infix_expr(left, right, tok.type()));
 
         return true;
     }
@@ -334,7 +334,7 @@ namespace xy {
         // empty array
         if(stream.check(T_CLOSE_BRACKET)) {
             stream.accept();
-            stack.push_back(new array_expr{{}});
+            stack.push_back(new array_expr);
             return true;
         }
 
@@ -345,11 +345,13 @@ namespace xy {
         ast *first(pop(stack));
 
         if(first->is_instance<type_decl>()) {
-            stack.push_back(new array_type_decl{first->reinterpret<type_decl>()});
+            stack.push_back(new array_type_decl(first->reinterpret<type_decl>()));
             return consume(T_CLOSE_BRACKET);
 
         } else if(first->is_instance<expression>()) {
-            array_expr *arr(new array_expr{nullptr, {first->reinterpret<expression>()}});
+            array_expr *arr(new array_expr);
+            arr->elements.push_back(first->reinterpret<expression>());
+
             token expr_head;
             for(; !stream.check(T_CLOSE_BRACKET);) {
                 if(!consume(T_COMMA)) {
@@ -394,13 +396,13 @@ namespace xy {
     bool parser::parse_literal(const token &tok, const char *data) throw() {
         switch(tok.type()) {
         case T_INTEGER_LITERAL:
-            stack.push_back(new integer_literal_expr{nullptr, cstring::copy(data)});
+            stack.push_back(new integer_literal_expr(cstring::copy(data)));
             return true;
         case T_STRING_LITERAL:
-            stack.push_back(new string_literal_expr{nullptr, cstring::copy(data)});
+            stack.push_back(new string_literal_expr(cstring::copy(data)));
             return true;
         case T_RATIONAL_LITERAL:
-            stack.push_back(new rational_literal_expr{nullptr, cstring::copy(data)});
+            stack.push_back(new rational_literal_expr(cstring::copy(data)));
             return true;
         default:
             return false;
@@ -408,7 +410,7 @@ namespace xy {
     }
 
     bool parser::parse_type_name(const token &, const char *name) throw() {
-        stack.push_back(new named_type_decl{stab[name]});
+        stack.push_back(new named_type_decl(stab[name]));
         return true;
     }
     bool parser::parse_union(const token &, const char *) throw() {

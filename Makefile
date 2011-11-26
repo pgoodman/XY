@@ -16,7 +16,7 @@ CXX = ${DEFAULT_CXX}
 CC = ${DEFAULT_CC}
 
 CXX_FEATURES = -fno-rtti -fno-exceptions -fstrict-aliasing
-CXX_WARN_FLAGS = -Wall -Werror -Wno-unused-function 
+CXX_WARN_FLAGS = -Wall -Werror -Wno-unused-function -Wno-variadic-macros 
 CXX_WARN_FLAGS += -Wcast-qual -Wno-format-security
 CXX_FLAGS = -O0 -g -ansi -I${ROOT_DIR} -std=c++0x
 LD_FLAGS =
