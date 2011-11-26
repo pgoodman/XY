@@ -38,7 +38,7 @@ namespace xy {
         }
 
         template <typename ...arg_types>
-        void report_here(token &here, io::message_id id, arg_types... args) throw() {
+        void report_here(const token &here, io::message_id id, arg_types... args) throw() {
             io::message_queue *queue(branches[active_branch.back()]);
             queue->push(id, args...);
             queue->push(io::c_file_line_col, file(), here.line(), here.column());

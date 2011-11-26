@@ -367,6 +367,19 @@ namespace xy {
         virtual ~type_decl(void) throw() { }
     };
 
+        struct template_instance_type_decl : public support::ast_impl<template_instance_type_decl, type_decl> {
+
+            type_decl *template_type;
+            std::vector<ast *> params;
+
+            XY_AST_CONSTRUCTOR(template_instance_type_decl, template_type)
+
+            virtual ~template_instance_type_decl(void) throw() {
+                support::delete_ast(template_type);
+                support::delete_ast_vector(params);
+            }
+        };
+
         struct named_type_decl : public support::ast_impl<named_type_decl, type_decl> {
         public:
             support::mapped_name name;

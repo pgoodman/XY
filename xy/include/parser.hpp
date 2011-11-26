@@ -106,6 +106,7 @@ namespace xy {
         bool parse_let(void) throw();
 
         parser(diagnostic_context &ctx_, token_stream &stream_) throw();
+        ~parser(void) throw();
 
         static void parse_open_file(io::file<xy::io::read_tag> &ff, diagnostic_context &, bool &) throw();
 

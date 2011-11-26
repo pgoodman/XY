@@ -7,6 +7,10 @@ The syntax of XY is a mix between JavaScript, C, C++, Haskell, and Python.
 
 Types in XY are structurally defined. I intend to have both inductive and co-inductive data types. The XY compiler will check the well-typedness of programs statically (i.e. at compile time).
 
+Requirements
+------------
+A relatively recent version of the GCC or Clang. The compiler is implemented using some features of C99 and C++11, e.g. variadic templates and macros, tuples, automatic calling of base class default constructors, etc.
+
 Downloading the Coding
 ----------------------
 
@@ -30,4 +34,4 @@ Compiling with LLVM Toolchain
 Reporting Bugs / Compiler Errors
 --------------------------------
 
-Either post them here or email them to i@petergoodman.me. Thank you!
+I usually compile the XY compiler on my computer and on a Linux box. This leaves much to be desired in terms of portability. If you run into a compiler error a runtime error, then please post them here or email them to i@petergoodman.me. Thank you!

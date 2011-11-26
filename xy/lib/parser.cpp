@@ -191,22 +191,28 @@ namespace xy {
     }
 
     /// parse a function call or template instantiation
-    bool parser::parse_application(uint8_t, const token &, const char *) throw() {
+    bool parser::parse_application(uint8_t, const token &paren, const char *) throw() {
         ast *node(pop(stack));
 
-        if(nullptr == node) {
+        // function call
+        if(node->is_instance<expression>()) {
+            expression *function(node->reinterpret<expression>());
+            stack.push_back(new function_call_expr(function));
+
+        // template instantiation
+        } else if(node->is_instance<type_decl>()) {
+            type_decl *decl(node->reinterpret<type_decl>());
+            stack.push_back(new template_instance_type_decl(decl));
+
+        // wtf?
+        } else {
+            ctx.report_here(paren, io::e_type_decl_or_func_expr_expected);
+            delete node;
+            node = nullptr;
             return false;
         }
 
-        expression *function(node->reinterpret<expression>());
-
-        if(nullptr == function) {
-            // TODO error?
-            return false;
-        }
-
-        stack.push_back(new function_call_expr(function));
-        return false;
+        return true;
     }
 
     /// parse the { ...} parse of a type instantiation, e.g. Int{1}, or Array(Int, 3){1,2,3}.
@@ -242,6 +248,7 @@ namespace xy {
             stream.undo();
 
             if(!parse(expression_parsers, 0)) {
+                delete inst;
                 return false;
             }
 
@@ -249,6 +256,8 @@ namespace xy {
 
             // we didn't get an expression
             if(!val->is_instance<expression>()) {
+                delete val;
+                delete inst;
                 return report_simple(io::e_not_an_expression_for_type_instance, expr_begin);
             }
 
@@ -260,38 +269,37 @@ namespace xy {
     }
 
     bool parser::parse_array_access(uint8_t, const token &tok, const char *) throw() {
-        expression *left(pop(stack)->reinterpret<expression>());
+        ast *left_(pop(stack));
+        ast *right_(nullptr);
 
-        if(nullptr == left) {
+        if(!left_->is_instance<expression>()) {
+            delete left_;
             return report_simple(io::e_array_access_on_non_expr, tok);
         }
 
+        expression *left(left_->reinterpret<expression>());
+
         if(!parse(expression_parsers, 0) || !consume(T_CLOSE_BRACKET)) {
+            delete left;
             return false;
         }
 
-        expression *right(pop(stack)->reinterpret<expression>());
+        right_ = pop(stack);
 
-        if(nullptr == right) {
+        if(!right_->is_instance<expression>()) {
+            delete left_;
+            delete right_;
             return report_simple(io::e_array_access_on_non_expr, tok);
         }
 
-        stack.push_back(new array_access_expr(left, right));
-
+        stack.push_back(new array_access_expr(left, right_->reinterpret<expression>()));
         return true;
     }
 
     bool parser::parse_infix(uint8_t prec, const token &tok, const char *data) throw() {
 
-        printf("in the infix parser!\n");
-        printf("expr id is %lu\n", expression::static_id());
-        printf("int literal id is %lu\n", integer_literal_expr::static_id());
-        printf("type decl id is %lu\n", type_decl::static_id());
-        printf("id is: %lu\n", stack.back()->type_id());
-
         // looks like we're parsing an inline type declaration
         if(stack.back()->is_instance<type_decl>()) {
-            printf("parsing a type decl\n");
             switch(tok.type()) {
             case T_ARROW: return parse_infix_type_operator<arrow_type_decl>(prec, tok, data);
             case T_PLUS: return parse_infix_type_operator<sum_type_decl>(prec, tok, data);
@@ -307,8 +315,6 @@ namespace xy {
         }
 
         // parse the right thing
-        printf("parse_infix: parsing right param\n");
-
         if(!parse(expression_parsers, prec)) {
             return false;
         }
@@ -317,7 +323,6 @@ namespace xy {
         expression *left(pop(stack)->reinterpret<expression>());
 
         stack.push_back(new infix_expr(left, right, tok.type()));
-
         return true;
     }
 
@@ -355,6 +360,7 @@ namespace xy {
             token expr_head;
             for(; !stream.check(T_CLOSE_BRACKET);) {
                 if(!consume(T_COMMA)) {
+                    delete arr;
                     return false;
                 }
 
@@ -366,6 +372,7 @@ namespace xy {
                 stream.undo();
 
                 if(!parse(expression_parsers, 0)) {
+                    delete arr;
                     return false;
                 }
 
@@ -377,6 +384,8 @@ namespace xy {
 
                 // found a non-expression array element
                 } else {
+                    delete first;
+                    delete arr;
                     return report_simple(io::e_array_element_must_be_expr, expr_head);
                 }
             }
@@ -569,6 +578,7 @@ namespace xy {
             }
 
             if(last_seen < names.size()) {
+
                 ctx.report_here(names[last_seen].first, io::e_missing_type_decl_in_let, stab[names[last_seen].second]);
                 return false;
             }
@@ -601,6 +611,14 @@ namespace xy {
         , stream(stream_)
         , stack()
     { }
+
+    parser::~parser(void) throw() {
+        while(!stack.empty()) {
+            delete stack.back();
+            stack.back() = nullptr;
+            stack.pop_back();
+        }
+    }
 
     /// parse a stream of tokens
     bool parser::parse(diagnostic_context &ctx, token_stream &stream) throw() {
@@ -658,11 +676,7 @@ namespace xy {
     /// -----------------------------------------------------------------------
 
     bool parser::report_simple(io::message_id id, const token &got) throw() {
-        ctx.report(id, got.name());
-        ctx.report(io::c_file_line_col, ctx.file(), got.line(), got.column());
-        ctx.report(io::c_highlight, io::highlight_line(
-            ctx.file(), got.line(), got.column(), got.end_column()
-        ));
+        ctx.report_here(got, id, got.name());
         return false;
     }
 
@@ -671,14 +685,9 @@ namespace xy {
     bool parser::report_unexpected_follow_symbol(
         const token &first, const token &got, token_type expected
     ) throw() {
-
-        ctx.report(io::e_unexpected_follow_symbol,
+        ctx.report_here(got, io::e_unexpected_follow_symbol,
             got.name(), token::name(expected), first.name()
         );
-        ctx.report(io::c_file_line_col, ctx.file(), got.line(), got.column());
-        ctx.report(io::c_highlight, io::highlight_line(
-            ctx.file(), got.line(), got.column(), got.end_column()
-        ));
         return false;
     }
 
@@ -687,14 +696,9 @@ namespace xy {
     bool parser::report_unexpected_follow_symbol_2(
         const token &first, const token &got, token_type expected1, token_type expected2
     ) throw() {
-
-        ctx.report(io::e_unexpected_follow_symbol_2,
+        ctx.report_here(got, io::e_unexpected_follow_symbol_2,
             got.name(), token::name(expected1), token::name(expected2), first.name()
         );
-        ctx.report(io::c_file_line_col, ctx.file(), got.line(), got.column());
-        ctx.report(io::c_highlight, io::highlight_line(
-            ctx.file(), got.line(), got.column(), got.end_column()
-        ));
         return false;
     }
 
