@@ -263,6 +263,8 @@ namespace xy {
             inst->values.push_back(val->reinterpret<expression>());
         }
 
+        stack.push_back(inst);
+
         return consume(T_CLOSE_BRACE);
     }
 
