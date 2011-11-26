@@ -192,6 +192,16 @@ namespace xy {
         virtual ~expression(void) throw() { }
     };
 
+        struct name_expr : public support::ast_impl<name_expr, expression> {
+        public:
+
+            support::mapped_name name;
+
+            XY_AST_CONSTRUCTOR(name_expr, name)
+
+            virtual ~name_expr(void) throw() { }
+        };
+
         struct function_call_expr : public support::ast_impl<function_call_expr, expression> {
         public:
             expression *function;
@@ -370,13 +380,13 @@ namespace xy {
         struct template_instance_type_decl : public support::ast_impl<template_instance_type_decl, type_decl> {
 
             type_decl *template_type;
-            std::vector<ast *> params;
+            std::vector<ast *> parameters;
 
             XY_AST_CONSTRUCTOR(template_instance_type_decl, template_type)
 
             virtual ~template_instance_type_decl(void) throw() {
                 support::delete_ast(template_type);
-                support::delete_ast_vector(params);
+                support::delete_ast_vector(parameters);
             }
         };
 

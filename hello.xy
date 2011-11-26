@@ -6,4 +6,8 @@ let fizz, buzz := 10, Int{11,}
 let fizz := (Int -> Int) {10}
 let arr1, arr2, arr3 := [Int]{10, 20}, [10 + 20, 20 + [30,][0]], [10,20,]
 
-let Int := Int -> Int * Int + bool
+let a, b := function_call(1, 2, 2+3), function_call()
+
+let T1, T2 := Type_template(1, Int), Type(Inst)
+
+let Int := Int -> Int * Int + Bar( -* needs args *- )

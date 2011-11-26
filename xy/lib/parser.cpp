@@ -64,7 +64,7 @@ namespace xy {
 
     const parser::precedence_parser parser::type_parsers[] = {
         //{10,    T_FUNCTION,         &parser::parse_type_function,   &parser::parse_fail_s},
-        {100,   T_OPEN_PAREN,       &parser::parse_type_group,      &parser::parse_type_params},
+        {100,   T_OPEN_PAREN,       &parser::parse_type_group,      &parser::parse_application},
         {80,    T_ASTERISK,         &parser::parse_fail_p,          &parser::parse_infix_type_operator<arrow_type_decl>},
         {75,    T_ARROW,            &parser::parse_fail_p,          &parser::parse_infix_type_operator<product_type_decl>},
         {70,    T_PLUS,             &parser::parse_fail_p,          &parser::parse_infix_type_operator<sum_type_decl>},
@@ -196,13 +196,36 @@ namespace xy {
 
         // function call
         if(node->is_instance<expression>()) {
+
+            printf("looks like a function application!\n");
+
             expression *function(node->reinterpret<expression>());
-            stack.push_back(new function_call_expr(function));
+            function_call_expr *funcall(new function_call_expr(function));
+
+            if(!parse_params<function_call_expr, expression>(funcall, io::e_func_arg_not_expr)) {
+                delete funcall;
+                return false;
+            }
+
+            stack.push_back(funcall);
 
         // template instantiation
         } else if(node->is_instance<type_decl>()) {
             type_decl *decl(node->reinterpret<type_decl>());
-            stack.push_back(new template_instance_type_decl(decl));
+            template_instance_type_decl *tplinst(new template_instance_type_decl(decl));
+
+            if(!parse_params<template_instance_type_decl, ast>(tplinst, io::e_tpl_arg_not_ast)) {
+                delete tplinst;
+                return false;
+            }
+
+            if(tplinst->parameters.empty()) {
+                ctx.report_here(paren, io::e_tpl_must_have_args);
+                delete tplinst;
+                return false;
+            }
+
+            stack.push_back(tplinst);
 
         // wtf?
         } else {
@@ -413,6 +436,9 @@ namespace xy {
         case T_RATIONAL_LITERAL:
             stack.push_back(new rational_literal_expr(cstring::copy(data)));
             return true;
+        case T_NAME:
+            stack.push_back(new name_expr(stab[data]));
+            return true;
         default:
             return false;
         }
@@ -432,9 +458,6 @@ namespace xy {
         return true;
     }
     bool parser::parse_type_group(const token &, const char *) throw() {
-        return true;
-    }
-    bool parser::parse_type_params(uint8_t, const token &, const char *) throw() {
         return true;
     }
 

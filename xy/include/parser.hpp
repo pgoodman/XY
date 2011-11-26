@@ -90,7 +90,9 @@ namespace xy {
         bool parse_record(const token &, const char *) throw();
         bool parse_type_function(const token &, const char *) throw();
         bool parse_type_group(const token &, const char *) throw();
-        bool parse_type_params(uint8_t, const token &, const char *) throw();
+
+        template <typename node_type, typename param_type>
+        bool parse_params(node_type *node, io::message_id bad_param_error) throw();
 
         template <typename>
         bool parse_infix_type_operator(uint8_t, const token &, const char *) throw();
@@ -117,6 +119,41 @@ namespace xy {
         static bool parse_buffer(diagnostic_context &ctx, const char * const buffer) throw();
     };
 
+    template <typename node_type, typename param_type>
+    bool parser::parse_params(node_type *node, io::message_id bad_param_error) throw() {
+        bool consume_comma(false);
+        token expr_begin;
+        ast *val(nullptr);
+
+        for(; !stream.check(T_CLOSE_PAREN); consume_comma = true) {
+
+            if(consume_comma && !consume(T_COMMA)) {
+                return false;
+            }
+
+            // just so that we know the position of where the expression was
+            // meant to begin
+            stream.accept(expr_begin);
+            stream.undo();
+
+            if(!parse(expression_parsers, 0)) {
+                return false;
+            }
+
+            val = pop(stack);
+
+            if(!val->is_instance<param_type>()) {
+                delete val;
+                ctx.report_here(expr_begin, bad_param_error);
+                return false;
+            }
+
+            node->parameters.push_back(val->reinterpret<param_type>());
+        }
+
+        return consume(T_CLOSE_PAREN);
+    }
+
     template <typename type_operator>
     bool parser::parse_infix_type_operator(uint8_t prec, const token &op, const char *) throw() {
 
@@ -137,7 +174,11 @@ namespace xy {
         // parse the right-hand operand
         if(!parse(type_parsers, prec)) {
             delete left;
-            ctx.report_here(decl_tail, io::e_bad_suffix_type_decl, decl_tail.name());
+            if(T_TYPE_NAME == decl_tail.type()) {
+                ctx.report_here(decl_tail, io::e_incomplete_tpl_inst);
+            } else {
+                ctx.report_here(decl_tail, io::e_bad_suffix_type_decl, decl_tail.name());
+            }
             return false;
         }
 
