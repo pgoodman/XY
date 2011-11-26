@@ -55,9 +55,7 @@
 /// make a constructor that forwords all of its arguments to a base class
 /// constructor
 #define XY_AST_FORWARD_CONSTRUCTOR(class_name, parent_class, ...) \
-    class_name (XY_CAT(XY_AST_CONST_ARG_UNROLL_, XY_NARG(__VA_ARGS__))(XY_AST_PARENT_CONST_ARG, parent_class, __VA_ARGS__)) throw() \
-        : ast_impl<class_name,parent_class>() \
-    { \
+    class_name (XY_CAT(XY_AST_CONST_ARG_UNROLL_, XY_NARG(__VA_ARGS__))(XY_AST_PARENT_CONST_ARG, parent_class, __VA_ARGS__)) throw() { \
         XY_CAT(XY_AST_CONST_ARG_UNROLL_, XY_NARG(__VA_ARGS__))(XY_AST_PARENT_CONST_ARG_INIT, parent_class, __VA_ARGS__) ; \
     }
 

@@ -524,7 +524,8 @@ namespace xy {
             }
 
             // for each variable name
-            for(auto &name_pair : names) {
+            //for(auto &name_pair : names) {
+            for(size_t i(0); i < names.size(); ++i) {
                 if(check_sep && !consume(T_COMMA)) {
                     break;
                 }
@@ -533,7 +534,7 @@ namespace xy {
                     break;
                 }
 
-                (void) name_pair; // TODO
+                (void) names[i]; // TODO
 
                 check_sep = true;
                 ++last_seen;
@@ -551,7 +552,7 @@ namespace xy {
             }
 
             // for each variable name
-            for(auto &name_pair : names) {
+            for(size_t i(0); i < names.size(); ++i) {
                 if(check_sep && !consume(T_COMMA)) {
                     break;
                 }
@@ -561,7 +562,7 @@ namespace xy {
                     break;
                 }
 
-                (void) name_pair; // TODO
+                (void) names[i]; // TODO
 
                 check_sep = true;
                 ++last_seen;
