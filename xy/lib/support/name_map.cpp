@@ -69,6 +69,17 @@ namespace xy { namespace support {
     name_map::~name_map(void) throw() {
         trie_free(trie);
         alpha_map_free(alpha_map);
+        if(nullptr != blocks) {
+            for(unsigned i(0); i < capacity; ++i) {
+                if(nullptr != blocks[i]) {
+                    delete blocks[i];
+                    blocks[i] = nullptr;
+                }
+            }
+
+            delete [] blocks;
+            blocks = nullptr;
+        }
     }
 
     /// add the cstring name to the end of the block, starting from the end

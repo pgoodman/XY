@@ -120,17 +120,23 @@ namespace xy {
     template <typename type_operator>
     bool parser::parse_infix_type_operator(uint8_t prec, const token &op, const char *) throw() {
 
-        type_decl *left(pop(stack)->reinterpret<type_decl>());
-        if(nullptr == left) {
+        ast *left_(pop(stack));
+
+        if(!left_->is_instance<type_decl>()) {
+            delete left_;
             return report_simple(io::e_type_decl_expected_before_type_op, op);
         }
 
+        type_decl *left(left_->reinterpret<type_decl>());
+
+        // get a "pivot" token just in case we run into an error.
         token decl_tail;
         stream.accept(decl_tail);
         stream.undo();
 
         // parse the right-hand operand
         if(!parse(type_parsers, prec)) {
+            delete left;
             ctx.report_here(decl_tail, io::e_bad_suffix_type_decl, decl_tail.name());
             return false;
         }

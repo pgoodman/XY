@@ -28,6 +28,11 @@ namespace xy {
     diagnostic_context::~diagnostic_context(void) throw() {
         cstring::free(file_name);
         file_name = nullptr;
+
+        for(size_t i(0); i < branches.size(); ++i) {
+            delete branches[i];
+            branches[i] = nullptr;
+        }
     }
 
     const char *diagnostic_context::file(void) const throw() {

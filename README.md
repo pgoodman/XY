@@ -9,7 +9,7 @@ Types in XY are structurally defined. I intend to have both inductive and co-ind
 
 Requirements
 ------------
-A relatively recent version of the GCC or Clang. The compiler is implemented using some features of C99 and C++11, e.g. variadic templates and macros, tuples, automatic calling of base class default constructors, etc.
+A relatively recent version of the GCC or Clang. The compiler is implemented using some features of C99 and C++11, e.g. variadic templates, variadic macros, r-value references, etc.
 
 Downloading the Coding
 ----------------------

@@ -218,23 +218,21 @@ namespace xy {
     /// parse the { ...} parse of a type instantiation, e.g. Int{1}, or Array(Int, 3){1,2,3}.
     bool parser::parse_type_instantiation(uint8_t, const token &tok, const char *) throw() {
 
-        if(!stack.back()->is_instance<type_decl>()) {
-            printf("arrow decl id is %lu\n", arrow_type_decl::static_id());
-            printf("sum decl id is %lu\n", sum_type_decl::static_id());
-            printf("product decl id is %lu\n", product_type_decl::static_id());
-            printf("type decl id is %lu\n", type_decl::static_id());
-            printf("id is: %lu\n", stack.back()->type_id());
+        ast *decl_(pop(stack));
 
+        if(!decl_->is_instance<type_decl>()) {
+            delete decl_;
             return report_simple(io::e_not_a_type_for_instance, tok);
         }
 
         bool consume_comma(false);
-        type_instance_expr *inst(new type_instance_expr(pop(stack)->reinterpret<type_decl>()));
+        type_instance_expr *inst(new type_instance_expr(decl_->reinterpret<type_decl>()));
         token expr_begin;
         ast *val(nullptr);
 
-        for(; !stream.check(T_CLOSE_BRACE); consume_comma = true) {
+        for(; !stream.check(T_CLOSE_BRACE); consume_comma = true, val = nullptr) {
             if(consume_comma && !consume(T_COMMA)) {
+                delete inst;
                 return false;
             }
 
