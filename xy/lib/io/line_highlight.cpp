@@ -127,7 +127,7 @@ namespace xy { namespace io { namespace detail {
 
         // used for chunks from the file, and then constructing our
         // unhighlighted string
-        uint8_t scratch[BLOCK_SIZE]{'\0'};
+        uint8_t scratch[BLOCK_SIZE] = {'\0'};
 
         // something went wrong
         if(!self.read_up_to_line(f, scratch)) {
@@ -135,7 +135,7 @@ namespace xy { namespace io { namespace detail {
             return 0;
         }
 
-        char buff[MAX_NUM_BYTES + TAB_SIZE]{'\0'};
+        char buff[MAX_NUM_BYTES + TAB_SIZE] = {'\0'};
         uint32_t col(1);
         size_t j(0);
         utf8::codepoint chr;
