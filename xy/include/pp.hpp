@@ -24,8 +24,8 @@
 #define XY_CAT_(a, b) a ## b
 #define XY_CAT(a, b) XY_CAT_(a, b)
 
-// https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s
-// get number of variadic things
+/* https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s
+ * get number of variadic things */
 #define XY_NARG(...) \
          XY_NARG_(__VA_ARGS__,XY_RSEQ_N())
 #define XY_NARG_(...) \
@@ -47,7 +47,7 @@
          19,18,17,16,15,14,13,12,11,10, \
          9,8,7,6,5,4,3,2,1,0
 
-/// represents nothing
+/* represents nothing */
 #define XY_NOTHING10 XY_NOTHING9
 #define XY_NOTHING9 XY_NOTHING8
 #define XY_NOTHING8 XY_NOTHING7

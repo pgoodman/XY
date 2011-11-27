@@ -3,13 +3,12 @@
 #
 
 ROOT_DIR = ./
-INIT_LIST_V1_PARENT_DIR = /Developer/SDKs/MacOSX10.7.sdk/usr/include/c++/
 
-CLANG_CXX = /Users/petergoodman/Code/build/llvm/Debug+Asserts/bin/clang++
-INTEL_CXX = icpc
-GNU_CXX = g++
+CLANG_CC = clang
+INTEL_CC = icc
+GNU_CC = gcc
 
-DEFAULT_CXX = ${CLANG_CXX}
+DEFAULT_CXX = /Users/petergoodman/Code/build/llvm/Debug+Asserts/bin/clang++
 DEFAULT_CC = /Users/petergoodman/Code/build/llvm/Debug+Asserts/bin/clang
 
 CXX = ${DEFAULT_CXX}
@@ -29,7 +28,7 @@ CC_FLAGS = -O0 -g -ansi -I${ROOT_DIR} -std=c99
 GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align -Wno-long-long
 
 # are we compiling with the g++?
-ifeq (${CXX}, ${GNU_CXX})
+ifneq (,$(findstring ${GNU_CC},${CC}))
 	#CXX_FEATURES += -flto
 	CXX_FEATURES += -fno-stack-protector
 	CXX_WARN_FLAGS += -Wshadow -Wpointer-arith \
@@ -43,7 +42,7 @@ ifeq (${CXX}, ${GNU_CXX})
 endif
 
 # are we compiling with icc?
-ifeq (${CXX}, ${INTEL_CXX})
+ifneq (,$(findstring ${INTEL_CC},${CC}))
 	GNU_COMPATIBLE_FLAGS = 
 	CXX_FEATURES += -fno-stack-protector
 	CXX_WARN_FLAGS = -diag-disable 279
@@ -52,7 +51,7 @@ ifeq (${CXX}, ${INTEL_CXX})
 endif
 
 # are we compiling with clang++?
-ifeq (${CXX}, ${CLANG_CXX})
+ifneq (,$(findstring ${CLANG_CC},${CC}))
 	CXX_FEATURES += -fcatch-undefined-behavior -finline-functions
 	CXX_WARN_FLAGS += -Winline
 endif
