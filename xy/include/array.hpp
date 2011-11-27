@@ -62,7 +62,7 @@ namespace xy { namespace array {
     }
 
     template <typename T, const size_t LENGTH_D, const size_t LENGTH_S>
-    inline void copy(T (&dest)[LENGTH_D], T (&source)[LENGTH_S]) throw() {
+    inline void copy(T (& __restrict dest)[LENGTH_D], T (& __restrict source)[LENGTH_S]) throw() {
         static_assert(LENGTH_D <= LENGTH_S,
             "The destination array must be no bigger than the source array."
         );
