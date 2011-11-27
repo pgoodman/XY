@@ -28,7 +28,7 @@ CC_FLAGS = -O0 -g -ansi -I${ROOT_DIR} -std=c99
 GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align -Wno-long-long
 
 # are we compiling with the g++?
-ifneq (,$(findstring ${GNU_CC},${CC}))
+ifeq (${CXX}, ${GNU_CXX})
 	#CXX_FEATURES += -flto
 	CXX_FEATURES += -fno-stack-protector
 	CXX_WARN_FLAGS += -Wshadow -Wpointer-arith \
@@ -43,19 +43,19 @@ endif
 
 # are we compiling with icc?
 ifneq (,$(findstring ${INTEL_CC},${CC}))
-	GNU_COMPATIBLE_FLAGS = 
-	CXX_FEATURES += -fno-stack-protector
-	CXX_WARN_FLAGS = -diag-disable 279
-	CXX_FLAGS += -Kc++ -Wall -Werror -wd981 -ansi-alias
+	CXX_FEATURES += -fno-stack-protector -finline-functions -no-alias-const
+					-check-uninit -debugall -diag-typeerror -early-template-check
+					-falign-functions -fargument-noalias -no-intel-extensions
+					
+	# CXX_WARN_FLAGS = -diag-disable 279
+	# -wd981
+	CXX_FLAGS += -Kc++ -Wall -Werror -ansi-alias
 	LD_FLAGS += -lstdc++
 endif
 
 # are we compiling with clang++?
 ifneq (,$(findstring ${CLANG_CC},${CC}))
-	CXX_FEATURES += -fcatch-undefined-behavior -finline-functions -no-alias-const
-					-check-uninit -debugall -diag-typeerror -early-template-check
-					-falign-functions -fargument-noalias -no-intel-extensions
-	
+	CXX_FEATURES += -fcatch-undefined-behavior -finline-functions
 	CXX_WARN_FLAGS += -Winline
 endif
 

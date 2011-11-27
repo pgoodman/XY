@@ -37,7 +37,7 @@ namespace xy { namespace io {
         , message(m)
     { }
 
-#   define XY_MSG(key, type, message) {key, type, XY_F_DEF message},
+#   define XY_MSG(key, type, message) message_template(key, type, XY_F_DEF message),
     const message_template message::MESSAGE_STRINGS[] = {
 #       include "xy/messages/messages.inc"
         {sentinel_id, sentinel_type, nullptr}
