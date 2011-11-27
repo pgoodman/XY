@@ -25,10 +25,10 @@ extern "C" {
 #   define XY_REALPATH_LINKAGE extern
 #endif
 
-extern int lstat(const char *path, struct stat *buf);
-extern ssize_t readlink(const char *path, char *buf, size_t bufsiz);
+extern int lstat(const char *path, struct stat *buf) XY_EXCEPTION_SPEC;
+extern ssize_t readlink(const char *path, char *buf, size_t bufsiz) XY_EXCEPTION_SPEC;
 
-XY_REALPATH_LINKAGE char *realpath(const char *pathname, char *resolved_path);
+XY_REALPATH_LINKAGE char *realpath(const char *pathname, char *resolved_path) XY_EXCEPTION_SPEC;
 
 #ifdef __cplusplus
 }

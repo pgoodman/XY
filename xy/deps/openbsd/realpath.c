@@ -45,7 +45,7 @@
  * in which case the path which caused trouble is left in (resolved).
  */
 char *
-realpath(const char *path, char *resolved)
+realpath(const char *path, char *resolved) XY_EXCEPTION_SPEC
 {
     struct stat sb;
     char *p, *q, *s;
