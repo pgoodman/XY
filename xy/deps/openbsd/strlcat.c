@@ -30,7 +30,7 @@
  * If retval >= siz, truncation occurred.
  */
 size_t
-strlcat(char *dst, const char *src, size_t siz)
+strlcat(char *dst, const char *src, size_t siz) XY_EXCEPTION_SPEC
 {
     char *d = dst;
     const char *s = src;

@@ -76,7 +76,7 @@ static const u_char charmap[] = {
 };
 
 int
-strcasecmp(const char *s1, const char *s2)
+strcasecmp(const char *s1, const char *s2) XY_EXCEPTION_SPEC
 {
     const u_char *cm = charmap;
     const u_char *us1 = (const u_char *)s1;
@@ -89,7 +89,7 @@ strcasecmp(const char *s1, const char *s2)
 }
 
 int
-strncasecmp(const char *s1, const char *s2, size_t n)
+strncasecmp(const char *s1, const char *s2, size_t n) XY_EXCEPTION_SPEC
 {
     if (n != 0) {
         const u_char *cm = charmap;

@@ -9,6 +9,12 @@
 #ifndef XY_PP_HPP_
 #define XY_PP_HPP_
 
+#ifdef __cplusplus
+#   define XY_EXCEPTION_SPEC throw()
+#else
+#   define XY_EXCEPTION_SPEC
+#endif
+
 #if defined(__HOS_LINUX__) || defined(__linux__) || defined(linux) || defined(__linux)
 #   define XY_HOST_LINUX 1
 #else
