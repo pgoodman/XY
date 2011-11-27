@@ -45,7 +45,7 @@ namespace xy {
         auto begin(branches[0]->begin());
         auto end(branches[0]->end());
         for(; begin != end; ) {
-            const io::message *msg{*begin};
+            const io::message *msg(*begin);
 
             if(++begin != end && io::c_file_line_col == begin->id) {
                 begin->print(fp);

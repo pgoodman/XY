@@ -35,7 +35,7 @@ namespace xy {
         diagnostic_context &ctx,
         utf8::codepoint &cp
     )  throw() {
-        int first_chr{'\0'};
+        int first_chr('\0');
         switch(state) {
         case READ_BLOCK:
 
