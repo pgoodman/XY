@@ -72,6 +72,8 @@ namespace xy { namespace io {
         const message_id id;
         const message_type type;
         const char * const message;
+
+        message_template(message_id, message_type, const char *) throw();
     };
 
     // forward declarations

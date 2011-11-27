@@ -31,6 +31,12 @@ namespace xy { namespace io {
         next = nullptr;
     }
 
+    message_template::message_template(message_id i, message_type t, const char *m) throw()
+        : id(i)
+        , type(t)
+        , message(m)
+    { }
+
 #   define XY_MSG(key, type, message) {key, type, XY_F_DEF message},
     const message_template message::MESSAGE_STRINGS[] = {
 #       include "xy/messages/messages.inc"
@@ -98,7 +104,7 @@ namespace xy { namespace io {
     }
 
     message_queue::~message_queue(void) throw() {
-        for(message *msg{first}, *next{&LAST_MESSAGE}; &LAST_MESSAGE != msg; msg = next) {
+        for(message *msg(first), *next(&LAST_MESSAGE); &LAST_MESSAGE != msg; msg = next) {
             next = msg->next;
             delete msg;
         }
