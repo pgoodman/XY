@@ -66,6 +66,7 @@ int main(int argc, const char **argv) throw() {
         while(nullptr != (line = linenoise(">>> "))) {
 
             if(0 == strcmp(line, "exit")) {
+                free(line);
                 break;
             }
 

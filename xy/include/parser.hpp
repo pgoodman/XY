@@ -125,7 +125,7 @@ namespace xy {
         token expr_begin;
         ast *val(nullptr);
 
-        for(; !stream.check(T_CLOSE_PAREN) || !stream.check(end_type); consume_comma = true) {
+        for(; !stream.check(T_CLOSE_PAREN) && !stream.check(end_type); consume_comma = true) {
 
             if(consume_comma && !consume(T_COMMA)) {
                 return false;
