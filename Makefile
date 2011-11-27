@@ -48,8 +48,7 @@ ifneq (,$(findstring ${INTEL_CC},${CC}))
 					-falign-functions -fargument-noalias -no-intel-extensions
 					
 	# CXX_WARN_FLAGS = -diag-disable 279
-	# -wd981
-	CXX_FLAGS += -Kc++ -Wall -Werror -ansi-alias
+	CXX_FLAGS += -Kc++ -Wall -Werror -ansi-alias -wd981 -wd383
 	LD_FLAGS += -lstdc++
 	GNU_COMPATIBLE_FLAGS = -Wextra -Wno-long-long
 endif

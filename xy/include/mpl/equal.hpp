@@ -103,7 +103,7 @@ namespace xy { namespace mpl {
             return false;
         }
     };
-
+    /*
     template <typename A, typename B>
     bool equal_p(void) {
         return equal<A,B>();
@@ -113,6 +113,7 @@ namespace xy { namespace mpl {
     bool const_equal_p(void) {
         return const_equal<A,B>();
     }
+    */
 }}
 
 #endif /* XY_EQUAL_HPP_ */

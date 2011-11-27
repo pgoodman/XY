@@ -72,7 +72,7 @@ namespace xy { namespace array {
     }
 
     template <typename T, const size_t LENGTH>
-    inline void initialize(T (&arr)[LENGTH], T &&val) throw() {
+    inline void initialize(T (& __restrict arr)[LENGTH], T && __restrict val) throw() {
         for(size_t i(0); i < LENGTH; ++i) {
             arr[i] = val;
         }
