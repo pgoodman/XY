@@ -16,6 +16,27 @@
 #endif
 
 #if defined(__GNUC__) && XY_HOST_LINUX
+
+#   if !defined(_SVID_SOURCE)
+#       define _SVID_SOURCE 0
+#   endif
+
+#   if !defined(_BSD_SOURCE)
+#       define _BSD_SOURCE 0
+#   endif
+
+#   if !defined(_XOPEN_SOURCE)
+#       define _XOPEN_SOURCE 0
+#   endif
+
+#   if !defined(_XOPEN_SOURCE_EXTENDED)
+#       define _XOPEN_SOURCE_EXTENDED 0
+#   endif
+
+#   if !defined(_POSIX_C_SOURCE)
+#       define _POSIX_C_SOURCE 0
+#   endif
+
 #   if _SVID_SOURCE || _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || /* Since glibc 2.12: */ _POSIX_C_SOURCE >= 200809L
 #      define XY_LINUX_HAS_STRDUP 1
 #   else
