@@ -17,7 +17,16 @@ extern "C" {
 
 #include <stdlib.h>
 
-char *realpath(const char *pathname, char *resolved_path);
+#if !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH)
+#   define XY_REALPATH_LINKAGE
+#else
+#   define XY_REALPATH_LINKAGE extern
+#endif
+
+extern int lstat(const char *path, struct stat *buf);
+extern ssize_t readlink(const char *path, char *buf, size_t bufsiz);
+
+XY_REALPATH_LINKAGE char *realpath(const char *pathname, char *resolved_path);
 
 #ifdef __cplusplus
 }
