@@ -64,6 +64,11 @@ int main(int argc, const char **argv) throw() {
         char *line(nullptr);
         linenoiseSetCompletionCallback(completion);
         while(nullptr != (line = linenoise(">>> "))) {
+
+            if(0 == strcmp(line, "exit")) {
+                break;
+            }
+
             diagnostic_context ctx("stdin");
             if(!parser::parse_buffer(ctx, line)) {
                 fprintf(stderr, "Error parsing.\n");
@@ -72,6 +77,8 @@ int main(int argc, const char **argv) throw() {
             if(ctx.has_message()) {
                 ctx.print_diagnostics(stderr);
             }
+
+            free(line);
         }
     }
 
