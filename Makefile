@@ -52,7 +52,10 @@ endif
 
 # are we compiling with clang++?
 ifneq (,$(findstring ${CLANG_CC},${CC}))
-	CXX_FEATURES += -fcatch-undefined-behavior -finline-functions
+	CXX_FEATURES += -fcatch-undefined-behavior -finline-functions -no-alias-const
+					-check-uninit -debugall -diag-typeerror -early-template-check
+					-falign-functions -fargument-noalias -no-intel-extensions
+	
 	CXX_WARN_FLAGS += -Winline
 endif
 

@@ -13,8 +13,8 @@
 
 namespace xy { namespace io {
 
-    file<read_tag>::file(void) throw() : fd{INVALID_FILE_DESCRIPTOR} { }
-    file<read_tag>::file(int _fd) throw() : fd{_fd} { }
+    file<read_tag>::file(void) throw() : fd(INVALID_FILE_DESCRIPTOR) { }
+    file<read_tag>::file(int _fd) throw() : fd(_fd) { }
     file<read_tag>::~file(void) throw() {
         if(INVALID_FILE_DESCRIPTOR != fd) {
             close(fd);
