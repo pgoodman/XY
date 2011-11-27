@@ -43,8 +43,8 @@ endif
 
 # are we compiling with icc?
 ifneq (,$(findstring ${INTEL_CC},${CC}))
-	CXX_FEATURES += -fno-stack-protector -finline-functions -no-alias-const
-					-check-uninit -debugall -diag-typeerror -early-template-check
+	CXX_FEATURES += -fno-stack-protector -finline-functions -no-alias-const \
+					-check-uninit -debugall -diag-typeerror -early-template-check \
 					-falign-functions -fargument-noalias -no-intel-extensions
 					
 	# CXX_WARN_FLAGS = -diag-disable 279
