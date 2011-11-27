@@ -205,14 +205,21 @@ namespace xy {
         struct function_call_expr : public support::ast_impl<function_call_expr, expression> {
         public:
             expression *function;
-            std::vector<expression *> parameters;
+            std::vector<ast *> template_parameters;
+            std::vector<expression *> arguments;
+
+            // it is possible that we will get some arguments, categorized as
+            // template arguments, that are all expressions, but are not known
+            // if they are template args or function args
+            bool might_be_ambiguous;
 
             XY_AST_CONSTRUCTOR(function_call_expr, function)
             //XY_AST_CONSTRUCTOR(function_call_expr, function, parameters)
 
             virtual ~function_call_expr(void) throw() {
                 support::delete_ast(function);
-                support::delete_ast_vector(parameters);
+                support::delete_ast_vector(template_parameters);
+                support::delete_ast_vector(arguments);
             }
         };
 

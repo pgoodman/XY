@@ -91,8 +91,8 @@ namespace xy {
         bool parse_type_function(const token &, const char *) throw();
         bool parse_type_group(const token &, const char *) throw();
 
-        template <typename node_type, typename param_type>
-        bool parse_params(node_type *node, io::message_id bad_param_error) throw();
+        template <typename param_type>
+        bool parse_params(io::message_id, token_type, std::vector<param_type *> &) throw();
 
         template <typename>
         bool parse_infix_type_operator(uint8_t, const token &, const char *) throw();
@@ -119,13 +119,13 @@ namespace xy {
         static bool parse_buffer(diagnostic_context &ctx, const char * const buffer) throw();
     };
 
-    template <typename node_type, typename param_type>
-    bool parser::parse_params(node_type *node, io::message_id bad_param_error) throw() {
+    template <typename param_type>
+    bool parser::parse_params(io::message_id bad_param_error, token_type end_type, std::vector<param_type *> &params) throw() {
         bool consume_comma(false);
         token expr_begin;
         ast *val(nullptr);
 
-        for(; !stream.check(T_CLOSE_PAREN); consume_comma = true) {
+        for(; !stream.check(T_CLOSE_PAREN) | !stream.check(end_type); consume_comma = true) {
 
             if(consume_comma && !consume(T_COMMA)) {
                 return false;
@@ -148,10 +148,10 @@ namespace xy {
                 return false;
             }
 
-            node->parameters.push_back(val->reinterpret<param_type>());
+            params.push_back(val->reinterpret<param_type>());
         }
 
-        return consume(T_CLOSE_PAREN);
+        return true;
     }
 
     template <typename type_operator>

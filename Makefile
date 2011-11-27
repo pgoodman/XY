@@ -64,6 +64,7 @@ OBJS =
 OBJS += bin/lib/utf8/codepoint.o
 OBJS += bin/lib/utf8/decoder.o 
 OBJS += bin/lib/support/byte_reader.o
+OBJS += bin/lib/support/cstring_reader.o
 OBJS += bin/lib/io/file.o
 OBJS += bin/lib/io/message.o
 OBJS += bin/lib/io/cwd.o
@@ -81,6 +82,8 @@ OBJS += bin/deps/libdatrie/alpha-map.o
 OBJS += bin/deps/libdatrie/darray.o
 OBJS += bin/deps/libdatrie/tail.o
 OBJS += bin/deps/libdatrie/trie.o
+
+OBJS += bin/deps/linenoise/linenoise.o
 
 OBJS += bin/lib/support/name_map.o
 OBJS += bin/lib/type.o
@@ -106,6 +109,12 @@ bin/lib/utf8/%.o: xy/lib/utf8/%.cpp
 bin/deps/libdatrie/%.o: xy/deps/libdatrie/%.c
 	${CC} ${CC_FLAGS} -c $< -o $@
 
+bin/deps/libdatrie/%.o: xy/deps/libdatrie/%.c
+	${CC} ${CC_FLAGS} -c $< -o $@
+
+bin/deps/linenoise/%.o: xy/deps/linenoise/%.c
+	${CC} ${CC_FLAGS} -c $< -o $@
+
 install:
 	-mkdir bin
 	-mkdir bin/lib
@@ -114,6 +123,7 @@ install:
 	-mkdir bin/lib/support
 	-mkdir bin/deps
 	-mkdir bin/deps/libdatrie
+	-mkdir bin/deps/linenoise
 
 clean:
 	-rm -f bin/*.o
@@ -122,3 +132,4 @@ clean:
 	-rm -f bin/lib/io/*.o
 	-rm -f bin/lib/support/*.o
 	-rm -f bin/deps/libdatrie/*.o
+	-rm -f bin/deps/linenoise/*.o

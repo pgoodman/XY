@@ -18,3 +18,6 @@ XY_MSG(e_func_arg_not_expr, error, "Arguments to function calls must be expressi
 XY_MSG(e_tpl_arg_not_ast, error, "Arguments to type template instantiations must be either expressions or type declarations.")
 XY_MSG(e_tpl_must_have_args, error, "Template type instantiations must have at least one argument. No arguments were provided.")
 XY_MSG(e_incomplete_tpl_inst, error, "Incomplete template type instantiation. There was probably a problem with one of the template type arguments, or you have provided no arguments.")
+XY_MSG(e_bin_rhs_not_expr, error, "Incomplete right-hand-side to the binary operator. I expected an expression after the %s but when I tried to parse one I got an error.")
+XY_MSG(w_bin_empty_tpl_and_func_args, warning, "Possibly ambiguous statement. A function call specifying zero template arguments and zero expression arguments, but still specifying the ';' might be ambiguous.")
+

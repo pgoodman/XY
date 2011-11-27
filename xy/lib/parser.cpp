@@ -13,6 +13,7 @@
 #include "xy/include/tokenizer.hpp"
 #include "xy/include/array.hpp"
 #include "xy/include/cstring.hpp"
+#include "xy/include/support/cstring_reader.hpp"
 
 #include "xy/include/io/line_highlight.hpp"
 
@@ -202,10 +203,41 @@ namespace xy {
             expression *function(node->reinterpret<expression>());
             function_call_expr *funcall(new function_call_expr(function));
 
-            if(!parse_params<function_call_expr, expression>(funcall, io::e_func_arg_not_expr)) {
+            if(!parse_params<ast>(io::e_tpl_arg_not_ast, T_SEMICOLON, funcall->template_parameters)) {
                 delete funcall;
                 return false;
             }
+
+            // looks like a function template
+            if(stream.check(T_SEMICOLON)) {
+
+                funcall->might_be_ambiguous = false;
+
+                token semicolon;
+                stream.accept(semicolon);
+
+                if(!parse_params<expression>(io::e_func_arg_not_expr, T_CLOSE_PAREN, funcall->arguments)) {
+                    delete funcall;
+                    return false;
+                }
+
+                // empty type parameters to template function and function arguments,
+                // e.g. foo(;)
+                if(funcall->template_parameters.empty() && funcall->arguments.empty()) {
+                    ctx.report_here(semicolon, io::w_bin_empty_tpl_and_func_args);
+                }
+
+            } else {
+                funcall->might_be_ambiguous = true;
+                for(size_t i(0); i < funcall->template_parameters.size(); ++i) {
+                    if(funcall->template_parameters[i]->is_instance<type_decl>()) {
+                        funcall->might_be_ambiguous = false;
+                        break;
+                    }
+                }
+            }
+
+            consume(T_CLOSE_PAREN);
 
             stack.push_back(funcall);
 
@@ -214,10 +246,12 @@ namespace xy {
             type_decl *decl(node->reinterpret<type_decl>());
             template_instance_type_decl *tplinst(new template_instance_type_decl(decl));
 
-            if(!parse_params<template_instance_type_decl, ast>(tplinst, io::e_tpl_arg_not_ast)) {
+            if(!parse_params<ast>(io::e_tpl_arg_not_ast, T_CLOSE_PAREN, tplinst->parameters)) {
                 delete tplinst;
                 return false;
             }
+
+            consume(T_CLOSE_PAREN);
 
             if(tplinst->parameters.empty()) {
                 ctx.report_here(paren, io::e_tpl_must_have_args);
@@ -337,8 +371,13 @@ namespace xy {
             return report_simple(io::e_arrow_in_expr_context, tok);
         }
 
+        token right_head;
+        stream.accept(right_head);
+        stream.undo();
+
         // parse the right thing
         if(!parse(expression_parsers, prec)) {
+            ctx.report_here(right_head, io::e_bin_rhs_not_expr, tok.name());
             return false;
         }
 
@@ -458,7 +497,11 @@ namespace xy {
         return true;
     }
     bool parser::parse_type_group(const token &, const char *) throw() {
-        return true;
+        if(!parse(type_parsers, 0)) {
+            return false;
+        }
+
+        return consume(T_CLOSE_PAREN);
     }
 
     /*
@@ -551,6 +594,7 @@ namespace xy {
 
         // variable/func declaration
         } else if(stream.check(T_NAME)) {
+
             if(!parse_name_list(T_NAME, names) || !consume(T_ASSIGN)) {
                 return false;
             }
@@ -751,9 +795,10 @@ namespace xy {
     /// -----------------------------------------------------------------------
 
     bool parser::parse_buffer(diagnostic_context &ctx, const char * const buffer) throw() {
-        (void) ctx;
-        (void) buffer;
-        return false;
+        tokenizer tt;
+        support::cstring_reader rr(buffer);
+        token_stream stream(ctx, tt, rr);
+        return parse(ctx, stream);
     }
 }
 
