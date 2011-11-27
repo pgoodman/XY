@@ -47,7 +47,7 @@ ifneq (,$(findstring ${INTEL_CC},${CC}))
 				   -finline-functions -no-alias-const \
 				   -check-uninit -early-template-check \
 				   -falign-functions -fargument-noalias -no-intel-extensions
-	CXX_FLAGS += -Kc++ -Wall -Werror -ansi-alias -wd981 -wd383
+	CXX_FLAGS += -Kc++ -Wall -Werror -ansi-alias -wd981 -wd383 -wd444
 	LD_FLAGS += -lstdc++
 	GNU_COMPATIBLE_FLAGS = -Wextra -Wno-long-long
 endif

@@ -16,7 +16,7 @@ namespace xy { namespace io {
 
     const char *get_cwd(void) throw() {
         static bool have_cwd(false);
-        static char CWD[FILENAME_MAX + 1U]{'\0'};
+        static char CWD[FILENAME_MAX + 1U] = {'\0'};
 
         static_assert(static_cast<size_t>(FILENAME_MAX + 1U) > FILENAME_MAX,
             "Macro FILENAME_MAX is set to maximum value for size_t and caused "
