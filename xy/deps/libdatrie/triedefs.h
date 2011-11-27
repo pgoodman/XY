@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-#include "xy/deps/libdatrie/string.h"
+#include "xy/deps/openbsd/string.h"
 #include "xy/deps/libdatrie/typedefs.h"
 
 
