@@ -39,6 +39,9 @@
 
 #if !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH)
 
+int lstat(const char *path, struct stat *buf);
+ssize_t readlink(const char *path, char *buf, size_t bufsiz);
+
 /*
  * char *realpath(const char *path, char resolved[PATH_MAX]);
  *
@@ -214,5 +217,9 @@ err:
         free(resolved);
     return (NULL);
 }
+
+#else
+
+XY_EMPTY_COMPILATION_UNIT
 
 #endif

@@ -9,6 +9,7 @@
 #ifndef XY_OPENBSD_STDLIB_H_
 #define XY_OPENBSD_STDLIB_H_
 
+#include "xy/include/pp.hpp"
 
 #ifdef __cplusplus
 extern "C" {
