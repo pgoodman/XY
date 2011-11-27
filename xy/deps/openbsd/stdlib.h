@@ -16,6 +16,8 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#include <sys/param.h>
+#include <sys/stat.h>
 
 #if !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH)
 #   define XY_REALPATH_LINKAGE
