@@ -39,8 +39,8 @@
 
 #if !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH)
 
-int lstat(const char *path, struct stat *buf);
-ssize_t readlink(const char *path, char *buf, size_t bufsiz);
+extern int lstat(const char *path, struct stat *buf);
+extern ssize_t readlink(const char *path, char *buf, size_t bufsiz);
 
 /*
  * char *realpath(const char *path, char resolved[PATH_MAX]);

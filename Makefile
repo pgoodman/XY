@@ -51,6 +51,7 @@ ifneq (,$(findstring ${INTEL_CC},${CC}))
 	# -wd981
 	CXX_FLAGS += -Kc++ -Wall -Werror -ansi-alias
 	LD_FLAGS += -lstdc++
+	GNU_COMPATIBLE_FLAGS = -Wextra -Wno-long-long
 endif
 
 # are we compiling with clang++?

@@ -15,10 +15,14 @@
 #   define XY_HOST_LINUX 0
 #endif
 
-#if _SVID_SOURCE || _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || /* Since glibc 2.12: */ _POSIX_C_SOURCE >= 200809L
-#   define XY_LINUX_HAS_STRDUP 1
+#if defined(__GNUC__) && XY_HOST_LINUX
+#   if _SVID_SOURCE || _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || /* Since glibc 2.12: */ _POSIX_C_SOURCE >= 200809L
+#      define XY_LINUX_HAS_STRDUP 1
+#   else
+#      define XY_LINUX_HAS_STRDUP 0
+#   endif
 #else
-#   define XY_LINUX_HAS_STRDUP 0
+#      define XY_LINUX_HAS_STRDUP 0
 #endif
 
 #define XY_CAT_(a, b) a ## b
