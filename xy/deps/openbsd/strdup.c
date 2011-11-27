@@ -36,7 +36,7 @@
 
 #include "xy/deps/openbsd/string.h"
 
-#if XY_HOST_LINUX && !XY_LINUX_HAS_STRDUP
+#if XY_HOST_LINUX && !XY_LINUX_HAS_STRDUP && !defined(HAVE_STRDUP)
 
 char *
 strdup(const char *str)
