@@ -120,7 +120,7 @@ namespace xy { namespace io {
 
     public:
 
-        virtual ~message_iterator(void) throw();
+        ~message_iterator(void) throw();
         message_iterator(const message_iterator &) throw();
         message_iterator &operator=(const message_iterator &) throw();
 
