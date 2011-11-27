@@ -14,7 +14,6 @@
 extern "C" {
 #endif
 
-#include <sys/param.h>
 #include <stdlib.h>
 
 char *realpath(const char *pathname, char *resolved_path);
