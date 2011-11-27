@@ -402,6 +402,7 @@ namespace xy { namespace io {
                 : message(id_)
                 , values(values_...)
             {
+                (void) values_;
                 allocate_strings<0, TUPLE_SIZE, tuple_type>::allocate(values);
             }
 
@@ -466,6 +467,7 @@ namespace xy { namespace io {
         /// push a message into the queue.
         template <typename ...arg_types>
         void push(message_id id, arg_types... args) throw() {
+            (void) args;
             message *msg(new message_impl<arg_types...>(id, args...));
             seen[msg->type] = true;
             if(&LAST_MESSAGE == first) {
