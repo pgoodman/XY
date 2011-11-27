@@ -61,6 +61,13 @@ CXX_FLAGS += ${CXX_WARN_FLAGS} ${CXX_FEATURES} ${GNU_COMPATIBLE_FLAGS}
 CC_FLAGS += ${CC_WARN_FLAGS} ${CC_FEATURES} ${GNU_COMPATIBLE_FLAGS}
 
 OBJS = 
+
+OBJS += bin/deps/openbsd/realpath.o
+OBJS += bin/deps/openbsd/strcasecmp.o
+OBJS += bin/deps/openbsd/strdup.o
+OBJS += bin/deps/openbsd/strlcat.o
+OBJS += bin/deps/openbsd/strlcpy.o
+
 OBJS += bin/lib/utf8/codepoint.o
 OBJS += bin/lib/utf8/decoder.o 
 OBJS += bin/lib/support/byte_reader.o
@@ -115,6 +122,9 @@ bin/deps/libdatrie/%.o: xy/deps/libdatrie/%.c
 bin/deps/linenoise/%.o: xy/deps/linenoise/%.c
 	${CC} ${CC_FLAGS} -c $< -o $@
 
+bin/deps/openbsd/%.o: xy/deps/openbsd/%.c
+	${CC} ${CC_FLAGS} -c $< -o $@
+
 install:
 	-mkdir bin
 	-mkdir bin/lib
@@ -124,6 +134,7 @@ install:
 	-mkdir bin/deps
 	-mkdir bin/deps/libdatrie
 	-mkdir bin/deps/linenoise
+	-mkdir bin/deps/openbsd
 
 clean:
 	-rm -f bin/*.o
@@ -133,3 +144,4 @@ clean:
 	-rm -f bin/lib/support/*.o
 	-rm -f bin/deps/libdatrie/*.o
 	-rm -f bin/deps/linenoise/*.o
+	-rm -f bin/deps/openbsd/*.o

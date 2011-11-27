@@ -60,4 +60,9 @@
 #define XY_NOTHING1
 #define XY_NOTHING XY_NOTHING10
 
+#define XY_EMPTY_COMPILATION_UNIT \
+    static void bar(void); \
+    static void foo(void) { (void) bar; } \
+    static void bar(void) { (void) foo; }
+
 #endif /* XY_PP_HPP_ */

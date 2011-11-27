@@ -33,7 +33,10 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include <string.h>
+
+#include "xy/deps/openbsd/string.h"
+
+#if XY_HOST_LINUX && !defined(HAS_STRDUP)
 
 char *
 strdup(const char *str)
@@ -47,4 +50,10 @@ strdup(const char *str)
     (void)memcpy(copy, str, siz);
     return(copy);
 }
+
+#else
+
+XY_EMPTY_COMPILATION_UNIT
+
+#endif
 

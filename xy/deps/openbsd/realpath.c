@@ -27,13 +27,12 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/param.h>
 #include <sys/stat.h>
-
 #include <errno.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+
+#include "xy/deps/openbsd/stdlib.h"
+#include "xy/deps/openbsd/string.h"
 
 #if !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH)
 

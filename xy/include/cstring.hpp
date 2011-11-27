@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <cstring>
 
-#include "xy/include/pp.hpp"
+#include "xy/deps/openbsd/string.h"
 
 namespace xy { namespace cstring {
 
@@ -31,12 +31,5 @@ namespace xy { namespace cstring {
     size_t byte_length(const uint8_t *str) throw();
 
 }}
-
-#if XY_HOST_LINUX
-extern "C" {
-    size_t strlcat(char *, const char *, size_t);
-    size_t strlcpy(char *, const char *, size_t);
-}
-#endif
 
 #endif /* XY_CSTRING_HPP_ */

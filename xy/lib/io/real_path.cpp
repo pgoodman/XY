@@ -10,9 +10,8 @@
 #endif
 
 #define PATH_MAX xy::io::REAL_PATH_MAX_LEN
-extern "C" {
-#   include "xy/deps/openbsd/realpath.c"
-}
+
+#include "xy/deps/openbsd/stdlib.h"
 
 namespace xy { namespace io {
     /*

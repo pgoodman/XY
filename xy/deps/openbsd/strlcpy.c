@@ -17,7 +17,10 @@
  */
 
 #include <sys/types.h>
-#include <string.h>
+
+#include "xy/deps/openbsd/string.h"
+
+#if XY_HOST_LINUX
 
 /*
  * Copy src to string dst of size siz.  At most siz-1 characters
@@ -49,3 +52,9 @@ strlcpy(char *dst, const char *src, size_t siz)
 
     return(s - src - 1);    /* count does not include NUL */
 }
+
+#else
+
+XY_EMPTY_COMPILATION_UNIT
+
+#endif

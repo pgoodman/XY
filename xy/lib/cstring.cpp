@@ -50,10 +50,4 @@ namespace xy { namespace cstring {
     }
 }}
 
-#if XY_HOST_LINUX
-extern "C" {
-#   include "xy/deps/openbsd/strlcat.c"
-#   include "xy/deps/openbsd/strlcpy.c"
-}
-#endif
 

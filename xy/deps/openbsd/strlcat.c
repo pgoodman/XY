@@ -17,7 +17,10 @@
  */
 
 #include <sys/types.h>
-#include <string.h>
+
+#include "xy/deps/openbsd/string.h"
+
+#if XY_HOST_LINUX
 
 /*
  * Appends src to string dst of size siz (unlike strncat, siz is the
@@ -53,3 +56,9 @@ strlcat(char *dst, const char *src, size_t siz)
 
     return(dlen + (s - src));   /* count does not include NUL */
 }
+
+#else
+
+XY_EMPTY_COMPILATION_UNIT
+
+#endif
