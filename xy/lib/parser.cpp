@@ -494,13 +494,14 @@ namespace xy {
         }
 
         const size_t str_len(cstring::byte_length(data));
-        char *new_literal(new char[prev_str->byte_length + str_len - 1U]);
+        char *new_literal(new char[prev_str->byte_length + str_len + 1U]);
 
         memcpy(new_literal, prev_str->data, prev_str->byte_length);
-        memcpy(&(new_literal[prev_str->byte_length]), data, str_len);
+        memcpy(&(new_literal[prev_str->byte_length]), data, str_len + 1U);
 
         cstring::free(prev_str->data);
         prev_str->data = new_literal;
+        prev_str->byte_length += str_len;
 
         return true;
     }
