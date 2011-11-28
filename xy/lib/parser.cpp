@@ -242,6 +242,39 @@ namespace xy {
 
             consume(T_CLOSE_PAREN);
 
+            // function is clearly not a function
+            if(node->is_instance<literal_expr>()) {
+
+                // try to merge adjacent string literals
+                if(node->is_instance<string_literal_expr>()
+                && funcall->might_be_ambiguous
+                && 1 == funcall->template_parameters.size()
+                && funcall->template_parameters[0]->is_instance<string_literal_expr>()) {
+
+                    string_literal_expr *lhs_str(node->reinterpret<string_literal_expr>());
+                    string_literal_expr *rhs_str(funcall->template_parameters[0]->reinterpret<string_literal_expr>());
+
+                    funcall->function = nullptr;
+                    funcall->template_parameters[0] = nullptr;
+                    funcall->template_parameters.clear();
+                    delete funcall;
+
+                    stack.push_back(lhs_str);
+
+                    parse_string_concat(0, paren, rhs_str->data);
+                    delete rhs_str;
+
+                    rhs_str = nullptr;
+                    funcall = nullptr;
+
+                    return true;
+                }
+
+                // error!
+                ctx.report_here(paren, io::e_func_lhs_is_literal);
+                return false;
+            }
+
             stack.push_back(funcall);
 
         // template instantiation
