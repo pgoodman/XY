@@ -656,9 +656,9 @@ trie_state_is_walkable (const TrieState *s, AlphaChar c)
     TrieChar tc = alpha_map_char_to_trie (s->trie->alpha_map, c);
 
     if (!s->is_suffix)
-        return da_is_walkable (s->trie->da, s->index, tc);
+        return (Bool) da_is_walkable (s->trie->da, s->index, tc);
     else 
-        return tail_is_walkable_char (s->trie->tail, s->index, s->suffix_idx,
+        return (Bool) tail_is_walkable_char (s->trie->tail, s->index, s->suffix_idx,
                                       tc);
 }
 
@@ -675,7 +675,7 @@ trie_state_is_walkable (const TrieState *s, AlphaChar c)
 Bool
 trie_state_is_single (const TrieState *s)
 {
-    return s->is_suffix;
+    return (Bool) s->is_suffix;
 }
 
 /**
