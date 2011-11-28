@@ -131,9 +131,9 @@ symbols_add (Symbols *syms, TrieChar c)
     while (lower < upper) {
         short middle;
 
-        middle = (lower + upper)/2;
+        middle = (short) ((lower + upper)/2);
         if (c > syms->symbols[middle])
-            lower = middle + 1;
+            lower = (short) (middle + 1);
         else if (c < syms->symbols[middle])
             upper = middle;
         else
@@ -404,7 +404,7 @@ static Bool
 da_check_free_cell (DArray         *d,
                     TrieIndex       s)
 {
-    return da_extend_pool (d, s) && da_get_check (d, s) < 0;
+    return (TRUE == da_extend_pool (d, s)) && da_get_check (d, s) < 0;
 }
 
 static Bool
