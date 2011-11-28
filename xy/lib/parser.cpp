@@ -725,6 +725,12 @@ namespace xy {
             }
         }
 
+        if(ctx.has_message(io::message_type::error)
+        || ctx.has_message(io::message_type::recoverable_error)
+        || ctx.has_message(io::message_type::failed_assertion)) {
+            return false;
+        }
+
         p.consume(T_EOF);
 
         if(ctx.has_message(io::message_type::error)
@@ -732,6 +738,7 @@ namespace xy {
         || ctx.has_message(io::message_type::failed_assertion)) {
             return false;
         }
+
 
         p.stab.pop_context();
 

@@ -325,6 +325,12 @@ namespace xy {
             const char * const str;
             const size_t len;
             const token_type type;
+
+            reserved_name(const char *s, size_t l, token_type t) throw()
+                : str(s)
+                , len(l)
+                , type(t)
+            { }
         };
 
         static reserved_name RESERVED_NAMES[] = {
@@ -340,13 +346,13 @@ namespace xy {
             {"if",          3U, T_IF},
             {"then",        5U, T_THEN},
             {"else",        5U, T_ELSE},*/
-            {"let",         4U, T_LET},
-            {"import",      7U, T_IMPORT},
-            {"return",      7U, T_RETURN},
-            {"yield",       6U, T_YIELD},
-            {"union",       6U, T_UNION},
-            {"record",      7U, T_RECORD},
-            {"function",    9U, T_FUNCTION},
+            reserved_name("let",         4U, T_LET),
+            reserved_name("import",      7U, T_IMPORT),
+            reserved_name("return",      7U, T_RETURN),
+            reserved_name("yield",       6U, T_YIELD),
+            reserved_name("union",       6U, T_UNION),
+            reserved_name("record",      7U, T_RECORD),
+            reserved_name("function",    9U, T_FUNCTION)
         };
     }
 
@@ -406,13 +412,14 @@ namespace xy {
             return false;
         }
 
-        int16_t new_val = (static_cast<int16_t>(*chr) * 8) + (digit - '0');
+        int new_val = (static_cast<int>(*chr) * 8) + (digit - '0');
 
         if(new_val > 255) { // wrap-around
             ctx.report(io::e_octal_escape_too_big, new_val, new_val);
             push_file_line_col_under(ctx, start_col);
             return false;
         }
+
         *chr = static_cast<char>(new_val);
         return true;
     }
@@ -854,7 +861,7 @@ namespace xy {
 
                             // normal ascii in string
                             } else {
-                                scratch[i] = chr;
+                                scratch[i] = static_cast<char>(chr);
                             }
 
                             i += 1;
@@ -894,7 +901,7 @@ namespace xy {
                     tok.col_ = ll.column();
                     tok.type_ = T_INTEGER_LITERAL;
                     tok.num_columns_ = 1;
-                    scratch[0] = chr;
+                    scratch[0] = static_cast<char>(chr);
 
                     for(; ll.get_codepoint(f, ctx, cp); ++i) {
                         if(cp.is_null()) {
