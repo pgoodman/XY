@@ -65,17 +65,22 @@ namespace xy {
     struct type;
 
     namespace {
-        class type_category { };
+
+        /// a "hidden" category for type ids
+        class ast_type_category { };
     }
 
     typedef size_t ast_type;
 
     namespace support {
 
+        /// implements the subtype relationship for AST class types and the
+        /// needed RTTI.
         template <typename T, typename O=void>
         struct ast_impl;
 
-        // non-virtual
+        /// non-virtual; represent a subtype relationship among two AST classes
+        /// i.e. T <: O, where we can check the subtype relation at runtime.
         template <typename T, typename O>
         struct ast_impl : public O {
         public:
@@ -88,14 +93,14 @@ namespace xy {
 
                 if(!has_id) {
                     has_id = true;
-                    id = O::static_id() | (1 << mpl::id<T, type_category>::get());
+                    id = O::static_id() | (1 << mpl::id<T, ast_type_category>::get());
                 }
 
                 return id;
             }
 
             static ast_type exact_id(void) throw() {
-                return 1 << mpl::id<T, type_category>::get();
+                return 1 << mpl::id<T, ast_type_category>::get();
             }
 
             virtual ~ast_impl(void) throw() { }
@@ -105,7 +110,7 @@ namespace xy {
             }
         };
 
-        // top-level, virtual
+        /// top-level, virtual; base class of the root AST class.
         template <typename T>
         struct ast_impl<T, void> {
         public:
@@ -118,14 +123,14 @@ namespace xy {
 
                 if(!has_id) {
                     has_id = true;
-                    id = (1 << mpl::id<T, type_category>::get());
+                    id = (1 << mpl::id<T, ast_type_category>::get());
                 }
 
                 return id;
             }
 
             static ast_type exact_id(void) throw() {
-                return 1 << mpl::id<T, type_category>::get();
+                return 1 << mpl::id<T, ast_type_category>::get();
             }
 
             virtual ~ast_impl(void) throw() { }
@@ -135,6 +140,14 @@ namespace xy {
             }
         };
 
+        // forward declarations for icpc's sake
+        template <typename T>
+        void delete_ast(T &) throw();
+
+        template <typename T>
+        void delete_ast_vector(std::vector<T *> &) throw();
+
+        /// delete an AST node
         template <typename T>
         void delete_ast(T &ptr) throw() {
             if(nullptr != ptr) {
@@ -143,6 +156,7 @@ namespace xy {
             }
         }
 
+        /// delete a vector of AST nodes
         template <typename T>
         void delete_ast_vector(std::vector<T *> &vec) throw() {
             //for(T *type : vec) {
