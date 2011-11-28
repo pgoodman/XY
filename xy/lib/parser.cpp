@@ -271,6 +271,7 @@ namespace xy {
                 }
 
                 // error!
+                delete funcall;
                 ctx.report_here(paren, io::e_func_lhs_is_literal);
                 return false;
             }
