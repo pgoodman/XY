@@ -10,20 +10,20 @@
 
 namespace xy {
 
-    type::~type(void) { }
-    name_type::~name_type(void) { }
-    alias_type::~alias_type(void) { }
-    cover_type::~cover_type(void) { }
-    product_type::~product_type(void) { }
-    tuple_type::~tuple_type(void) { }
-    record_type::~record_type(void) { }
-    sum_type::~sum_type(void) { }
-    function_type::~function_type(void) { }
-    reference_type::~reference_type(void) { }
-    integer_type::~integer_type(void) { }
-    array_type::~array_type(void) { }
-    token_list_type::~token_list_type(void) { }
-    token_expression_type::~token_expression_type(void) { }
+    type::~type(void) throw() { }
+    name_type::~name_type(void) throw() { }
+    alias_type::~alias_type(void) throw() { }
+    cover_type::~cover_type(void) throw() { }
+    product_type::~product_type(void) throw() { }
+    tuple_type::~tuple_type(void) throw() { }
+    record_type::~record_type(void) throw() { }
+    sum_type::~sum_type(void) throw() { }
+    function_type::~function_type(void) throw() { }
+    reference_type::~reference_type(void) throw() { }
+    integer_type::~integer_type(void) throw() { }
+    array_type::~array_type(void) throw() { }
+    token_list_type::~token_list_type(void) throw() { }
+    token_expression_type::~token_expression_type(void) throw() { }
 
     //--------------------------------------------------------------------------
 

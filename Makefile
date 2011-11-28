@@ -49,7 +49,7 @@ ifneq (,$(findstring ${INTEL_CC},${CC}))
 				   -falign-functions -fargument-noalias -no-intel-extensions
 	# -diag-disable 869				   
 	CXX_FLAGS += -Kc++ -Wall -Werror -ansi-alias -wd981 -wd383 -wd444 -wd1599 -wd869
-	CC_FLAGS += -wd981
+	CC_FLAGS += -wd981 -wd111
 	LD_FLAGS += -lstdc++
 	GNU_COMPATIBLE_FLAGS = -Wextra -Wno-long-long
 endif

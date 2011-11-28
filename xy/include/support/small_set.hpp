@@ -159,7 +159,7 @@ namespace xy { namespace support {
 
                 // allocate new storage, copy in the shifted elements
                 if((num_elems + 1) > capacity) {
-                    T *new_elems(reserve(capacity * 2));
+                    T *new_elems(reserve(capacity * 2U));
 
                     for(size_t i(0); i < insert_at; ++i) {
                         new_elems[i] = elems[i];

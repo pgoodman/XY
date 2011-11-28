@@ -112,7 +112,6 @@ static int history_len = 0;
 char **history = NULL;
 
 static void linenoiseAtExit(void);
-int linenoiseHistoryAdd(const char *line);
 
 static int isUnsupportedTerm(void) {
     char *term = getenv("TERM");
@@ -316,7 +315,7 @@ static int linenoisePrompt(int fd, char *buf, size_t buflen, const char *prompt)
          * there was an error reading from fd. Otherwise it will return the
          * character that should be handled next. */
         if (c == 9 && completionCallback != NULL) {
-            c = completeLine(fd,prompt,buf,buflen,&len,&pos,cols);
+            c = (char) completeLine(fd,prompt,buf,buflen,&len,&pos,cols);
             /* Return on errors */
             if (c < 0) return len;
             /* Read next character when 0 */
@@ -357,7 +356,7 @@ static int linenoisePrompt(int fd, char *buf, size_t buflen, const char *prompt)
             if (pos > 0 && pos < len) {
                 int aux = buf[pos-1];
                 buf[pos-1] = buf[pos];
-                buf[pos] = aux;
+                buf[pos] = (char) aux;
                 if (pos != len-1) pos++;
                 refreshLine(fd,prompt,buf,len,pos,cols);
             }
@@ -470,9 +469,10 @@ up_down_arrow:
         case 12: /* ctrl+l, clear screen */
             linenoiseClearScreen();
             refreshLine(fd,prompt,buf,len,pos,cols);
+            break;
         }
     }
-    return len;
+    return (int) len;
 }
 
 static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {

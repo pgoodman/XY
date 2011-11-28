@@ -94,7 +94,7 @@ namespace xy { namespace support {
             ++block_id;
 
             if(nullptr == blocks || block_id >= static_cast<int>(capacity)) {
-                unsigned new_capacity = capacity * 2;
+                uint16_t new_capacity = capacity * 2;
                 if(new_capacity <= capacity) {
                     new_capacity = ((capacity / 2) + 2) * 2;
                 }
