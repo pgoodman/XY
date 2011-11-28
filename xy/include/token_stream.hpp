@@ -45,7 +45,7 @@ namespace xy {
             diagnostic_context &ctx_,
             tokenizer &tt_,
             support::byte_reader &f_
-        );
+        ) throw();
 
         ~token_stream(void) throw();
 
