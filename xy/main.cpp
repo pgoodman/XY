@@ -50,7 +50,7 @@ static void completion(const char *buff, linenoiseCompletions *lc) {
     }
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, char *argv[]) {
     if(argc > 1) {
         diagnostic_context ctx(argv[1]);
         if(!parser::parse_file(ctx, argv[1])) {
