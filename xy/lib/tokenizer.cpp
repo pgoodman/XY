@@ -305,27 +305,28 @@ namespace xy {
         }
 
         /// is a character a decimal digit?
-        static bool is_decimal(char c) throw() {
+        static bool is_decimal(int c) throw() {
             return isdigit(c);
         }
 
         /// is a character an octal digit?
-        static bool is_octal(char c) throw() {
+        static bool is_octal(int c) throw() {
             return '0' <= c && c <= '7';
         }
 
         /// is a character a hexadecimal digit?
-        static bool is_hex(char c) throw() {
-            const char cl(tolower(c));
+        static bool is_hex(int c) throw() {
+            const int cl(tolower(c));
             return isdigit(c) || ('a' <= cl && cl <= 'f');
         }
 
         /// a names to token type mapping of reserved keywords in the language
-        typedef struct {
+        struct reserved_name {
             const char * const str;
             const size_t len;
             const token_type type;
-        } reserved_name;
+        };
+
         static reserved_name RESERVED_NAMES[] = {
             /*{"take",        5U, T_TAKE},
             {"give",        5U, T_GIVE},
@@ -424,7 +425,7 @@ namespace xy {
             return false;
         }
 
-        char digit = tolower(cp.to_cstring()[0]);
+        int digit = tolower(cp.to_cstring()[0]);
         if(!isalnum(digit) || 'f' < digit) {
             ctx.report(io::e_invalid_hex_escape, cp.to_cstring());
             push_file_line_col_left(ctx, start_col);
@@ -432,7 +433,7 @@ namespace xy {
         } else if('a' <= digit) {
             digit -= 'a' - ':';
         }
-        const int16_t new_val = (static_cast<int16_t>(*chr) * 16) + (digit - '0');
+        const int new_val = (static_cast<int>(*chr) * 16) + (digit - '0');
         *chr = static_cast<char>(new_val);
         return true;
     }
@@ -449,7 +450,7 @@ namespace xy {
     ) throw() {
         token_type tt(T_INVALID);
         size_t i(0);
-        bool (*digit_p)(char) = is_decimal;
+        bool (*digit_p)(int) = is_decimal;
         int last_chr('\0');
         uint32_t last_line(0);
         uint32_t last_col(0);
@@ -904,7 +905,7 @@ namespace xy {
                             break;
                         }
                         chr = cp.to_cstring()[0];
-                        scratch[i] = chr;
+                        scratch[i] = static_cast<char>(chr);
 
                         if(!digit_p(chr)) {
 
