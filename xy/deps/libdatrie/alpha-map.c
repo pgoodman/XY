@@ -276,7 +276,7 @@ alpha_map_add_range (AlphaMap *alpha_map, AlphaChar begin, AlphaChar end)
 TrieChar
 alpha_map_char_to_trie (const AlphaMap *alpha_map, AlphaChar ac)
 {
-    TrieChar    alpha_begin;
+    int    alpha_begin;
     AlphaRange *range;
 
     if (0 == ac)
@@ -287,7 +287,7 @@ alpha_map_char_to_trie (const AlphaMap *alpha_map, AlphaChar ac)
         if (range->begin <= ac && ac <= range->end)
             return (TrieChar) (alpha_begin + (ac - range->begin));
 
-        alpha_begin += (TrieChar) (range->end - range->begin + 1);
+        alpha_begin += (range->end - range->begin + 1);
     }
 
     return TRIE_CHAR_MAX;
@@ -296,7 +296,7 @@ alpha_map_char_to_trie (const AlphaMap *alpha_map, AlphaChar ac)
 AlphaChar
 alpha_map_trie_to_char (const AlphaMap *alpha_map, TrieChar tc)
 {
-    TrieChar    alpha_begin;
+    int    alpha_begin;
     AlphaRange *range;
 
     if (0 == tc)
@@ -307,7 +307,7 @@ alpha_map_trie_to_char (const AlphaMap *alpha_map, TrieChar tc)
         if (tc <= alpha_begin + (range->end - range->begin))
             return (AlphaChar) (range->begin + (tc - alpha_begin));
 
-        alpha_begin += (TrieChar) (range->end - range->begin + 1);
+        alpha_begin += (range->end - range->begin + 1);
     }
 
     return ALPHA_CHAR_ERROR;

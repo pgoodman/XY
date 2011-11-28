@@ -404,7 +404,7 @@ static Bool
 da_check_free_cell (DArray         *d,
                     TrieIndex       s)
 {
-    return (TRUE == da_extend_pool (d, s)) && da_get_check (d, s) < 0;
+    return (Bool) ((TRUE == da_extend_pool (d, s)) && da_get_check (d, s) < 0);
 }
 
 static Bool
