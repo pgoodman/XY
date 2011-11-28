@@ -29,7 +29,7 @@ namespace xy {
 
         {10,    T_NAME,             &parser::parse_literal,         &parser::parse_fail_s},
         {10,    T_TYPE_NAME,        &parser::parse_type_name,       &parser::parse_fail_s},
-        {10,    T_STRING_LITERAL,   &parser::parse_literal,         &parser::parse_fail_s},
+        {10,    T_STRING_LITERAL,   &parser::parse_literal,         &parser::parse_string_concat},
         {10,    T_INTEGER_LITERAL,  &parser::parse_literal,         &parser::parse_fail_s},
         {10,    T_RATIONAL_LITERAL, &parser::parse_literal,         &parser::parse_fail_s},
 
@@ -473,7 +473,7 @@ namespace xy {
             stack.push_back(new integer_literal_expr(cstring::copy(data)));
             return true;
         case T_STRING_LITERAL:
-            stack.push_back(new string_literal_expr(cstring::copy(data)));
+            stack.push_back(new string_literal_expr(cstring::copy(data), cstring::byte_length(data)));
             return true;
         case T_RATIONAL_LITERAL:
             stack.push_back(new rational_literal_expr(cstring::copy(data)));
@@ -484,6 +484,25 @@ namespace xy {
         default:
             return false;
         }
+    }
+
+    /// concatenate adjacent string literals
+    bool parser::parse_string_concat(unsigned, const token &, const char *data) throw() {
+        string_literal_expr *prev_str(stack.back()->reinterpret<string_literal_expr>());
+        if(nullptr == prev_str) {
+            return false;
+        }
+
+        const size_t str_len(cstring::byte_length(data));
+        char *new_literal(new char[prev_str->byte_length + str_len - 1U]);
+
+        memcpy(new_literal, prev_str->data, prev_str->byte_length);
+        memcpy(&(new_literal[prev_str->byte_length]), data, str_len);
+
+        cstring::free(prev_str->data);
+        prev_str->data = new_literal;
+
+        return true;
     }
 
     bool parser::parse_type_name(const token &, const char *name) throw() {

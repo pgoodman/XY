@@ -334,7 +334,13 @@ namespace xy {
             struct string_literal_expr : public support::ast_impl<string_literal_expr, literal_expr> {
             public:
 
-                XY_AST_FORWARD_CONSTRUCTOR(string_literal_expr, literal_expr, data)
+                unsigned byte_length;
+
+                string_literal_expr(const char *data_, unsigned len_) throw()
+                    : byte_length(len_)
+                {
+                    this->data = data_;
+                }
 
                 virtual ~string_literal_expr(void) throw() { }
             };

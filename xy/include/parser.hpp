@@ -83,6 +83,7 @@ namespace xy {
         bool parse_infix(unsigned, const token &, const char *) throw();
         bool parse_prefix(const token &, const char *) throw();
         bool parse_literal(const token &, const char *) throw();
+        bool parse_string_concat(unsigned, const token &, const char *) throw();
 
         // type parsers
         bool parse_type_name(const token &, const char *) throw();
