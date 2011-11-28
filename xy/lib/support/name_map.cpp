@@ -94,9 +94,9 @@ namespace xy { namespace support {
             ++block_id;
 
             if(nullptr == blocks || block_id >= static_cast<int>(capacity)) {
-                uint16_t new_capacity = capacity * 2;
+                uint16_t new_capacity = static_cast<uint16_t>(capacity * 2U);
                 if(new_capacity <= capacity) {
-                    new_capacity = ((capacity / 2) + 2) * 2;
+                    new_capacity = static_cast<uint16_t>(((capacity / 2U) + 2U) * 2U);
                 }
 
                 // like a realloc

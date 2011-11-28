@@ -149,7 +149,7 @@ namespace xy { namespace support {
 
             if(nullptr == elems) {
                 num_elems = 1;
-                elems = reserve(2);
+                elems = reserve(2U);
                 elems[0] = obj;
                 return true;
             }
@@ -159,7 +159,7 @@ namespace xy { namespace support {
 
                 // allocate new storage, copy in the shifted elements
                 if((num_elems + 1) > capacity) {
-                    T *new_elems(reserve(capacity * 2U));
+                    T *new_elems(reserve(static_cast<uint16_t>(capacity * 2U)));
 
                     for(size_t i(0); i < insert_at; ++i) {
                         new_elems[i] = elems[i];

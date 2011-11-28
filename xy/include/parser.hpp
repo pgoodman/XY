@@ -53,10 +53,10 @@ namespace xy {
         // precedence table
         struct precedence_parser {
         public:
-            uint8_t precedence;
+            unsigned precedence;
             token_type pivot;
             bool (parser::*prefix)(const token &, const char *);
-            bool (parser::*postfix)(uint8_t, const token &, const char *);
+            bool (parser::*postfix)(unsigned, const token &, const char *);
         };
 
         static const precedence_parser expression_parsers[];
@@ -69,18 +69,18 @@ namespace xy {
         bool consume(token_type) throw();
 
         /// precendence parsers
-        bool parse(const parser::precedence_parser *, uint8_t prec) throw();
+        bool parse(const parser::precedence_parser *, unsigned prec) throw();
         bool parse_fail_p(const token &, const char *) throw();
-        bool parse_fail_s(uint8_t, const token &, const char *) throw();
+        bool parse_fail_s(unsigned, const token &, const char *) throw();
 
         // expression parsers
         bool parse_paren_expression(const token &, const char *) throw();
-        bool parse_application(uint8_t, const token &, const char *) throw();
-        bool parse_type_instantiation(uint8_t, const token &, const char *) throw();
-        bool parse_array_access(uint8_t, const token &, const char *) throw();
+        bool parse_application(unsigned, const token &, const char *) throw();
+        bool parse_type_instantiation(unsigned, const token &, const char *) throw();
+        bool parse_array_access(unsigned, const token &, const char *) throw();
         bool parse_array_literal(const token &, const char *) throw();
         bool parse_record_literal(const token &, const char *) throw();
-        bool parse_infix(uint8_t, const token &, const char *) throw();
+        bool parse_infix(unsigned, const token &, const char *) throw();
         bool parse_prefix(const token &, const char *) throw();
         bool parse_literal(const token &, const char *) throw();
 
@@ -95,11 +95,11 @@ namespace xy {
         bool parse_params(io::message_id, token_type, std::vector<param_type *> &) throw();
 
         template <typename>
-        bool parse_infix_type_operator(uint8_t, const token &, const char *) throw();
+        bool parse_infix_type_operator(unsigned, const token &, const char *) throw();
 
-        //bool parse_arrow_type(uint8_t, const token &, const char *) throw();
-        //bool parse_sum_type(uint8_t, const token &, const char *) throw();
-        //bool parse_product_type(uint8_t, const token &, const char *) throw();
+        //bool parse_arrow_type(unsigned, const token &, const char *) throw();
+        //bool parse_sum_type(unsigned, const token &, const char *) throw();
+        //bool parse_product_type(unsigned, const token &, const char *) throw();
         bool parse_ref_type(const token &, const char *) throw();
         bool parse_array_type(const token &, const char *) throw();
 
@@ -155,7 +155,7 @@ namespace xy {
     }
 
     template <typename type_operator>
-    bool parser::parse_infix_type_operator(uint8_t prec, const token &op, const char *) throw() {
+    bool parser::parse_infix_type_operator(unsigned prec, const token &op, const char *) throw() {
 
         ast *left_(pop(stack));
 

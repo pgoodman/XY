@@ -77,7 +77,10 @@ namespace xy {
         {255,   T_INVALID,          &parser::parse_fail_p,          &parser::parse_fail_s},
     };
 
-    const parser::precedence_parser *parser::get_precedence_parser(const parser::precedence_parser *parsers, const token &tok) {
+    const parser::precedence_parser *parser::get_precedence_parser(
+        const parser::precedence_parser *parsers,
+        const token &tok
+    ) throw() {
         for(; T_INVALID != parsers->pivot; ++parsers) {
             if(parsers->pivot == tok.type()) {
                 break;
@@ -96,7 +99,7 @@ namespace xy {
     }
 
     /// top-down operator precedence parser
-    bool parser::parse(const parser::precedence_parser *parsers, uint8_t rbp) throw() {
+    bool parser::parse(const parser::precedence_parser *parsers, unsigned rbp) throw() {
 
 #define INDENT \
     indent[++indent_index] = '\t';
@@ -192,7 +195,7 @@ namespace xy {
     }
 
     /// parse a function call or template instantiation
-    bool parser::parse_application(uint8_t, const token &paren, const char *) throw() {
+    bool parser::parse_application(unsigned, const token &paren, const char *) throw() {
         ast *node(pop(stack));
 
         // function call
@@ -273,7 +276,7 @@ namespace xy {
     }
 
     /// parse the { ...} parse of a type instantiation, e.g. Int{1}, or Array(Int, 3){1,2,3}.
-    bool parser::parse_type_instantiation(uint8_t, const token &tok, const char *) throw() {
+    bool parser::parse_type_instantiation(unsigned, const token &tok, const char *) throw() {
 
         ast *decl_(pop(stack));
 
@@ -325,7 +328,7 @@ namespace xy {
         return consume(T_CLOSE_BRACE);
     }
 
-    bool parser::parse_array_access(uint8_t, const token &tok, const char *) throw() {
+    bool parser::parse_array_access(unsigned, const token &tok, const char *) throw() {
         ast *left_(pop(stack));
         ast *right_(nullptr);
 
@@ -353,7 +356,7 @@ namespace xy {
         return true;
     }
 
-    bool parser::parse_infix(uint8_t prec, const token &tok, const char *data) throw() {
+    bool parser::parse_infix(unsigned prec, const token &tok, const char *data) throw() {
 
         // looks like we're parsing an inline type declaration
         if(stack.back()->is_instance<type_decl>()) {
@@ -505,10 +508,10 @@ namespace xy {
     }
 
     /*
-    bool parser::parse_sum_type(uint8_t, const token &, const char *) throw() {
+    bool parser::parse_sum_type(unsigned, const token &, const char *) throw() {
         return true;
     }
-    bool parser::parse_product_type(uint8_t, const token &, const char *) throw() {
+    bool parser::parse_product_type(unsigned, const token &, const char *) throw() {
         return true;
     }*/
 
@@ -523,7 +526,7 @@ namespace xy {
         return false;
     }
 
-    bool parser::parse_fail_s(uint8_t, const token &, const char *) throw() {
+    bool parser::parse_fail_s(unsigned, const token &, const char *) throw() {
         return false;
     }
 
