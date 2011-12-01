@@ -21,7 +21,7 @@
 
 #include "xy/include/support/unsafe_cast.hpp"
 
-#define D(x) x
+#define D(x)
 
 namespace xy { namespace repl {
 
@@ -51,6 +51,12 @@ namespace xy { namespace repl {
         case ':': linenoiseAddCompletion(lc,":="); break;
         case 'y': linenoiseAddCompletion(lc,"yield"); break;
         case '=': linenoiseAddCompletion(lc,"=>"); break;
+        case '\0': linenoiseAddCompletion(lc,"    "); break;
+        case ' ':
+            linenoiseAddCompletion(lc,"   ");
+            linenoiseAddCompletion(lc,"  ");
+            linenoiseAddCompletion(lc," ");
+            break;
         default: break;
         }
     }
@@ -218,7 +224,7 @@ namespace xy { namespace repl {
                     ::exit(EXIT_FAILURE);
                 }
 
-                if(!READ_THREAD_GETS_LOCK) {
+                if(IN_REPL && !READ_THREAD_GETS_LOCK) {
                     pthread_mutex_unlock(&REPL_EXECUTION_LOCK);
                     D( sleep(1U); )
                     continue;
@@ -253,7 +259,7 @@ namespace xy { namespace repl {
                     ::exit(EXIT_FAILURE);
                 }
 
-                if(READ_THREAD_GETS_LOCK) {
+                if(IN_REPL && READ_THREAD_GETS_LOCK) {
                     pthread_mutex_unlock(&REPL_EXECUTION_LOCK);
                     D( sleep(1U); )
                     continue;

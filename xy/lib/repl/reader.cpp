@@ -9,7 +9,7 @@
 #include "xy/include/repl/reader.hpp"
 #include "xy/include/repl/repl.hpp"
 
-#define D(x) x
+#define D(x)
 
 namespace xy { namespace repl {
 
