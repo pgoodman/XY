@@ -14,6 +14,7 @@
 #include "xy/include/array.hpp"
 #include "xy/include/cstring.hpp"
 #include "xy/include/support/cstring_reader.hpp"
+#include "xy/include/repl/repl.hpp"
 
 #include "xy/include/io/line_highlight.hpp"
 
@@ -129,10 +130,13 @@ namespace xy {
         printf("%s---parser is %s\n", indent, token::name(prev_parser->pivot));
 
         // no supported parser or failed to parse
+        repl::wait();
         if(!(this->*(prev_parser->prefix))(curr, curr_data)) {
             DEDENT
+            repl::accept();
             return false;
         }
+        repl::accept();
 
         printf("%s---parsed prefix.\n", indent);
 
@@ -155,10 +159,13 @@ namespace xy {
             printf("%s---parsing suffix with right precedence %u\n", indent, curr_parser->precedence & ~1);
 
             // failed the sub-parse
+            repl::wait();
             if(!(this->*(curr_parser->postfix))(curr_parser->precedence & ~1, curr, curr_data)) {
                 DEDENT
+                repl::accept();
                 return false;
             }
+            repl::accept();
 
             printf("%s---parsed suffix.\n", indent);
 
@@ -712,6 +719,7 @@ namespace xy {
     }
 
     bool parser::consume(token_type expected) throw() {
+        repl::wait();
         if(!stream.check(expected)) {
             token got;
             stream.accept(got);
@@ -722,9 +730,11 @@ namespace xy {
                 ctx.file(), got.line(), got.column(), got.end_column()
             ));
 
+            repl::accept();
             return false;
         }
 
+        repl::accept();
         return stream.accept();
     }
 
@@ -752,7 +762,7 @@ namespace xy {
         p.stab.push_context();
 
         bool last_parsed(true);
-        while(last_parsed && stream.check()) {
+        for(; last_parsed && stream.check(); ) {
 
             while(stream.check(T_STRING_LITERAL)
                || stream.check(T_INTEGER_LITERAL)
@@ -767,13 +777,15 @@ namespace xy {
 
             // variable definition
             else if(stream.check(T_LET)) {
+                repl::wait();
                 last_parsed = p.parse_let();
+                p.consume(T_SEMICOLON);
+                repl::accept();
 
             // report_unexpected token
             } else if(stream.check() ){
                 token got;
                 stream.accept(got);
-
                 p.report_simple(io::e_unexpected_symbol, got);
 
                 break;
@@ -862,6 +874,12 @@ namespace xy {
         tokenizer tt;
         support::cstring_reader rr(buffer);
         token_stream stream(ctx, tt, rr);
+        return parse(ctx, stream);
+    }
+
+    bool parser::parse_reader(diagnostic_context &ctx, support::byte_reader &reader) throw() {
+        tokenizer tt;
+        token_stream stream(ctx, tt, reader);
         return parse(ctx, stream);
     }
 }

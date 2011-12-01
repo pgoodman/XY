@@ -18,7 +18,7 @@ CXX_FEATURES = -fno-rtti -fno-exceptions -fstrict-aliasing
 CXX_WARN_FLAGS = -Wall -Werror -Wno-unused-function -Wno-variadic-macros 
 CXX_WARN_FLAGS += -Wcast-qual -Wno-format-security
 CXX_FLAGS = -O0 -g -ansi -I${ROOT_DIR} -std=c++0x
-LD_FLAGS =
+LD_FLAGS = -lpthread
 
 CC_FEATURES = -fstrict-aliasing
 CC_WARN_FLAGS = -Wall -Werror -Wno-unused-function 
@@ -101,6 +101,9 @@ OBJS += bin/lib/type_system.o
 OBJS += bin/lib/symbol_table.o
 OBJS += bin/lib/parser.o
 
+OBJS += bin/lib/repl/repl.o
+OBJS += bin/lib/repl/reader.o  
+
 OBJS += bin/main.o 
 OUT = bin/xy
 
@@ -114,6 +117,9 @@ bin/lib/%.o: xy/lib/%.cpp
 	${CXX} ${CXX_FLAGS} -c $< -o $@
 
 bin/lib/utf8/%.o: xy/lib/utf8/%.cpp
+	${CXX} ${CXX_FLAGS} -c $< -o $@
+
+bin/lib/repl/%.o: xy/lib/repl/%.cpp
 	${CXX} ${CXX_FLAGS} -c $< -o $@
 	
 bin/deps/libdatrie/%.o: xy/deps/libdatrie/%.c
@@ -134,6 +140,7 @@ install:
 	-mkdir bin/lib/utf8
 	-mkdir bin/lib/io
 	-mkdir bin/lib/support
+	-mkdir bin/lib/repl
 	-mkdir bin/deps
 	-mkdir bin/deps/libdatrie
 	-mkdir bin/deps/linenoise
@@ -145,6 +152,7 @@ clean:
 	-rm -f bin/lib/utf8/*.o
 	-rm -f bin/lib/io/*.o
 	-rm -f bin/lib/support/*.o
+	-rm -f bin/lib/repl/*.o
 	-rm -f bin/deps/libdatrie/*.o
 	-rm -f bin/deps/linenoise/*.o
 	-rm -f bin/deps/openbsd/*.o

@@ -29,26 +29,10 @@
 #include "xy/include/utf8/codepoint.hpp"
 #include "xy/include/parser.hpp"
 
-#include "xy/deps/linenoise/linenoise.h"
+#include "xy/include/repl/repl.hpp"
+#include "xy/include/repl/reader.hpp"
 
 using namespace xy;
-
-static void completion(const char *buff, linenoiseCompletions *lc) {
-    switch(buff[0]) {
-    case 'l': linenoiseAddCompletion(lc,"let"); break;
-    case 'f': linenoiseAddCompletion(lc,"function"); break;
-    case 'r':
-        linenoiseAddCompletion(lc,"record");
-        linenoiseAddCompletion(lc,"return");
-        break;
-    case 'u': linenoiseAddCompletion(lc,"union"); break;
-    case '-': linenoiseAddCompletion(lc,"->"); break;
-    case ':': linenoiseAddCompletion(lc,":="); break;
-    case 'y': linenoiseAddCompletion(lc,"yield"); break;
-    case '=': linenoiseAddCompletion(lc,"=>"); break;
-    default: break;
-    }
-}
 
 int main(int argc, char *argv[]) {
     if(argc > 1) {
@@ -61,17 +45,17 @@ int main(int argc, char *argv[]) {
             return false;
         }
     } else {
-        char *line(nullptr);
-        linenoiseSetCompletionCallback(completion);
-        while(nullptr != (line = linenoise(">>> "))) {
 
-            if(0 == strcmp(line, "exit")) {
-                free(line);
-                break;
-            }
+        char *buffer = repl::init();
+        repl::reader byte_reader(buffer);
+        diagnostic_context ctx("stdin");
 
-            diagnostic_context ctx("stdin");
-            if(!parser::parse_buffer(ctx, line)) {
+        for(; repl::check(); ) {
+
+            byte_reader.reset();
+            ctx.reset();
+
+            if(!parser::parse_reader(ctx, byte_reader)) {
                 fprintf(stderr, "Error parsing.\n");
             }
 
@@ -79,8 +63,48 @@ int main(int argc, char *argv[]) {
                 ctx.print_diagnostics(stderr);
             }
 
-            free(line);
+            //printf("main loop yielding\n");
+            repl::read::yield();
         }
+
+
+
+            /*
+            while(repl::READ_MORE == repl::eval::yield()) {
+
+                line = linenoise("... ");
+                if(nullptr == line) {
+                    break;
+                }
+
+                line_len = cstring::byte_length(line) + 1;
+                if((cursor + line_len) > end_of_buffer) {
+                    free(line);
+                    fprintf(stderr, "Error: REPL buffer full.\n");
+                    break;
+                }
+
+                // extend the buffer in place
+                memcpy(cursor, line, line_len);
+                cursor[line_len - 1] = '\n';
+                free(line);
+                line = nullptr;
+            }
+            */
+
+            /*
+            if(!parser::parse_buffer(ctx, line)) {
+                fprintf(stderr, "Error parsing.\n");
+            }
+
+            if(ctx.has_message()) {
+                ctx.print_diagnostics(stderr);
+            }
+            */
+
+        //}
+
+        repl::exit();
     }
 
     return 0;

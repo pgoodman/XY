@@ -20,6 +20,7 @@
 #include "xy/include/symbol_table.hpp"
 
 #include "xy/include/io/file.hpp"
+#include "xy/include/support/byte_reader.hpp"
 
 namespace xy {
 
@@ -118,6 +119,7 @@ namespace xy {
         static bool parse(diagnostic_context &ctx, token_stream &stream_) throw();
         static bool parse_file(diagnostic_context &ctx, const char * const file_name) throw();
         static bool parse_buffer(diagnostic_context &ctx, const char * const buffer) throw();
+        static bool parse_reader(diagnostic_context &ctx, support::byte_reader &reader) throw();
     };
 
     template <typename param_type>

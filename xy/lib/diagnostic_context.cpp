@@ -131,6 +131,14 @@ namespace xy {
         branches.resize(num_queues - num_leafs, nullptr);
     }
 
+    /// reject all of the speculative branches, i.e. subsume all of them!
+    void diagnostic_context::reset(void) throw() {
+        while(!branches.empty()) {
+            reject();
+        }
+        speculate(1);
+    }
+
 
     /// check if we have any messages (in the top queue)
     bool diagnostic_context::has_message(void) const throw() {

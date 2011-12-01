@@ -57,6 +57,7 @@ namespace xy {
         void speculate(unsigned num_branches) throw();
         void accept(unsigned which_branch) throw();
         void reject(void) throw();
+        void reset(void) throw();
 
         /// check if we have any messages (in the top queue)
         bool has_message(void) const throw();

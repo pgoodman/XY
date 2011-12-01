@@ -9,7 +9,7 @@ Types in XY are structurally defined. I intend to have both inductive and co-ind
 
 Requirements
 ------------
-A relatively recent version of the GCC or Clang. The compiler is implemented using some features of C99 and C++11, e.g. variadic templates, variadic macros, r-value references, etc.
+A relatively recent version of the GCC, Clang, or the Intel&reg; C++ XE Studio. The compiler is implemented using some features of C99 and C++11, e.g. variadic templates, variadic macros, r-value references, etc.
 
 Downloading the Coding
 ----------------------
@@ -30,6 +30,12 @@ Compiling with LLVM Toolchain
 
     make install
     make CXX="clang++ -Dconstexpr=const -Dnullptr=0" CC="clang"
+
+Compiling with the Intel&reg; C++ Studio
+--------------------------------------
+
+    make install
+    make CXX="icpc -Dconstexpr=const -Dnullptr=0" CC="icc"
 
 Reporting Bugs / Compiler Errors
 --------------------------------

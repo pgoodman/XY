@@ -39,7 +39,7 @@ namespace xy {
         switch(state) {
         case READ_BLOCK:
 
-            for(; read_size == BLOCK_SIZE; ) {
+            for(; ; ) {
 
                 read_size = f.read_block(scratch, array::size(scratch));
                 if(0U == read_size) {
