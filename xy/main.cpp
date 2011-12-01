@@ -51,8 +51,6 @@ int main(int argc, char *argv[]) {
         diagnostic_context ctx("stdin");
 
         for(; repl::check(); ) {
-
-            byte_reader.reset();
             ctx.reset();
 
             if(!parser::parse_reader(ctx, byte_reader)) {
@@ -64,6 +62,7 @@ int main(int argc, char *argv[]) {
             }
 
             //printf("main loop yielding\n");
+            byte_reader.reset();
             repl::read::yield();
         }
 

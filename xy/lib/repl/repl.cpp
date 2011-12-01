@@ -51,11 +51,6 @@ namespace xy { namespace repl {
         case ':': linenoiseAddCompletion(lc,":="); break;
         case 'y': linenoiseAddCompletion(lc,"yield"); break;
         case '=': linenoiseAddCompletion(lc,"=>"); break;
-        case '\0': linenoiseAddCompletion(lc,"    "); break;
-        case ' ':
-            linenoiseAddCompletion(lc,"   ");
-            linenoiseAddCompletion(lc,"  ");
-            linenoiseAddCompletion(lc," ");
             break;
         default: break;
         }
@@ -83,7 +78,7 @@ namespace xy { namespace repl {
         char *line(nullptr);
         size_t line_len(0);
 
-        D( printf("read thread is %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
+        D( printf("REPL: read thread is %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
         if(!READ_THREAD_GETS_LOCK) {
             eval::yield();
@@ -105,18 +100,18 @@ namespace xy { namespace repl {
             }
 
             if(0 == strcmp("exit", line)) {
-                D( printf("read thread is exiting\n"); )
+                D( printf("REPL: read thread is exiting\n"); )
                 repl::exit();
                 break;
             }
 
-            D( printf("got '%s'\n", line); )
+            D( printf("REPL: got '%s'\n", line); )
             do {
                 line_len = cstring::byte_length(line);
                 cursor = append_line(cursor, end_of_buffer, line, line_len);
                 line = nullptr;
 
-                D( printf("buffer is '%s'\n", REPL_BUFFER); )
+                D( printf("REPL: buffer is '%s'\n", REPL_BUFFER); )
 
                 eval::yield();
 
@@ -152,7 +147,7 @@ namespace xy { namespace repl {
             ::exit(EXIT_FAILURE);
         }
 
-        D( printf("main thread is %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
+        D( printf("REPL: main thread is %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
         // presumption: reader has the lock
         READ_THREAD_GETS_LOCK = true;
@@ -176,7 +171,7 @@ namespace xy { namespace repl {
             pthread_mutex_destroy(&REPL_EXECUTION_LOCK);
         }
 
-        D( printf("thread %lu is exiting\n", support::unsafe_cast<size_t>(pthread_self())); )
+        D( printf("REPL: thread %lu is exiting\n", support::unsafe_cast<size_t>(pthread_self())); )
 
         pthread_exit(nullptr);
     }
@@ -187,11 +182,13 @@ namespace xy { namespace repl {
     }
 
     void wait(void) throw() {
+        D( printf("REPL: incrementing %u\n", NUM_WAIT_REQUESTS + 1); )
         NUM_WAIT_REQUESTS += 1;
         AT_END_OF_INPUT = 0U == NUM_WAIT_REQUESTS;
     }
 
     void accept(void) throw() {
+        D( printf("REPL: decrementing %u\n", NUM_WAIT_REQUESTS - 1); )
         NUM_WAIT_REQUESTS -= 1;
         AT_END_OF_INPUT = 0U == NUM_WAIT_REQUESTS;
     }
@@ -209,7 +206,7 @@ namespace xy { namespace repl {
                 return;
             }
 
-            D( printf("yielding to eval thread from %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
+            D( printf("REPL: yielding to eval thread from %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
             // pre-condition:
             // - we are in the read thread
@@ -244,7 +241,7 @@ namespace xy { namespace repl {
                 return;
             }
 
-            D( printf("yielding to read thread from %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
+            D( printf("REPL: yielding to read thread from %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
             // pre-condition:
             // - we are in the eval thread

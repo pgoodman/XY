@@ -8,6 +8,7 @@
 
 #include <cassert>
 
+#define D(x)
 
 #include "xy/include/parser.hpp"
 #include "xy/include/tokenizer.hpp"
@@ -116,18 +117,18 @@ namespace xy {
         token curr;
         const char *curr_data;
 
-        printf("%srbp is %u\n", indent, rbp);
+        D( printf("%srbp is %u\n", indent, rbp); )
 
         if(!stream.accept(curr, curr_data)) {
             DEDENT
             return false;
         }
 
-        printf("%sa: got token %s with data '%s' at line %u, col %u\n", indent, curr.name(), curr_data, curr.line(), curr.column());
+        D( printf("%sa: got token %s with data '%s' at line %u, col %u\n", indent, curr.name(), curr_data, curr.line(), curr.column()); )
 
         const precedence_parser *prev_parser(get_precedence_parser(parsers, curr));
 
-        printf("%s---parser is %s\n", indent, token::name(prev_parser->pivot));
+        D( printf("%s---parser is %s\n", indent, token::name(prev_parser->pivot)); )
 
         // no supported parser or failed to parse
         repl::wait();
@@ -138,13 +139,13 @@ namespace xy {
         }
         repl::accept();
 
-        printf("%s---parsed prefix.\n", indent);
+        D( printf("%s---parsed prefix.\n", indent); )
 
         // get the parser for the next token
         stream.accept(curr, curr_data);
-        printf("%sb: got token %s with data '%s' at line %u, col %u\n", indent, curr.name(), curr_data, curr.line(), curr.column());
+        D( printf("%sb: got token %s with data '%s' at line %u, col %u\n", indent, curr.name(), curr_data, curr.line(), curr.column()); )
         const precedence_parser *curr_parser(get_precedence_parser(parsers, curr));
-        printf("%s---parser is %s with left precedence %u\n", indent, token::name(curr_parser->pivot), curr_parser->precedence);
+        D( printf("%s---parser is %s with left precedence %u\n", indent, token::name(curr_parser->pivot), curr_parser->precedence); )
 
         // parsing won't get us anywhere, but we've successfully parsed
         // something already.
@@ -156,7 +157,7 @@ namespace xy {
 
         for(; rbp < curr_parser->precedence; ) {
 
-            printf("%s---parsing suffix with right precedence %u\n", indent, curr_parser->precedence & ~1);
+            D( printf("%s---parsing suffix with right precedence %u\n", indent, curr_parser->precedence & ~1); )
 
             // failed the sub-parse
             repl::wait();
@@ -167,7 +168,7 @@ namespace xy {
             }
             repl::accept();
 
-            printf("%s---parsed suffix.\n", indent);
+            D( printf("%s---parsed suffix.\n", indent); )
 
             // we extended this parse :D who cares if there's another token or
             // not? let's leave that to the caller :D
@@ -176,11 +177,11 @@ namespace xy {
                 return true;
             }
 
-            printf("%sc: got token %s with data '%s' at line %u, col %u\n", indent, curr.name(), curr_data, curr.line(), curr.column());
+            D( printf("%sc: got token %s with data '%s' at line %u, col %u\n", indent, curr.name(), curr_data, curr.line(), curr.column()); )
 
             curr_parser = get_precedence_parser(parsers, curr);
 
-            printf("%s---parser is %s with left precedence %u\n", indent, token::name(curr_parser->pivot), curr_parser->precedence);
+            D( printf("%s---parser is %s with left precedence %u\n", indent, token::name(curr_parser->pivot), curr_parser->precedence); )
 
             if(&parser::parse_fail_s == curr_parser->postfix) {
                 stream.undo();
@@ -189,7 +190,7 @@ namespace xy {
             }
         }
 
-        printf("%sinput precedence %u was not less than token precedence %u \n", indent, rbp, curr_parser->precedence);
+        D( printf("%sinput precedence %u was not less than token precedence %u \n", indent, rbp, curr_parser->precedence); )
 
         // we exited the loop, i.e. we had something that could be parsed but
         // whose precedence level is incorrect, i.e. should be handled by
@@ -208,7 +209,7 @@ namespace xy {
         // function call
         if(node->is_instance<expression>()) {
 
-            printf("looks like a function application!\n");
+            D( printf("looks like a function application!\n"); )
 
             expression *function(node->reinterpret<expression>());
             function_call_expr *funcall(new function_call_expr(function));
