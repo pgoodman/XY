@@ -15,8 +15,11 @@
 #include "xy/include/repl/repl.hpp"
 
 #include "xy/deps/linenoise/linenoise.h"
+
 #include "xy/include/array.hpp"
 #include "xy/include/cstring.hpp"
+
+#include "xy/include/support/unsafe_cast.hpp"
 
 #define D(x) x
 
@@ -74,7 +77,7 @@ namespace xy { namespace repl {
         char *line(nullptr);
         size_t line_len(0);
 
-        D( printf("read thread is %lu\n", reinterpret_cast<size_t>(pthread_self())); )
+        D( printf("read thread is %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
         if(!READ_THREAD_GETS_LOCK) {
             eval::yield();
@@ -143,7 +146,7 @@ namespace xy { namespace repl {
             ::exit(EXIT_FAILURE);
         }
 
-        D( printf("main thread is %lu\n", reinterpret_cast<size_t>(pthread_self())); )
+        D( printf("main thread is %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
         // presumption: reader has the lock
         READ_THREAD_GETS_LOCK = true;
@@ -167,7 +170,7 @@ namespace xy { namespace repl {
             pthread_mutex_destroy(&REPL_EXECUTION_LOCK);
         }
 
-        D( printf("thread %lu is exiting\n", reinterpret_cast<size_t>(pthread_self())); )
+        D( printf("thread %lu is exiting\n", support::unsafe_cast<size_t>(pthread_self())); )
 
         pthread_exit(nullptr);
     }
@@ -200,7 +203,7 @@ namespace xy { namespace repl {
                 return;
             }
 
-            D( printf("yielding to eval thread from %lu\n", reinterpret_cast<size_t>(pthread_self())); )
+            D( printf("yielding to eval thread from %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
             // pre-condition:
             // - we are in the read thread
@@ -235,7 +238,7 @@ namespace xy { namespace repl {
                 return;
             }
 
-            D( printf("yielding to read thread from %lu\n", reinterpret_cast<size_t>(pthread_self())); )
+            D( printf("yielding to read thread from %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
             // pre-condition:
             // - we are in the eval thread
