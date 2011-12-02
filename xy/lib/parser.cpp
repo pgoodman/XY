@@ -8,7 +8,7 @@
 
 #include <cassert>
 
-#define D(x)
+#define D(x) x
 
 #include "xy/include/parser.hpp"
 #include "xy/include/tokenizer.hpp"
@@ -780,7 +780,9 @@ namespace xy {
             else if(stream.check(T_LET)) {
                 repl::wait();
                 last_parsed = p.parse_let();
-                p.consume(T_SEMICOLON);
+                if(last_parsed) {
+                    p.consume(T_SEMICOLON);
+                }
                 repl::accept();
 
             // report_unexpected token
@@ -795,20 +797,16 @@ namespace xy {
             }
         }
 
-        if(ctx.has_message(io::message_type::error)
-        || ctx.has_message(io::message_type::recoverable_error)
-        || ctx.has_message(io::message_type::failed_assertion)) {
-            return false;
+        if(last_parsed) {
+            p.consume(T_EOF);
         }
-
-        p.consume(T_EOF);
 
         if(ctx.has_message(io::message_type::error)
         || ctx.has_message(io::message_type::recoverable_error)
-        || ctx.has_message(io::message_type::failed_assertion)) {
+        || ctx.has_message(io::message_type::failed_assertion)
+        || !last_parsed) {
             return false;
         }
-
 
         p.stab.pop_context();
 

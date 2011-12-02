@@ -13,9 +13,9 @@
 
 namespace xy { namespace repl {
 
-    static const char *NULL_STRING("");
+    static char NULL_STRING[] = {'\0','\0','\0'};
 
-    reader::reader(const char *buffer_) throw()
+    reader::reader(char *buffer_) throw()
         : pos(0UL)
         , is_empty(true)
         , buffer(nullptr == buffer_ ? NULL_STRING : buffer_)
@@ -30,6 +30,8 @@ namespace xy { namespace repl {
     void reader::reset(void) throw() {
         pos = 0;
         is_empty = true;
+        buffer[0] = '\0';
+        buffer[1] = '\0';
     }
 
     /// read up to the end of a string or the end of a line

@@ -117,6 +117,9 @@ namespace xy {
         const size_t num_queues(branches.size());
         const size_t num_leafs(branch_counts.back());
 
+        assert(0 < num_queues);
+        assert(0 < num_leafs);
+
         branch_counts.pop_back();
         active_branch.pop_back();
 

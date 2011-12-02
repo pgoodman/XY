@@ -19,10 +19,10 @@ namespace xy { namespace repl {
 
         mutable size_t pos;
         mutable bool is_empty;
-        const char *buffer;
+        char *buffer;
 
     public:
-        reader(const char *) throw();
+        reader(char *) throw();
         void reset(void) throw();
 
         virtual ~reader(void) throw();
