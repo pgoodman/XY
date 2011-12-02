@@ -32,6 +32,8 @@
 #include "xy/include/repl/repl.hpp"
 #include "xy/include/repl/reader.hpp"
 
+#define D(x)
+
 using namespace xy;
 
 int main(int argc, char *argv[]) {
@@ -53,6 +55,7 @@ int main(int argc, char *argv[]) {
         for(; repl::check(); ) {
             ctx.reset();
 
+            D( printf("MAIN: about to parse\n"); )
             if(!parser::parse_reader(ctx, byte_reader)) {
                 fprintf(stderr, "Error parsing.\n");
             }
@@ -61,47 +64,10 @@ int main(int argc, char *argv[]) {
                 ctx.print_diagnostics(stderr);
             }
 
-            //printf("main loop yielding\n");
+            D( printf("MAIN: resetting\n"); )
             byte_reader.reset();
-            repl::read::yield();
+            //repl::read::yield();
         }
-
-
-
-            /*
-            while(repl::READ_MORE == repl::eval::yield()) {
-
-                line = linenoise("... ");
-                if(nullptr == line) {
-                    break;
-                }
-
-                line_len = cstring::byte_length(line) + 1;
-                if((cursor + line_len) > end_of_buffer) {
-                    free(line);
-                    fprintf(stderr, "Error: REPL buffer full.\n");
-                    break;
-                }
-
-                // extend the buffer in place
-                memcpy(cursor, line, line_len);
-                cursor[line_len - 1] = '\n';
-                free(line);
-                line = nullptr;
-            }
-            */
-
-            /*
-            if(!parser::parse_buffer(ctx, line)) {
-                fprintf(stderr, "Error parsing.\n");
-            }
-
-            if(ctx.has_message()) {
-                ctx.print_diagnostics(stderr);
-            }
-            */
-
-        //}
 
         repl::exit();
     }

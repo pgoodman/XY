@@ -18,6 +18,7 @@ namespace xy { namespace repl {
     private:
 
         mutable size_t pos;
+        mutable bool is_empty;
         const char *buffer;
 
     public:

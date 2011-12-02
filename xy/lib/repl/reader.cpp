@@ -17,21 +17,45 @@ namespace xy { namespace repl {
 
     reader::reader(const char *buffer_) throw()
         : pos(0UL)
+        , is_empty(true)
         , buffer(nullptr == buffer_ ? NULL_STRING : buffer_)
     { }
 
     reader::~reader(void) throw() {
         buffer = NULL_STRING;
         pos = 0;
+        is_empty = true;
     }
 
     void reader::reset(void) throw() {
         pos = 0;
+        is_empty = true;
     }
 
     /// read up to the end of a string or the end of a line
     size_t reader::read_block(uint8_t *block, const size_t GIVEN_SIZE) const throw() {
+        bool just_read(false);
 
+        // the buffer is empty, do the first read
+        if(is_empty && repl::check()) {
+            D( printf("READER: begin fill buffer\n"); )
+            repl::read::yield();
+            is_empty = false;
+            just_read = true;
+
+        // don't do anything; REPL isn't on anymore
+        } else if(!repl::check()) {
+            D( printf("READER: repl is done.\n"); )
+            return 0U;
+        }
+
+        // we haven't just requested new info from the REPL but we should.
+        if(!just_read && '\n' == buffer[pos]) {
+            repl::read::yield();
+        }
+
+
+        /*
         D( printf("READER: trying to read block! buffer is '%s', tail is '%s'\n", buffer, &(buffer[pos])); )
 
         for(; repl::check() && repl::should_wait(); ) {
@@ -55,6 +79,7 @@ namespace xy { namespace repl {
 
             break;
         }
+        */
 
         size_t given_size(GIVEN_SIZE - 1U); // -1 to allow for trailing '\0'
         size_t read_amount(0);

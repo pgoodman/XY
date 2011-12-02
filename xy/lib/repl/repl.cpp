@@ -30,18 +30,15 @@ namespace xy { namespace repl {
     static pthread_t READ_THREAD;
     static char REPL_BUFFER[8193];
 
-    static shared_data<read_write_locked, bool> IN_REPL(false);
+    static shared_data<write_locked, bool> IN_REPL(false);
 
     // keep track of if we can accept
-    static shared_data<read_write_locked, unsigned> NUM_WAIT_REQUESTS(0);
-    static shared_data<read_write_locked, bool> AT_END_OF_INPUT(true);
-    //static unsigned NUM_WAIT_REQUESTS(0);
-    //static bool AT_END_OF_INPUT(true);
+    static shared_data<write_locked, unsigned> NUM_WAIT_REQUESTS(0);
+    static shared_data<write_locked, bool> AT_END_OF_INPUT(true);
 
     // owned by whoever is currently running
     static pthread_mutex_t REPL_EXECUTION_LOCK;
     static shared_data<read_write_locked, bool> READ_THREAD_GETS_LOCK(false);
-    //static bool READ_THREAD_GETS_LOCK(false);
 
     /// set auto-completion things for linenoise
     static void completion(const char *buff, linenoiseCompletions *lc) {
@@ -133,6 +130,8 @@ namespace xy { namespace repl {
                 }
 
             } while(IN_REPL);
+
+            eval::yield();
         }
 
         return nullptr;
@@ -220,6 +219,7 @@ namespace xy { namespace repl {
             // - we have the lock; we want to give it away to the eval thread,
             //   and only return when we should get the lock back.
             READ_THREAD_GETS_LOCK = false;
+            pthread_mutex_unlock(&REPL_EXECUTION_LOCK);
 
             for(; IN_REPL; ) {
                 if(0 != pthread_mutex_lock(&REPL_EXECUTION_LOCK)) {
@@ -228,7 +228,7 @@ namespace xy { namespace repl {
 
                 if(IN_REPL && !READ_THREAD_GETS_LOCK) {
                     pthread_mutex_unlock(&REPL_EXECUTION_LOCK);
-                    D( sleep(1U); )
+                    //pthread_yield();
                     continue;
                 }
 
@@ -263,7 +263,7 @@ namespace xy { namespace repl {
 
                 if(IN_REPL && READ_THREAD_GETS_LOCK) {
                     pthread_mutex_unlock(&REPL_EXECUTION_LOCK);
-                    D( sleep(1U); )
+                    //pthread_yield();
                     continue;
                 }
 
