@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "xy/include/repl/repl.hpp"
+#include "xy/include/repl/shared_data.hpp"
 
 #include "xy/deps/linenoise/linenoise.h"
 
@@ -25,17 +26,22 @@
 
 namespace xy { namespace repl {
 
-    static bool IN_REPL(false);
+    //static bool IN_REPL(false);
     static pthread_t READ_THREAD;
     static char REPL_BUFFER[8193];
 
+    static shared_data<read_write_locked, bool> IN_REPL(false);
+
     // keep track of if we can accept
-    static unsigned NUM_WAIT_REQUESTS(0);
-    static bool AT_END_OF_INPUT(true);
+    static shared_data<read_write_locked, unsigned> NUM_WAIT_REQUESTS(0);
+    static shared_data<read_write_locked, bool> AT_END_OF_INPUT(true);
+    //static unsigned NUM_WAIT_REQUESTS(0);
+    //static bool AT_END_OF_INPUT(true);
 
     // owned by whoever is currently running
     static pthread_mutex_t REPL_EXECUTION_LOCK;
-    static bool READ_THREAD_GETS_LOCK(false);
+    static shared_data<read_write_locked, bool> READ_THREAD_GETS_LOCK(false);
+    //static bool READ_THREAD_GETS_LOCK(false);
 
     /// set auto-completion things for linenoise
     static void completion(const char *buff, linenoiseCompletions *lc) {
@@ -147,6 +153,7 @@ namespace xy { namespace repl {
             ::exit(EXIT_FAILURE);
         }
 
+
         D( printf("REPL: main thread is %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
         // presumption: reader has the lock
@@ -183,13 +190,13 @@ namespace xy { namespace repl {
 
     void wait(void) throw() {
         D( printf("REPL: incrementing %u\n", NUM_WAIT_REQUESTS + 1); )
-        NUM_WAIT_REQUESTS += 1;
+        NUM_WAIT_REQUESTS = NUM_WAIT_REQUESTS + 1;
         AT_END_OF_INPUT = 0U == NUM_WAIT_REQUESTS;
     }
 
     void accept(void) throw() {
         D( printf("REPL: decrementing %u\n", NUM_WAIT_REQUESTS - 1); )
-        NUM_WAIT_REQUESTS -= 1;
+        NUM_WAIT_REQUESTS = NUM_WAIT_REQUESTS - 1;
         AT_END_OF_INPUT = 0U == NUM_WAIT_REQUESTS;
     }
 
@@ -212,9 +219,7 @@ namespace xy { namespace repl {
             // - we are in the read thread
             // - we have the lock; we want to give it away to the eval thread,
             //   and only return when we should get the lock back.
-
             READ_THREAD_GETS_LOCK = false;
-            pthread_mutex_unlock(&REPL_EXECUTION_LOCK);
 
             for(; IN_REPL; ) {
                 if(0 != pthread_mutex_lock(&REPL_EXECUTION_LOCK)) {
