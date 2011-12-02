@@ -37,7 +37,7 @@
     }
 
 #define XY_SHARED_DATA_READ(L)                          \
-    operator T(void) throw() const {                    \
+    operator T(void) const throw() {                    \
         L(pthread_mutex_lock(&lock_);)                  \
         const T ret_val(data_);                         \
         L(pthread_mutex_unlock(&lock_);)                \
