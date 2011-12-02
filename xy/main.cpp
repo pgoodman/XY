@@ -49,26 +49,27 @@ int main(int argc, char *argv[]) {
     } else {
 
         char *buffer = repl::init();
-        repl::reader byte_reader(buffer);
-        diagnostic_context ctx("stdin");
+        {
+            repl::reader byte_reader(buffer);
+            diagnostic_context ctx("stdin");
 
-        for(; repl::check(); ) {
-            ctx.reset();
+            for(; repl::check(); ) {
+                ctx.reset();
 
-            D( printf("MAIN: about to parse\n"); )
-            if(!parser::parse_reader(ctx, byte_reader)) {
-                fprintf(stderr, "Error parsing.\n");
+                D( printf("MAIN: about to parse\n"); )
+                if(!parser::parse_reader(ctx, byte_reader)) {
+                    fprintf(stderr, "Error parsing.\n");
+                }
+
+                if(ctx.has_message()) {
+                    ctx.print_diagnostics(stderr);
+                }
+
+                D( printf("MAIN: resetting\n"); )
+                byte_reader.reset();
+                //repl::read::yield();
             }
-
-            if(ctx.has_message()) {
-                ctx.print_diagnostics(stderr);
-            }
-
-            D( printf("MAIN: resetting\n"); )
-            byte_reader.reset();
-            //repl::read::yield();
         }
-
         repl::exit();
     }
 
