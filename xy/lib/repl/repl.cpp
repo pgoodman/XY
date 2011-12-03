@@ -208,6 +208,8 @@ namespace xy { namespace repl {
                 return;
             }
 
+            assert(pthread_self() == READ_THREAD);
+
             D( printf("REPL: yielding to eval thread from %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
             // pre-condition:
@@ -241,6 +243,8 @@ namespace xy { namespace repl {
             if(!IN_REPL || READ_THREAD_EXITED) {
                 return;
             }
+
+            assert(pthread_self() != READ_THREAD);
 
             D( printf("REPL: yielding to read thread from %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
