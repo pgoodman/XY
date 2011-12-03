@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
     } else {
 
         char *buffer = repl::init();
+        bool parse_was_good(false);
         {
             repl::reader byte_reader(buffer);
             diagnostic_context ctx("stdin");
@@ -57,12 +58,14 @@ int main(int argc, char *argv[]) {
                 ctx.reset();
 
                 D( printf("MAIN: about to parse\n"); )
-                if(!parser::parse_reader(ctx, byte_reader)) {
-                    fprintf(stderr, "Error parsing.\n");
-                }
+                parse_was_good = parser::parse_reader(ctx, byte_reader);
 
                 if(ctx.has_message()) {
                     ctx.print_diagnostics(stderr);
+                }
+
+                if(parse_was_good) {
+                    // TODO
                 }
 
                 D( printf("MAIN: resetting\n"); )

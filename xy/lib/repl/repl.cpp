@@ -39,6 +39,7 @@ namespace xy { namespace repl {
     // owned by whoever is currently running
     static pthread_mutex_t REPL_EXECUTION_LOCK;
     static shared_data<read_write_locked, bool> READ_THREAD_GETS_LOCK(false);
+    static shared_data<read_write_locked, bool> READ_THREAD_EXITED(false);
 
     /// set auto-completion things for linenoise
     static void completion(const char *buff, linenoiseCompletions *lc) {
@@ -98,13 +99,11 @@ namespace xy { namespace repl {
             line = linenoise(">>> ");
 
             if(nullptr == line) {
-                repl::exit();
                 break;
             }
 
             if(0 == strcmp("exit", line)) {
                 D( printf("REPL: read thread is exiting\n"); )
-                repl::exit();
                 break;
             }
 
@@ -125,14 +124,19 @@ namespace xy { namespace repl {
                 // continue getting input
                 line = linenoise("... ");
                 if(nullptr == line) {
-                    repl::exit();
-                    break;
+                    goto exit_read_thread;
                 }
 
             } while(IN_REPL);
 
             eval::yield();
         }
+
+    exit_read_thread:
+
+        READ_THREAD_GETS_LOCK = false;
+        READ_THREAD_EXITED = true;
+        pthread_mutex_unlock(&REPL_EXECUTION_LOCK);
 
         return nullptr;
     }
@@ -152,7 +156,6 @@ namespace xy { namespace repl {
             ::exit(EXIT_FAILURE);
         }
 
-
         D( printf("REPL: main thread is %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
         // presumption: reader has the lock
@@ -169,13 +172,6 @@ namespace xy { namespace repl {
 
     /// exit the current thread and turn off the REPL if it's on
     void exit(void) throw() {
-        if(IN_REPL) {
-            IN_REPL = false;
-            READ_THREAD_GETS_LOCK = !READ_THREAD_GETS_LOCK;
-            pthread_mutex_unlock(&REPL_EXECUTION_LOCK);
-        } else {
-            pthread_mutex_destroy(&REPL_EXECUTION_LOCK);
-        }
 
         D( printf("REPL: thread %lu is exiting\n", support::unsafe_cast<size_t>(pthread_self())); )
 
@@ -184,7 +180,7 @@ namespace xy { namespace repl {
 
     /// check if we can keep going
     bool check(void) throw() {
-        return IN_REPL;
+        return IN_REPL && !READ_THREAD_EXITED;
     }
 
     void wait(void) throw() {
@@ -242,7 +238,7 @@ namespace xy { namespace repl {
         /// yield execution to the read thread; called from the eval thread.
         /// this will return when an eval::yield has been called.
         void yield(void) throw() {
-            if(!IN_REPL) {
+            if(!IN_REPL || READ_THREAD_EXITED) {
                 return;
             }
 
@@ -256,7 +252,7 @@ namespace xy { namespace repl {
             READ_THREAD_GETS_LOCK = true;
             pthread_mutex_unlock(&REPL_EXECUTION_LOCK);
 
-            for(; IN_REPL; ) {
+            for(; IN_REPL && !READ_THREAD_EXITED; ) {
                 if(0 != pthread_mutex_lock(&REPL_EXECUTION_LOCK)) {
                     ::exit(EXIT_FAILURE);
                 }
