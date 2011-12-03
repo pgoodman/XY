@@ -168,6 +168,8 @@ namespace xy { namespace repl {
             ::exit(EXIT_FAILURE);
         }
 
+        pthread_detach(READ_THREAD);
+
         return &(REPL_BUFFER[0]);
     }
 
