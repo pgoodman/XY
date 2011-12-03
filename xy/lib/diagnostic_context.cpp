@@ -125,7 +125,11 @@ namespace xy {
 
         const bool can_subsume(!active_branch.empty());
 
-        io::message_queue *prev_active_branch(branches[active_branch.back()]);
+        io::message_queue *prev_active_branch(nullptr);
+
+        if(can_subsume) {
+            prev_active_branch = branches[active_branch.back()];
+        }
 
         for(size_t i(num_queues - num_leafs); i < num_queues; ++i) {
             if(can_subsume) {

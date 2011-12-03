@@ -104,6 +104,7 @@ namespace xy { namespace repl {
 
             if(0 == strcmp("exit", line)) {
                 D( printf("REPL: read thread is exiting\n"); )
+                free(line);
                 break;
             }
 
