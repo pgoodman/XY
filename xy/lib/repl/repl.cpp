@@ -174,7 +174,7 @@ namespace xy { namespace repl {
     void exit(void) throw() {
 
         D( printf("REPL: thread %lu is exiting\n", support::unsafe_cast<size_t>(pthread_self())); )
-
+        pthread_mutex_destroy(&REPL_EXECUTION_LOCK);
         pthread_exit(nullptr);
     }
 

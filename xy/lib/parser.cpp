@@ -8,7 +8,7 @@
 
 #include <cassert>
 
-#define D(x) x
+#define D(x)
 
 #include "xy/include/parser.hpp"
 #include "xy/include/tokenizer.hpp"
@@ -790,6 +790,7 @@ namespace xy {
                 token got;
                 stream.accept(got);
                 p.report_simple(io::e_unexpected_symbol, got);
+                last_parsed = false;
 
                 break;
             } else {

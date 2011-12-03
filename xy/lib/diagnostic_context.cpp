@@ -123,10 +123,15 @@ namespace xy {
         branch_counts.pop_back();
         active_branch.pop_back();
 
+        const bool can_subsume(!active_branch.empty());
+
         io::message_queue *prev_active_branch(branches[active_branch.back()]);
 
         for(size_t i(num_queues - num_leafs); i < num_queues; ++i) {
-            prev_active_branch->subsume(*(branches[i]));
+            if(can_subsume) {
+                prev_active_branch->subsume(*(branches[i]));
+            }
+
             delete branches[i];
             branches[i] = nullptr;
         }
