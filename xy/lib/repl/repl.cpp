@@ -84,9 +84,7 @@ namespace xy { namespace repl {
 
         D( printf("REPL: read thread is %lu\n", support::unsafe_cast<size_t>(pthread_self())); )
 
-        if(!READ_THREAD_GETS_LOCK) {
-            eval::yield();
-        }
+        pthread_mutex_lock(&REPL_EXECUTION_LOCK);
 
         for(; IN_REPL && READ_THREAD_GETS_LOCK; ) {
 
@@ -161,7 +159,6 @@ namespace xy { namespace repl {
 
         // presumption: reader has the lock
         READ_THREAD_GETS_LOCK = true;
-        pthread_mutex_lock(&REPL_EXECUTION_LOCK);
 
         // create another thread
         if(0 != pthread_create(&READ_THREAD, nullptr, &read_thread, nullptr)) {
