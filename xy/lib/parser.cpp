@@ -726,7 +726,7 @@ namespace xy {
             stream.accept(got);
 
             ctx.report(io::e_expected_different_symbol, got.name(), token::name(expected));
-            ctx.report(io::c_file_line_col, ctx.file(), got.line(), got.column());
+            ctx.report(io::c_file_line_col, ctx.name(), got.line(), got.column());
             ctx.report(io::c_highlight, io::highlight_line(
                 ctx.file(), got.line(), got.column(), got.end_column()
             ));

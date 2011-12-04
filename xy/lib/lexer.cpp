@@ -57,7 +57,7 @@ namespace xy {
                     if(decoder.found_error()) {
                         ctx.report(io::w_invalid_utf8_cp, chr.to_cstring());
                         ctx.report(
-                            io::c_file_line_col, ctx.file(),
+                            io::c_file_line_col, ctx.name(),
                             line_tracker[curr], column_tracker[curr]
                         );
                         ctx.report(io::c_highlight, io::highlight_column(
@@ -94,7 +94,7 @@ namespace xy {
                                 if(!isprint(first_chr) && !isspace(first_chr)) {
                                     ctx.report(io::e_non_graph_char, first_chr);
                                     ctx.report(
-                                        io::c_file_line_col, ctx.file(),
+                                        io::c_file_line_col, ctx.name(),
                                         line_tracker[curr], column_tracker[curr]
                                     );
                                     ctx.report(io::c_highlight, io::highlight_column(
@@ -132,7 +132,7 @@ namespace xy {
         if(decoder.is_in_use()) {
             ctx.report(io::e_invalid_trailing_utf8_cp);
             ctx.report(
-                io::c_file_line_col, ctx.file(),
+                io::c_file_line_col, ctx.name(),
                 line_tracker[curr], column_tracker[curr]
             );
             ctx.report(io::c_highlight, io::highlight_column(

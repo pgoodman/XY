@@ -367,7 +367,7 @@ namespace xy {
     /// diagnostic context's message queue.
     void tokenizer::push_file_line_col(diagnostic_context &ctx) throw() {
         ctx.report(io::c_file_line_col,
-            ctx.file(), ll.line(), ll.column()
+            ctx.name(), ll.line(), ll.column()
         );
         state = DONE;
     }
@@ -693,7 +693,7 @@ namespace xy {
                         for(; !positions.empty(); positions.pop_back()) {
                             ctx.report(io::n_start_of_block_comment);
                             ctx.report(io::c_file_line_col,
-                                ctx.file(), positions.back().first, positions.back().second
+                                ctx.name(), positions.back().first, positions.back().second
                             );
                             ctx.report(io::c_highlight, io::highlight_column(
                                 ctx.file(), positions.back().first, positions.back().second
@@ -747,7 +747,7 @@ namespace xy {
                         if(i >= BUFFER_LENGTH) {
                             ctx.report(io::e_string_too_long, static_cast<unsigned>(BUFFER_LENGTH));
                             ctx.report(io::c_file_line_col,
-                                ctx.file(), tok.line_, tok.col_
+                                ctx.name(), tok.line_, tok.col_
                             );
                             ctx.report(io::c_highlight, io::highlight_column(
                                 ctx.file(), tok.line_, tok.col_
@@ -875,7 +875,7 @@ namespace xy {
                 early_termination_of_string:
                     ctx.report(io::e_string_not_terminated);
                     ctx.report(io::c_file_line_col,
-                        ctx.file(), tok.line_, tok.col_
+                        ctx.name(), tok.line_, tok.col_
                     );
                     ctx.report(io::c_highlight, io::highlight_column(
                         ctx.file(), tok.line_, tok.col_
@@ -1010,7 +1010,7 @@ namespace xy {
                                 scratch, static_cast<unsigned>(NAME_LENGTH)
                             );
                             ctx.report(io::c_file_line_col,
-                                ctx.file(), tok.line_, tok.col_
+                                ctx.name(), tok.line_, tok.col_
                             );
                             ctx.report(io::c_highlight, io::highlight_column(
                                 ctx.file(), tok.line_, tok.col_

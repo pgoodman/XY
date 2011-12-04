@@ -15,8 +15,9 @@
 
 namespace xy {
 
-    diagnostic_context::diagnostic_context(const char *file_name_) throw()
-        : file_name(cstring::copy(file_name_))
+    diagnostic_context::diagnostic_context(const char *context_name_, const char *file_name_) throw()
+        : context_name(cstring::copy(context_name_))
+        , file_name(cstring::copy(file_name_))
         , branch_counts()
         , active_branch()
         , branches()
@@ -27,7 +28,9 @@ namespace xy {
 
     diagnostic_context::~diagnostic_context(void) throw() {
         cstring::free(file_name);
+        cstring::free(context_name);
         file_name = nullptr;
+        context_name = nullptr;
 
         for(size_t i(0); i < branches.size(); ++i) {
             delete branches[i];
@@ -37,6 +40,10 @@ namespace xy {
 
     const char *diagnostic_context::file(void) const throw() {
         return file_name;
+    }
+
+    const char *diagnostic_context::name(void) const throw() {
+        return context_name;
     }
 
     void diagnostic_context::print_diagnostics(FILE *fp) const throw() {

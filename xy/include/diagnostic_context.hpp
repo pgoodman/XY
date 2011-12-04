@@ -23,6 +23,7 @@ namespace xy {
     class diagnostic_context {
     private:
 
+        const char *context_name;
         const char *file_name;
         //io::message_queue diag;
 
@@ -41,16 +42,17 @@ namespace xy {
         void report_here(const token &here, io::message_id id, arg_types... args) throw() {
             io::message_queue *queue(branches[active_branch.back()]);
             queue->push(id, args...);
-            queue->push(io::c_file_line_col, file(), here.line(), here.column());
+            queue->push(io::c_file_line_col, name(), here.line(), here.column());
             queue->push(io::c_highlight, io::highlight_line(
                 file(), here.line(), here.column(), here.end_column()
             ));
         }
 
-        diagnostic_context(const char *file_name_) throw();
+        diagnostic_context(const char *context_name_, const char *file_name_) throw();
         ~diagnostic_context(void) throw();
 
         const char *file(void) const throw();
+        const char *name(void) const throw();
 
         void print_diagnostics(FILE *fp) const throw();
 

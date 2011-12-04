@@ -20,14 +20,8 @@
 #include <cassert>
 
 #include "xy/include/diagnostic_context.hpp"
-#include "xy/include/token.hpp"
-#include "xy/include/tokenizer.hpp"
-#include "xy/include/io/file.hpp"
-#include "xy/include/io/message.hpp"
-#include "xy/include/io/cwd.hpp"
-#include "xy/include/io/real_path.hpp"
-#include "xy/include/utf8/codepoint.hpp"
 #include "xy/include/parser.hpp"
+#include "xy/include/cstring.hpp"
 
 #include "xy/include/repl/repl.hpp"
 #include "xy/include/repl/reader.hpp"
@@ -36,9 +30,26 @@
 
 using namespace xy;
 
+static const char *REPL_HISTORY_FILE_NAME(".xy.repl");
+
+static void write_repl_file(const char *buffer) throw() {
+    FILE *fp(fopen(REPL_HISTORY_FILE_NAME, "w"));
+    if(nullptr == fp) {
+        printf("failed to open repl history file.\n");
+        return;
+    }
+
+    fwrite(buffer, 1U, cstring::byte_length(buffer) + 1U, fp);
+    fclose(fp);
+}
+
+static void delete_repl_file(void) throw() {
+    remove(REPL_HISTORY_FILE_NAME);
+}
+
 int main(int argc, char *argv[]) {
     if(argc > 1) {
-        diagnostic_context ctx(argv[1]);
+        diagnostic_context ctx(argv[1], argv[1]);
         if(!parser::parse_file(ctx, argv[1])) {
             fprintf(stderr, "Error parsing file '%s'\n", argv[1]);
         }
@@ -52,7 +63,7 @@ int main(int argc, char *argv[]) {
         bool parse_was_good(false);
         {
             repl::reader byte_reader(buffer);
-            diagnostic_context ctx("stdin");
+            diagnostic_context ctx("stdin", REPL_HISTORY_FILE_NAME);
 
             for(; repl::check(); ) {
                 ctx.reset();
@@ -61,7 +72,9 @@ int main(int argc, char *argv[]) {
                 parse_was_good = parser::parse_reader(ctx, byte_reader);
 
                 if(ctx.has_message()) {
+                    write_repl_file(buffer);
                     ctx.print_diagnostics(stderr);
+                    delete_repl_file();
                 }
 
                 if(parse_was_good) {

@@ -14,7 +14,7 @@ XY_MSG(e_array_access_on_non_expr, error, "The array access operator a[b] must h
 XY_MSG(e_missing_type_decl_in_let, error, "Missing or invalid type declaration to match the type name '%s' in this 'let' statement.")
 XY_MSG(e_bad_suffix_type_decl, error, "An %s is not allowed at this point in an (inline) type declaration.")
 XY_MSG(e_type_decl_or_func_expr_expected, error, "I was expecting to find an inline type declaration (for template instantiation) or an expression (that has a function type) before this point.")
-XY_MSG(e_func_arg_not_expr, error, "Arguments to function calls must be expressions.")
+XY_MSG(e_func_arg_not_expr, error, "Non-template arguments to function calls must be expressions.")
 XY_MSG(e_tpl_arg_not_ast, error, "Arguments to type template instantiations must be either expressions or type declarations.")
 XY_MSG(e_tpl_must_have_args, error, "Template type instantiations must have at least one argument. No arguments were provided.")
 XY_MSG(e_incomplete_tpl_inst, error, "Incomplete template type instantiation. There was probably a problem with one of the template type arguments, or you have provided no arguments.")
