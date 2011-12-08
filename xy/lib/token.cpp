@@ -107,8 +107,8 @@ namespace xy {
             "percent symbol",                  // %
             "tilde",                    // ~
             "arrow",                    // ->
+            "colon",                    // :
             "semicolon",                // ;
-            //"colon",                    // :
             "at symbol",                       // @
 
             "less-than symbol",                // <

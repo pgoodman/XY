@@ -569,14 +569,6 @@ namespace xy {
         return consume(T_CLOSE_PAREN);
     }
 
-    /*
-    bool parser::parse_sum_type(unsigned, const token &, const char *) throw() {
-        return true;
-    }
-    bool parser::parse_product_type(unsigned, const token &, const char *) throw() {
-        return true;
-    }*/
-
     bool parser::parse_ref_type(const token &, const char *) throw() {
         return true;
     }
@@ -653,6 +645,11 @@ namespace xy {
 
         stream.accept(prev);
 
+        // assume that top of stack is a statement list
+        statement_list *stmts(stack.back()->reinterpret<statement_list>());
+
+        assert(nullptr != stmts);
+
         if(!stream.check(T_NAME) && !stream.check(T_TYPE_NAME)){
             stream.accept(curr);
             return report_unexpected_follow_symbol_2(prev, curr, T_NAME, T_TYPE_NAME);
@@ -665,7 +662,6 @@ namespace xy {
             }
 
             // for each variable name
-            //for(auto &name_pair : names) {
             for(size_t i(0); i < names.size(); ++i) {
                 if(check_sep && !consume(T_COMMA)) {
                     break;
@@ -675,7 +671,11 @@ namespace xy {
                     break;
                 }
 
-                (void) names[i]; // TODO
+                stmts->statements.push_back(new var_def(
+                    names[i].second,
+                    stack.back()->reinterpret<expression>()
+                ));
+                stack.pop_back();
 
                 check_sep = true;
                 ++last_seen;
@@ -703,7 +703,11 @@ namespace xy {
                     break;
                 }
 
-                (void) names[i]; // TODO
+                stmts->statements.push_back(new type_def(
+                    names[i].second,
+                    stack.back()->reinterpret<type_decl>()
+                ));
+                stack.pop_back();
 
                 check_sep = true;
                 ++last_seen;
@@ -761,6 +765,9 @@ namespace xy {
         parser p(ctx, stream);
         stream.ctx = ctx;
         p.stab.push_context();
+
+        // push the top thing onto the stack :D
+        p.stack.push_back(new statement_list);
 
         bool last_parsed(true);
         for(; last_parsed && stream.check(); ) {

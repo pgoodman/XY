@@ -367,13 +367,11 @@ namespace xy {
         public:
             support::mapped_name name;
             type_decl *declaration;
-            type_decl *func;
 
-            XY_AST_CONSTRUCTOR(type_def, name, declaration, func)
+            XY_AST_CONSTRUCTOR(type_def, name, declaration)
 
             virtual ~type_def(void) throw() {
                 support::delete_ast(declaration);
-                support::delete_ast(func);
             }
         };
 

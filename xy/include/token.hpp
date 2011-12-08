@@ -60,7 +60,7 @@ namespace xy {
         T_PERCENT,                  // %
         T_TILDE,                    // ~
         T_ARROW,                    // ->
-        //T_COLON,                    // :
+        T_COLON,                    // :
         T_SEMICOLON,                // ;
         T_AT,                       // @
 

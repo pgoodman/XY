@@ -524,15 +524,15 @@ namespace xy {
                 } else if(':' == chr) {
                     tok.col_ = ll.column();
                     tok.line_ = ll.line();
-                    tok.type_ = T_INVALID;
+                    tok.type_ = T_COLON;
                     tok.num_columns_ = 1;
 
                     if(!ll.get_codepoint(f, ctx, cp) || cp.is_null()) {
                         state = DONE;
-                        return false;
+                        return true;
                     } else if(!cp.is_ascii()) {
                         state = HAVE_NON_ASCII_CODEPOINT;
-                        return false;
+                        return true;
                     }
 
                     if('=' == cp.to_cstring()[0]) {
@@ -547,7 +547,7 @@ namespace xy {
                         return true;
                     } else {
                         state = HAVE_ASCII_CODEPOINT;
-                        return false;
+                        return true;
                     }
 
                 // minus/dash, arrow, comment, or block comment
@@ -1060,7 +1060,8 @@ namespace xy {
             break;
         }
 
-        return false;
+        tok.type_ = T_EOF;
+        return true;
     }
 }
 

@@ -410,7 +410,10 @@ namespace xy { namespace io {
             }
 
             virtual void print(FILE *fp) const throw() {
-                fprintf(fp, "%s" XY_F_BOLD, message::MESSAGE_TYPES[this->type]);
+                fprintf(fp, "%s" XY_F_BOLD " #%d",
+                    message::MESSAGE_TYPES[this->type],
+                    static_cast<int>(this->type)
+                );
                 print_tuple<
                     TUPLE_SIZE,
                     tuple_type
@@ -429,7 +432,10 @@ namespace xy { namespace io {
             virtual ~message_impl(void) throw() { }
 
             virtual void print(FILE *fp) const throw() {
-                fprintf(fp, "%s" XY_F_BOLD, message::MESSAGE_TYPES[this->type]);
+                fprintf(fp, "%s" XY_F_BOLD " #%d",
+                    message::MESSAGE_TYPES[this->type],
+                    static_cast<int>(this->type)
+                );
                 fprintf(fp, message::MESSAGE_STRINGS[id].message);
             }
         };
