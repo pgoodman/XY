@@ -59,34 +59,29 @@ int main(int argc, char *argv[]) {
         }
     } else {
 
-        char *buffer = repl::init();
+        repl::reader byte_reader;
         bool parse_was_good(false);
-        {
-            repl::reader byte_reader(buffer);
-            diagnostic_context ctx("stdin", REPL_HISTORY_FILE_NAME);
+        diagnostic_context ctx("stdin", REPL_HISTORY_FILE_NAME);
 
-            for(; repl::check(); ) {
-                ctx.reset();
+        for(;; ctx.reset(), byte_reader.reset()) {
 
-                D( printf("MAIN: about to parse\n"); )
-                parse_was_good = parser::parse_reader(ctx, byte_reader);
+            D( printf("MAIN: about to parse\n"); )
+            parse_was_good = parser::parse_reader(ctx, byte_reader);
 
-                if(ctx.has_message()) {
-                    write_repl_file(buffer);
-                    ctx.print_diagnostics(stderr);
-                    delete_repl_file();
-                }
+            if(ctx.has_message()) {
+                write_repl_file(byte_reader.history());
+                ctx.print_diagnostics(stderr);
+                delete_repl_file();
+            }
 
-                if(parse_was_good) {
-                    // TODO
-                }
+            if(byte_reader.got_exit()) {
+                break;
+            }
 
-                D( printf("MAIN: resetting\n"); )
-                byte_reader.reset();
-                //repl::read::yield();
+            if(parse_was_good) {
+                // TODO
             }
         }
-        repl::exit();
     }
 
     return 0;

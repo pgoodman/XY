@@ -47,7 +47,7 @@
 #define XY_LOCKED(x) x
 #define XY_UNLOCKED(x)
 
-namespace xy { namespace repl {
+namespace xy { namespace threading {
 
     /// forward declaration
     template <typename policy, typename T>
@@ -68,6 +68,8 @@ namespace xy { namespace repl {
         XY_SHARED_DATA_READ(XY_LOCKED)
     };
 
+    template <typename T>
+    pthread_mutex_t shared_data<read_write_locked, T>::lock_ = PTHREAD_MUTEX_INITIALIZER;
 
     /// reads are locked, writes are not
     template <typename T>
@@ -79,6 +81,9 @@ namespace xy { namespace repl {
         XY_SHARED_DATA_READ(XY_LOCKED)
     };
 
+    template <typename T>
+    pthread_mutex_t shared_data<read_locked, T>::lock_ = PTHREAD_MUTEX_INITIALIZER;
+
     /// writes are locked, reads are not
     template <typename T>
     class shared_data<write_locked, T> {
@@ -88,6 +93,9 @@ namespace xy { namespace repl {
         XY_SHARED_DATA_WRITE(XY_LOCKED)
         XY_SHARED_DATA_READ(XY_UNLOCKED)
     };
+
+    template <typename T>
+    pthread_mutex_t shared_data<write_locked, T>::lock_ = PTHREAD_MUTEX_INITIALIZER;
 }}
 
 

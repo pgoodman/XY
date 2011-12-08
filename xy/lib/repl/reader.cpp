@@ -6,82 +6,132 @@
  *     Version: $Id$
  */
 #include <cstdio>
+#include <cstdlib>
+
 #include "xy/include/repl/reader.hpp"
 #include "xy/include/repl/repl.hpp"
+#include "xy/include/cstring.hpp"
+#include "xy/include/array.hpp"
+
+#include "xy/deps/linenoise/linenoise.h"
 
 #define D(x)
 
 namespace xy { namespace repl {
 
-    static char NULL_STRING[] = {'\0','\0','\0'};
+    /// set auto-completion things for linenoise
+    static void completion(const char *buff, linenoiseCompletions *lc) {
+        switch(buff[0]) {
+        case 'l': linenoiseAddCompletion(lc,"let"); break;
+        case 'f': linenoiseAddCompletion(lc,"function"); break;
+        case 'r':
+            linenoiseAddCompletion(lc,"record");
+            linenoiseAddCompletion(lc,"return");
+            break;
+        case 'u': linenoiseAddCompletion(lc,"union"); break;
+        case '-': linenoiseAddCompletion(lc,"->"); break;
+        case ':': linenoiseAddCompletion(lc,":="); break;
+        case 'y': linenoiseAddCompletion(lc,"yield"); break;
+        case '=': linenoiseAddCompletion(lc,"=>"); break;
+            break;
+        default: break;
+        }
+    }
 
-    reader::reader(char *buffer_) throw()
+    static void append_line(char *cursor, const char *end, char *line, size_t line_len) throw() {
+        if((cursor + line_len + 1) > end) {
+            free(line);
+            fprintf(stderr, "Error: REPL buffer full.\n");
+            ::exit(EXIT_FAILURE);
+        }
+
+        memcpy(cursor, line, line_len);
+        cursor[line_len] = '\n';
+        free(line);
+    }
+
+    reader::reader(void) throw()
         : pos(0UL)
         , is_empty(true)
-        , buffer(nullptr == buffer_ ? NULL_STRING : buffer_)
-    { }
+        , is_done(false)
+    {
+        memset(&(buffer[0]), 0, array::size(buffer));
+        linenoiseSetCompletionCallback(completion);
+    }
 
     reader::~reader(void) throw() {
-        buffer = NULL_STRING;
         pos = 0;
         is_empty = true;
+        is_done = true;
     }
 
     void reader::reset(void) throw() {
         pos = 0;
         is_empty = true;
-        buffer[0] = '\0';
-        buffer[1] = '\0';
+        memset(&(buffer[0]), 0, array::size(buffer));
+    }
+
+    bool reader::got_exit(void) const throw() {
+        return is_done;
+    }
+
+    const char *reader::history(void) const throw() {
+        return &(buffer[0]);
     }
 
     /// read up to the end of a string or the end of a line
     size_t reader::read_block(uint8_t *block, const size_t GIVEN_SIZE) const throw() {
         bool just_read(false);
+        char *line(nullptr);
+        size_t pos_offset(0U);
+
+        if(is_done) {
+            return 0U;
+        }
 
         // the buffer is empty, do the first read
-        if(is_empty && repl::check()) {
-            D( printf("READER: begin fill buffer\n"); )
-            repl::read::yield();
+        if(is_empty) {
             is_empty = false;
             just_read = true;
 
-        // don't do anything; REPL isn't on anymore
-        } else if(!repl::check()) {
-            D( printf("READER: repl is done.\n"); )
-            return 0U;
+            line = linenoise(">>> ");
+            if(nullptr == line) {
+                fprintf(stderr, "Error: unable to read initial line from REPL.\n");
+                ::exit(EXIT_FAILURE);
+            }
+
+            if(0 == strcmp("exit", line)) {
+                free(line);
+                buffer[0] = '\0';
+                is_done = true;
+                return 0U;
+            }
         }
 
         // we haven't just requested new info from the REPL but we should.
         if(!just_read && '\n' == buffer[pos]) {
-            repl::read::yield();
-        }
 
-
-        /*
-        D( printf("READER: trying to read block! buffer is '%s', tail is '%s'\n", buffer, &(buffer[pos])); )
-
-        for(; repl::check() && repl::should_wait(); ) {
-            // we've just started evaluating a new block; yield to the reader
-            if(0 == pos && 0 == buffer[pos]) {
-                D( printf("READER: reader wants initial\n"); )
-                repl::read::yield();
-                continue;
+            if(can_accept()) {
+               return 0U;
             }
 
-            // we're at the new line boundary; yield back to the reader so the
-            if('\n' == buffer[pos]) {
-
-                D( printf("READER: reader wants more\n"); )
-                repl::read::yield();
-                ++pos;
-                continue;
-            } else if(repl::should_wait()) {
-                D( printf("READER: buffer='%s' pos=%lu  tail='%s'\n", buffer, pos, &(buffer[pos])); )
+            just_read = true;
+            pos_offset = 1U;
+            line = linenoise("... ");
+            if(nullptr == line) {
+                fprintf(stderr, "Error: unable to read following line from REPL.\n");
+                ::exit(EXIT_FAILURE);
             }
-
-            break;
         }
-        */
+
+        if(just_read) {
+            append_line(
+                const_cast<char *>(&(buffer[pos + pos_offset])),
+                &array::last(buffer) - 1,
+                line,
+                cstring::byte_length(line)
+            );
+        }
 
         size_t given_size(GIVEN_SIZE - 1U); // -1 to allow for trailing '\0'
         size_t read_amount(0);

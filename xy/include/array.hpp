@@ -57,7 +57,7 @@ namespace xy { namespace array {
     }
 
     template <typename T, const size_t LENGTH>
-    inline T &last(T (&arr)[LENGTH]) throw() {
+    inline constexpr T &last(T (&arr)[LENGTH]) throw() {
         return arr[LENGTH - 1U];
     }
 
