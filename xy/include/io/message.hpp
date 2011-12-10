@@ -11,11 +11,21 @@
 #define XY_MESSAGE_HPP_
 
 #include <stdint.h>
-#include <tr1/tuple>
-#include <tr1/utility>
-#include <tr1/type_traits>
+
 #include <cstdio>
 #include <cstring>
+
+#if 0
+#   define STD_TR1 std::tr1
+#   include <tr1/tuple>
+#   include <tr1/utility>
+#   include <tr1/type_traits>
+#else
+#   define STD_TR1 std
+#   include <tuple>
+#   include <utility>
+#   include <type_traits>
+#endif
 
 // forward declaration for clang on linux where type_info is missing for
 // exceptions
@@ -196,7 +206,7 @@ namespace xy { namespace io {
         template <typename T>
         class as_pod {
         public:
-            typedef as_pod_impl<T, std::tr1::is_enum<T>::value> converter;
+            typedef as_pod_impl<T, STD_TR1::is_enum<T>::value> converter;
             typedef typename converter::type type;
             static type convert(
                 const typename mpl::remove_const<T>::type &v
@@ -238,7 +248,7 @@ namespace xy { namespace io {
         class print_tuple<1, tuple_type> {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
-                fprintf(fp, fmt, to_pod(std::tr1::get<0>(t)));
+                fprintf(fp, fmt, to_pod(STD_TR1::get<0>(t)));
             }
         };
 
@@ -246,7 +256,7 @@ namespace xy { namespace io {
         class print_tuple<2, tuple_type> {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
-                fprintf(fp, fmt, to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)));
+                fprintf(fp, fmt, to_pod(STD_TR1::get<0>(t)), to_pod(STD_TR1::get<1>(t)));
             }
         };
 
@@ -255,7 +265,7 @@ namespace xy { namespace io {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
                 fprintf(fp, fmt,
-                    to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)), to_pod(std::tr1::get<2>(t))
+                    to_pod(STD_TR1::get<0>(t)), to_pod(STD_TR1::get<1>(t)), to_pod(STD_TR1::get<2>(t))
                 );
             }
         };
@@ -265,8 +275,8 @@ namespace xy { namespace io {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
                 fprintf(fp, fmt,
-                    to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)), to_pod(std::tr1::get<2>(t)),
-                    to_pod(std::tr1::get<3>(t))
+                    to_pod(STD_TR1::get<0>(t)), to_pod(STD_TR1::get<1>(t)), to_pod(STD_TR1::get<2>(t)),
+                    to_pod(STD_TR1::get<3>(t))
                 );
             }
         };
@@ -276,8 +286,8 @@ namespace xy { namespace io {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
                 fprintf(fp, fmt,
-                    to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)), to_pod(std::tr1::get<2>(t)),
-                    to_pod(std::tr1::get<3>(t)), to_pod(std::tr1::get<4>(t))
+                    to_pod(STD_TR1::get<0>(t)), to_pod(STD_TR1::get<1>(t)), to_pod(STD_TR1::get<2>(t)),
+                    to_pod(STD_TR1::get<3>(t)), to_pod(STD_TR1::get<4>(t))
                 );
             }
         };
@@ -287,8 +297,8 @@ namespace xy { namespace io {
         public:
             static void print(FILE *fp, const char *fmt, const tuple_type &t) {
                 fprintf(fp, fmt,
-                    to_pod(std::tr1::get<0>(t)), to_pod(std::tr1::get<1>(t)), to_pod(std::tr1::get<2>(t)),
-                    to_pod(std::tr1::get<3>(t)), to_pod(std::tr1::get<4>(t)), to_pod(std::tr1::get<5>(t))
+                    to_pod(STD_TR1::get<0>(t)), to_pod(STD_TR1::get<1>(t)), to_pod(STD_TR1::get<2>(t)),
+                    to_pod(STD_TR1::get<3>(t)), to_pod(STD_TR1::get<4>(t)), to_pod(STD_TR1::get<5>(t))
                 );
             }
         };
@@ -312,7 +322,7 @@ namespace xy { namespace io {
         class allocate_string<mpl::true_tag, i, tuple_type> {
         public:
             static void allocate(tuple_type &t) {
-                std::tr1::get<i>(t) = cstring::copy(std::tr1::get<i>(t));
+                STD_TR1::get<i>(t) = cstring::copy(STD_TR1::get<i>(t));
             }
         };
 
@@ -324,7 +334,7 @@ namespace xy { namespace io {
                 allocate_string<
                     typename mpl::equal<
                         char *,
-                        typename std::tr1::tuple_element<i,tuple_type>::type
+                        typename STD_TR1::tuple_element<i,tuple_type>::type
                     >::result,
                     i,
                     tuple_type
@@ -356,8 +366,8 @@ namespace xy { namespace io {
         class free_string<mpl::true_tag, i, tuple_type> {
         public:
             static void free(tuple_type &t) {
-                cstring::free(std::tr1::get<i>(t));
-                std::tr1::get<i>(t) = nullptr;
+                cstring::free(STD_TR1::get<i>(t));
+                STD_TR1::get<i>(t) = nullptr;
             }
         };
 
@@ -369,7 +379,7 @@ namespace xy { namespace io {
                 free_string<
                     typename mpl::equal<
                         char *,
-                        typename std::tr1::tuple_element<i,tuple_type>::type
+                        typename STD_TR1::tuple_element<i,tuple_type>::type
                     >::result,
                     i,
                     tuple_type
@@ -390,9 +400,9 @@ namespace xy { namespace io {
         template <typename ...arg_types>
         class message_impl : public message {
         public:
-            typedef std::tr1::tuple<arg_types...> tuple_type;
+            typedef STD_TR1::tuple<arg_types...> tuple_type;
             enum {
-                TUPLE_SIZE = std::tr1::tuple_size<tuple_type>::value
+                TUPLE_SIZE = STD_TR1::tuple_size<tuple_type>::value
             };
 
 

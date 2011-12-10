@@ -11,7 +11,7 @@
 
 #include <map>
 #include <vector>
-#include <tr1/unordered_map>
+//#include <tr1/unordered_map>
 
 #include "xy/include/type.hpp"
 #include "xy/include/support/block_allocator.hpp"
@@ -44,10 +44,11 @@ namespace xy {
         std::vector<type *> types;
 
         /// hash table representing all product types
+        /*
         std::tr1::unordered_map<
             std::vector<type *> *,
             product_type *
-        > product_types;
+        > product_types;*/
 
         /// a list of types that we are adding into some tuple/record/
         /// function type.
