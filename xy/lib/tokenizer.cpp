@@ -11,6 +11,7 @@
 #include <cstring>
 #include <vector>
 #include <utility>
+#include <cctype>
 
 #include "xy/include/tokenizer.hpp"
 #include "xy/include/array.hpp"
