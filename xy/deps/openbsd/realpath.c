@@ -32,15 +32,23 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "xy/deps/openbsd/string.h"
 
 #if !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH)
 
-#ifdef PATH_MAX
-#   undef PATH_MAX
+#ifndef PATH_MAX
+#   ifdef MAXPATHLEN
+#       define PATH_MAX MAXPATHLEN
+#   else
+#       define PATH_MAX 8192
+#   endif
 #endif
-#define PATH_MAX 32768
+
+#ifndef MAXSYMLINKS
+#   define MAXSYMLINKS 32
+#endif
 
 /*
  * char *realpath(const char *path, char resolved[PATH_MAX]);
