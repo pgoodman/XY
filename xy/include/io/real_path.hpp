@@ -12,13 +12,13 @@
 #include <sys/param.h>
 
 namespace xy { namespace io {
-
+    /*
     enum {
         REAL_PATH_MAX_LEN = PATH_MAX
     };
 
     char *get_real_path(const char *path, char (&resolved)[REAL_PATH_MAX_LEN]);
-
+    */
 }}
 
 #endif /* REALPATH_HPP_ */

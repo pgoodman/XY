@@ -12,6 +12,7 @@
 #include "xy/deps/openbsd/stdlib.h"
 
 namespace xy { namespace io {
+#if 0
     /*
      * char *realpath(const char *path, char resolved[REAL_PATH_MAX_LEN]);
      *
@@ -24,4 +25,6 @@ namespace xy { namespace io {
     {
         return realpath(path, &(resolved[0]));
     }
+#endif
+
 }}
