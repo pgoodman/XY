@@ -25,6 +25,19 @@ extern "C" {
 #   define XY_REALPATH_LINKAGE extern
 #endif
 
+#ifndef PATH_MAX
+#   ifdef MAXPATHLEN
+#       define PATH_MAX MAXPATHLEN
+#   else
+#       define PATH_MAX 8192
+#   endif
+#endif
+
+#ifndef MAXSYMLINKS
+#   define MAXSYMLINKS 32
+#endif
+
+
 extern int lstat(const char *path, struct stat *buf) XY_EXCEPTION_SPEC;
 extern ssize_t readlink(const char *path, char *buf, size_t bufsiz) XY_EXCEPTION_SPEC;
 

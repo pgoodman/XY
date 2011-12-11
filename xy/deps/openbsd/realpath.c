@@ -38,18 +38,6 @@
 
 #if !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH)
 
-#ifndef PATH_MAX
-#   ifdef MAXPATHLEN
-#       define PATH_MAX MAXPATHLEN
-#   else
-#       define PATH_MAX 8192
-#   endif
-#endif
-
-#ifndef MAXSYMLINKS
-#   define MAXSYMLINKS 32
-#endif
-
 /*
  * char *realpath(const char *path, char resolved[PATH_MAX]);
  *
