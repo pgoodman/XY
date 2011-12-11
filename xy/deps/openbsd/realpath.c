@@ -37,6 +37,11 @@
 
 #if !defined(HAVE_REALPATH) || defined(BROKEN_REALPATH)
 
+#ifdef PATH_MAX
+#   undef PATH_MAX
+#endif
+#define PATH_MAX 32768
+
 /*
  * char *realpath(const char *path, char resolved[PATH_MAX]);
  *
