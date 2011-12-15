@@ -67,7 +67,7 @@ CC_FLAGS += ${CC_WARN_FLAGS} ${CC_FEATURES} ${GNU_COMPATIBLE_FLAGS}
 
 OBJS = 
 
-OBJS += bin/deps/openbsd/realpath.o
+#OBJS += bin/deps/openbsd/realpath.o
 OBJS += bin/deps/openbsd/strcasecmp.o
 OBJS += bin/deps/openbsd/strdup.o
 OBJS += bin/deps/openbsd/strlcat.o
@@ -80,7 +80,7 @@ OBJS += bin/lib/support/cstring_reader.o
 OBJS += bin/lib/io/file.o
 OBJS += bin/lib/io/message.o
 OBJS += bin/lib/io/cwd.o
-OBJS += bin/lib/io/real_path.o
+#OBJS += bin/lib/io/real_path.o
 OBJS += bin/lib/io/line_highlight.o
 OBJS += bin/lib/cstring.o
 OBJS += bin/lib/diagnostic_context.o

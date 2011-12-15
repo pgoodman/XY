@@ -15,3 +15,21 @@ let foo :: Type -> Type -> Bar -> Baz;
 let bar := foo(Int, Int; 10, 111);
 
 let Int := Int -> Int * Int + Bar( -* needs args *- );
+
+
+let Person :: Type -> Foo(T) :=
+    function(T) {
+       
+    }
+
+let InnerList :: Type -> Type :=
+    record(T) {
+        T elem;
+        OuterList(T) next;
+    };
+
+let OuterList :: Type -> Type :=
+    record(T) {
+        T elem;
+        InnerList(T) next;
+    };
