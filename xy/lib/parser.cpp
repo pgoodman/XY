@@ -7,6 +7,7 @@
  */
 
 #include <cassert>
+#include <sstream>
 
 #define D(x)
 
@@ -73,8 +74,8 @@ namespace xy {
         {70,    T_PLUS,             &parser::parse_fail_p,          &parser::parse_infix_type_operator<sum_type_decl>},
 
         {10,    T_TYPE_NAME,        &parser::parse_type_name,       &parser::parse_fail_s},
-        {10,    T_UNION,            &parser::parse_union,           &parser::parse_fail_s},
-        {10,    T_RECORD,           &parser::parse_record,          &parser::parse_fail_s},
+        //{10,    T_UNION,            &parser::parse_union,           &parser::parse_fail_s},
+        //{10,    T_RECORD,           &parser::parse_record,          &parser::parse_fail_s},
 
         {255,   T_INVALID,          &parser::parse_fail_p,          &parser::parse_fail_s},
     };
@@ -370,6 +371,7 @@ namespace xy {
         return consume(T_CLOSE_BRACE);
     }
 
+    /// parse an array access, e.g. "hello"[0] or [...][0].
     bool parser::parse_array_access(unsigned, const token &tok, const char *) throw() {
         ast *left_(pop(stack));
         ast *right_(nullptr);
@@ -398,6 +400,10 @@ namespace xy {
         return true;
     }
 
+    /// parse an infix expression. This could have different meanings based
+    /// on the lhs. E.g. if the lhs is a type, then this could be product/sum/
+    /// arrow type, otherwise it could be a binary expression or something
+    /// more than a binary expression.
     bool parser::parse_infix(unsigned prec, const token &tok, const char *data) throw() {
 
         // looks like we're parsing an inline type declaration
@@ -509,6 +515,7 @@ namespace xy {
         return false;
     }
 
+    /// parse some sort of literal (e.g. integer, string, float, variable)
     bool parser::parse_literal(const token &tok, const char *data) throw() {
         switch(tok.type()) {
         case T_INTEGER_LITERAL:
@@ -548,8 +555,8 @@ namespace xy {
         return true;
     }
 
-    bool parser::parse_type_name(const token &, const char *name) throw() {
-        stack.push_back(new named_type_decl(stab[name]));
+    bool parser::parse_type_name(const token &tok, const char *name) throw() {
+        stack.push_back(new named_type_decl(stab[name], tok));
         return true;
     }
     bool parser::parse_union(const token &, const char *) throw() {
@@ -586,10 +593,7 @@ namespace xy {
 
     /// go get a comma-separated list of names, e.g. variable names or type
     /// names
-    bool parser::parse_name_list(
-        token_type expected,
-        std::vector<std::pair<token, support::mapped_name> > &names
-    ) throw() {
+    bool parser::parse_name_list(token_type expected, name_list_type &names) throw() {
         token prev_token, got;
         const char *name_buff;
 
@@ -597,7 +601,7 @@ namespace xy {
 
             // make sure names are comma-separated
             if(check_comma) {
-                if(stream.check(T_ASSIGN)) {
+                if(stream.check(T_ASSIGN) || stream.check(T_DECLARE)) {
                     return true;
                 } else if(!stream.check(T_COMMA)) {
                     stream.accept(got);
@@ -626,11 +630,140 @@ namespace xy {
         return true;
     }
 
+    /// parse a function declaration. This could be a type generating function,
+    /// i.e. a template type, a function template, or a normal function.
+    bool parser::parse_function(
+        arrow_type_decl *tpl_arg_types,
+        arrow_type_decl *arg_types,
+        bool is_func,
+        statement_list *stmts
+    ) throw() {
+        if(!(consume(T_FUNCTION) && consume(T_OPEN_PAREN))) {
+            return false;
+        }
+
+        const char *name_buff;
+        token got;
+
+        size_t num_args(0);
+        if(nullptr != arg_types) {
+            num_args = arg_types->types.size();
+        }
+
+        if(nullptr != tpl_arg_types) {
+            const size_t num(tpl_arg_types->types.size());
+            bool expect_comma(false);
+            for(size_t i(0); i < num; ++i, expect_comma = true) {
+                type_decl *part(tpl_arg_types->types[i]);
+                named_type_decl *named(part->reinterpret<named_type_decl>());
+
+                if(expect_comma) {
+                    if(stream.check(T_SEMICOLON)) {
+                        break;
+                    }
+                    if(!consume(T_COMMA)) {
+                        return false;
+                    }
+                }
+
+                stream.accept(got, name_buff);
+
+                // we should expect a type name
+                if(nullptr != named && Type == named->name) {
+
+                    if(T_TYPE_NAME != got.type()) {
+                        ctx.report_here(got, io::e_tpl_arg_need_type_name);
+                        ctx.report_here(named->location, io::e_tpl_arg_need_type_name_source);
+                        return false;
+                    }
+
+                // we should expect a variable name
+                } else {
+
+                }
+            }
+        }
+        /*
+        for(size_t i(0); i < num_tpl_args; ++i) {
+            type_decl *arg_type()
+        }
+
+        (void) num_tpl_args;*/
+        (void) num_args;
+        (void) is_func;
+        (void) stmts;
+
+        return true;
+    }
+
+    /// parse the function type declarations
+    bool parser::parse_func_decl_type(
+        bool allow_template,
+        arrow_type_decl **tpl_types,
+        arrow_type_decl **arg_types
+    ) throw() {
+        token next;
+        stream.accept(next);
+        stream.undo();
+
+        if(!parse(type_parsers, 0)) {
+            ctx.report_here(next,
+                (allow_template ? io::e_func_decl_bad_arrow : io::e_type_decl_bad_arrow)
+            );
+            return false;
+        }
+
+        // if we have a declaration with only one type, but the type is
+        // (A -> ...), then that should be considered the return type.
+        bool first_might_be_return(stream.check(T_OPEN_PAREN));
+
+        type_decl *first_type(pop(stack)->reinterpret<type_decl>());
+        type_decl *second_type(first_type);
+
+        if(allow_template && stream.check(T_DOUBLE_ARROW)) {
+            if(!consume(T_DOUBLE_ARROW)) {
+                return false;
+            }
+
+            stream.accept(next);
+            stream.undo();
+            bool second_might_be_return(T_OPEN_PAREN == next.type());
+
+            // couldn't parse the function type arguments (following the
+            // template type arguments)
+            if(!parse(type_parsers, 0)) {
+                ctx.report_here(next, io::e_func_no_arg_type);
+                return false;
+            }
+
+            second_type = pop(stack)->reinterpret<type_decl>();
+
+            // add in the template types, given that we know we've gotten
+            // argument types
+            arrow_type_decl *tpl_types_(second_type->reinterpret<arrow_type_decl>());
+            if(nullptr == tpl_types_ || second_might_be_return) {
+                tpl_types_ = new arrow_type_decl;
+                tpl_types_->types.push_back(first_type);
+            }
+            *tpl_types = tpl_types_;
+        }
+
+        // add in the argument types. for a type declaration, these are
+        // actually template argument types.
+        arrow_type_decl *arg_types_(second_type->reinterpret<arrow_type_decl>());
+        if(nullptr == arg_types_ || first_might_be_return) {
+            arg_types_ = new arrow_type_decl;
+            arg_types_->types.push_back(second_type);
+        }
+
+        *arg_types = arg_types_;
+
+        return true;
+    }
+
     /// parse a variable definition
-    //          let file:name := import "file/name.xy"
-    //          let file:name:foo := (import "file/name.xy").foo
     //          let one := 1
-    //          let two : Int = 2
+    //          let two = 2
     // or a function definition
     //          let foo :: ...
     // or a type declaration
@@ -639,7 +772,7 @@ namespace xy {
         assert(stream.check(T_LET));
         token prev;
         token curr;
-        std::vector<std::pair<token, support::mapped_name> > names;
+        name_list_type names;
         bool check_sep(false);
         unsigned last_seen(0);
 
@@ -657,7 +790,44 @@ namespace xy {
         // variable/func declaration
         } else if(stream.check(T_NAME)) {
 
-            if(!parse_name_list(T_NAME, names) || !consume(T_ASSIGN)) {
+            if(!parse_name_list(T_NAME, names)) {
+                return false;
+            }
+
+            // see if this is a function declaration, e.g.
+            // let foo :: Bar -> Baz := function(...) { ... }
+            if(stream.check(T_DECLARE)) {
+
+                // more than one names are part of this function declaration
+                if(1U != names.size()) {
+                    ctx.report_here(prev, io::e_func_decl_multiple_names, names.size());
+                    return false;
+                }
+
+                consume(T_DECLARE);
+
+                func_def *def(new func_def);
+                if(!parse_func_decl_type(true, &(def->template_arg_types), &(def->arg_types))) {
+                    delete def;
+                    return false;
+                }
+
+                // now we want to parse the function itself
+                if(!consume(T_ASSIGN)) {
+                    delete def;
+                    return false;
+                }
+
+                def->statements = new statement_list;
+                if(!parse_function(def->template_arg_types, def->arg_types, true, def->statements)) {
+                    delete def;
+                    return false;
+                }
+
+                stmts->statements.push_back(def);
+                return true;
+
+            } else if(!consume(T_ASSIGN)) {
                 return false;
             }
 
@@ -672,6 +842,7 @@ namespace xy {
                 }
 
                 stmts->statements.push_back(new var_def(
+                    names[i].first,
                     names[i].second,
                     stack.back()->reinterpret<expression>()
                 ));
@@ -704,6 +875,7 @@ namespace xy {
                 }
 
                 stmts->statements.push_back(new type_def(
+                    names[i].first,
                     names[i].second,
                     stack.back()->reinterpret<type_decl>()
                 ));
@@ -749,6 +921,7 @@ namespace xy {
         , stab()
         , stream(stream_)
         , stack()
+        , Type(stab["Type"])
     { }
 
     parser::~parser(void) throw() {
@@ -759,24 +932,15 @@ namespace xy {
         }
     }
 
-    /// parse a stream of tokens
-    bool parser::parse(diagnostic_context &ctx, token_stream &stream) throw() {
-
-        parser p(ctx, stream);
-        stream.ctx = ctx;
-        p.stab.push_context();
-
-        // push the top thing onto the stack :D
-        p.stack.push_back(new statement_list);
-
+    bool parser::parse(statement_list *stmts) throw() {
         bool last_parsed(true);
         for(; last_parsed && stream.check(); ) {
 
-            while(stream.check(T_STRING_LITERAL)
+            /*while(stream.check(T_STRING_LITERAL)
                || stream.check(T_INTEGER_LITERAL)
                || stream.check(T_RATIONAL_LITERAL)) {
                 stream.accept();
-            }
+            }*/
 
             // done parsing this file
             if(stream.check(T_EOF)) {
@@ -786,27 +950,38 @@ namespace xy {
             // variable definition
             else if(stream.check(T_LET)) {
                 repl::wait();
-                last_parsed = p.parse_let();
+                last_parsed = parse_let();
                 if(last_parsed) {
-                    p.consume(T_SEMICOLON);
+                    consume(T_SEMICOLON);
                 }
                 repl::accept();
 
-            // report_unexpected token
+            // possibly unexpected token; try to parse an expression
             } else if(stream.check() ){
-                token got;
+                /*token got;
                 stream.accept(got);
+                stream.undo();
                 p.report_simple(io::e_unexpected_symbol, got);
                 last_parsed = false;
+                */
 
-                break;
+                repl::wait();
+                last_parsed = parse(expression_parsers, 0);
+                if(last_parsed) {
+                    consume(T_SEMICOLON);
+                    expression *top_expr(pop(stack)->reinterpret<expression>());
+                    stmts->statements.push_back(new expression_stmt(top_expr));
+                }
+                repl::accept();
+
+
             } else {
                 break;
             }
         }
 
         if(last_parsed) {
-            p.consume(T_EOF);
+            consume(T_EOF);
         }
 
         if(ctx.has_message(io::message_type::error)
@@ -816,9 +991,19 @@ namespace xy {
             return false;
         }
 
-        p.stab.pop_context();
-
         return true;
+    }
+
+    /// parse a stream of tokens
+    bool parser::parse(diagnostic_context &ctx, token_stream &stream) throw() {
+
+        parser p(ctx, stream);
+        stream.ctx = ctx;
+
+        // push the top thing onto the stack :D
+        statement_list *stmts(new statement_list);
+        p.stack.push_back(stmts);
+        return p.parse(stmts);
     }
 
     /// -----------------------------------------------------------------------

@@ -10,9 +10,11 @@
 #define XY_AST_HPP_
 
 #include <vector>
+#include <iostream>
 
 #include "xy/include/pp.hpp"
 #include "xy/include/token.hpp"
+#include "xy/include/symbol_table.hpp"
 #include "xy/include/mpl/id.hpp"
 #include "xy/include/support/name_map.hpp"
 #include "xy/include/support/unsafe_cast.hpp"
@@ -35,11 +37,23 @@
 #define XY_AST_CONST_DEFAUL_ARG_UNROLL_4(A, a, b, c, d) A a, A b, A c, A d
 #define XY_AST_CONST_DEFAUL_ARG_UNROLL_5(A, a, b, c, d, e) A a, A b, A c, A d, A e
 
+#define XY_AST_DESTROY_FIELD(__, a) \
+    support::delete_ast<decltype(this->a)>::rec_delete(this->a)
+
 /// specify a constructor and which fields it should construct
 #define XY_AST_CONSTRUCTOR(class_name, ...) \
     class_name (XY_CAT(XY_AST_CONST_ARG_UNROLL_, XY_NARG(__VA_ARGS__))(XY_AST_CONST_ARG, void, __VA_ARGS__)) throw() \
         : XY_CAT(XY_AST_CONST_ARG_UNROLL_, XY_NARG(__VA_ARGS__))(XY_AST_CONST_ARG_INIT, void, __VA_ARGS__) \
     { }
+
+/// specify a destructor and which fields should be recursively destroyed
+#define XY_AST_DESTRUCTOR(class_name, ...) \
+    virtual ~class_name(void) throw() { \
+        XY_CAT(XY_AST_CONST_ARG_UNROLL_, XY_NARG(__VA_ARGS__))(XY_AST_DESTROY_FIELD, void, __VA_ARGS__); \
+    }
+
+#define XY_AST_DEFAULT_DESTRUCTOR(class_name) \
+    virtual ~class_name(void) throw() { }
 
 /// define a default constructor, with the initialization specialized with tuples,
 /// e.g. (var, val).
@@ -140,36 +154,60 @@ namespace xy {
             }
         };
 
-        // forward declarations for icpc's sake
         template <typename T>
-        void delete_ast(T &) throw();
+        class delete_ast;
 
+        /// delete a vector of AST nodes stored in an AST node
         template <typename T>
-        void delete_ast_vector(std::vector<T *> &) throw();
-
-        /// delete an AST node
-        template <typename T>
-        void delete_ast(T &ptr) throw() {
-            if(nullptr != ptr) {
-                delete ptr;
-                ptr = nullptr;
+        class delete_ast<std::vector<T *> > {
+        public:
+            static void rec_delete(std::vector<T *> &vec) throw() {
+                //for(T *type : vec) {
+                for(size_t i(0); i < vec.size(); ++i) {
+                    if(nullptr != vec[i]) {
+                        delete vec[i];
+                        vec[i] = nullptr;
+                    }
+                }
+                vec.clear();
             }
-        }
+        };
 
-        /// delete a vector of AST nodes
-        template <typename T>
-        void delete_ast_vector(std::vector<T *> &vec) throw() {
-            //for(T *type : vec) {
-            for(size_t i(0); i < vec.size(); ++i) {
-                if(nullptr != vec[i]) {
-                    delete vec[i];
-                    vec[i] = nullptr;
+        /// delete a cstring stored in an AST node
+        template <>
+        class delete_ast<const char *> {
+        public:
+            static void rec_delete(const char *ptr) throw() {
+                if(nullptr != ptr) {
+                    cstring::free(ptr);
                 }
             }
-            vec.clear();
+        };
+
+        /// delete an AST stored in an AST node
+        template <typename T>
+        class delete_ast {
+        public:
+            static void rec_delete(T &ptr) throw() {
+                if(nullptr != ptr) {
+                    delete ptr;
+                    ptr = nullptr;
+                }
+            }
+        };
+
+        template <typename T>
+        void print_separated_list(std::vector<T> &ls, const char *sep, std::ostream &os, symbol_table &stab) throw() {
+            for(size_t i(0); i < ls.size(); ++i) {
+                if(0 < i) {
+                    os << sep;
+                }
+                ls[i]->print(os, stab);
+            }
         }
     }
 
+    /// top-level AST node type
     struct ast : public support::ast_impl<ast> {
     public:
 
@@ -190,20 +228,23 @@ namespace xy {
 
             return support::unsafe_cast<T *>(this);
         }
+
+        virtual void print(std::ostream &, symbol_table &) throw() { }
     };
 
     struct expression;
     struct statement;
     struct type_decl;
+    struct arrow_type_decl;
 
+    /// top-level expression AST type
     struct expression : public support::ast_impl<expression, ast> {
     public:
         type *type_;
 
         XY_AST_DEFAULT_CONSTRUCTOR(expression, (type_, nullptr))
         XY_AST_CONSTRUCTOR(expression, type_)
-
-        virtual ~expression(void) throw() { }
+        XY_AST_DEFAULT_DESTRUCTOR(expression)
     };
 
         struct name_expr : public support::ast_impl<name_expr, expression> {
@@ -212,8 +253,7 @@ namespace xy {
             support::mapped_name name;
 
             XY_AST_CONSTRUCTOR(name_expr, name)
-
-            virtual ~name_expr(void) throw() { }
+            XY_AST_DEFAULT_DESTRUCTOR(name_expr)
         };
 
         struct function_call_expr : public support::ast_impl<function_call_expr, expression> {
@@ -228,13 +268,7 @@ namespace xy {
             bool might_be_ambiguous;
 
             XY_AST_CONSTRUCTOR(function_call_expr, function)
-            //XY_AST_CONSTRUCTOR(function_call_expr, function, parameters)
-
-            virtual ~function_call_expr(void) throw() {
-                support::delete_ast(function);
-                support::delete_ast_vector(template_parameters);
-                support::delete_ast_vector(arguments);
-            }
+            XY_AST_DESTRUCTOR(function_call_expr, function, template_parameters, arguments)
         };
 
         struct type_instance_expr : public support::ast_impl<type_instance_expr, expression> {
@@ -243,12 +277,7 @@ namespace xy {
             std::vector<expression *> values;
 
             XY_AST_CONSTRUCTOR(type_instance_expr, declaration)
-            //XY_AST_CONSTRUCTOR(type_instance_expr, declaration, values)
-
-            virtual ~type_instance_expr(void) throw() {
-                support::delete_ast(declaration);
-                support::delete_ast_vector(values);
-            }
+            XY_AST_DESTRUCTOR(type_instance_expr, declaration, values)
         };
 
         struct array_access_expr : public support::ast_impl<array_access_expr, expression> {
@@ -257,11 +286,7 @@ namespace xy {
             expression *index;
 
             XY_AST_CONSTRUCTOR(array_access_expr, array, index)
-
-            virtual ~array_access_expr(void) throw() {
-                support::delete_ast(array);
-                support::delete_ast(index);
-            }
+            XY_AST_DESTRUCTOR(array_access_expr, array, index)
         };
 
         struct infix_expr : public support::ast_impl<infix_expr, expression> {
@@ -271,11 +296,7 @@ namespace xy {
             token_type op;
 
             XY_AST_CONSTRUCTOR(infix_expr, left, right, op)
-
-            virtual ~infix_expr(void) throw() {
-                support::delete_ast(left);
-                support::delete_ast(right);
-            }
+            XY_AST_DESTRUCTOR(infix_expr, left, right)
         };
 
         struct prefix_expr : public support::ast_impl<prefix_expr, expression> {
@@ -284,10 +305,7 @@ namespace xy {
             token_type op;
 
             XY_AST_CONSTRUCTOR(prefix_expr, right, op)
-
-            virtual ~prefix_expr(void) throw() {
-                support::delete_ast(right);
-            }
+            XY_AST_DESTRUCTOR(prefix_expr, right)
         };
 
         struct array_expr : public support::ast_impl<array_expr, expression> {
@@ -295,11 +313,7 @@ namespace xy {
             std::vector<expression *> elements;
 
             XY_AST_DEFAULT_CONSTRUCTOR(array_expr, (elements, XY_NOTHING))
-            //XY_AST_CONSTRUCTOR(array_expr, elements)
-
-            virtual ~array_expr(void) throw() {
-                support::delete_ast_vector(elements);
-            }
+            XY_AST_DESTRUCTOR(array_expr, elements)
         };
 
         struct literal_expr : public support::ast_impl<literal_expr, expression> {
@@ -308,27 +322,21 @@ namespace xy {
 
             XY_AST_DEFAULT_CONSTRUCTOR(literal_expr, (data, nullptr))
             XY_AST_CONSTRUCTOR(literal_expr, data)
-
-            virtual ~literal_expr(void) throw() {
-                cstring::free(data);
-                data = nullptr;
-            }
+            XY_AST_DESTRUCTOR(literal_expr, data)
         };
 
             struct integer_literal_expr : public support::ast_impl<integer_literal_expr, literal_expr> {
             public:
 
                 XY_AST_FORWARD_CONSTRUCTOR(integer_literal_expr, literal_expr, data)
-
-                virtual ~integer_literal_expr(void) throw() { }
+                XY_AST_DEFAULT_DESTRUCTOR(integer_literal_expr)
             };
 
             struct rational_literal_expr : public support::ast_impl<rational_literal_expr, literal_expr> {
             public:
 
                 XY_AST_FORWARD_CONSTRUCTOR(rational_literal_expr, literal_expr, data)
-
-                virtual ~rational_literal_expr(void) throw() { }
+                XY_AST_DEFAULT_DESTRUCTOR(rational_literal_expr)
             };
 
             struct string_literal_expr : public support::ast_impl<string_literal_expr, literal_expr> {
@@ -341,20 +349,16 @@ namespace xy {
                 {
                     this->data = data_;
                 }
-
-                virtual ~string_literal_expr(void) throw() { }
+                XY_AST_DEFAULT_DESTRUCTOR(string_literal_expr)
             };
 
     struct statement_list : public support::ast_impl<statement_list, ast> {
     public:
         std::vector<statement *> statements;
 
-        //XY_AST_CONSTRUCTOR(statement_list, statements)
-        XY_AST_DEFAULT_CONSTRUCTOR(statement_list, (statements, XY_NOTHING))
-
-        virtual ~statement_list(void) throw() {
-            support::delete_ast_vector(statements);
-        }
+        XY_AST_DEFAULT_CONSTRUCTOR(statement_list,
+            (statements, XY_NOTHING))
+        XY_AST_DESTRUCTOR(statement_list, statements)
     };
 
     struct statement : public support::ast_impl<statement, ast> {
@@ -363,38 +367,63 @@ namespace xy {
         virtual ~statement(void) throw() { }
     };
 
+        struct expression_stmt : public support::ast_impl<expression_stmt, statement> {
+        public:
+            expression *expression;
+
+            XY_AST_CONSTRUCTOR(expression_stmt, expression)
+            XY_AST_DESTRUCTOR(expression_stmt, expression)
+        };
+
+        /// simple type definition
         struct type_def : public support::ast_impl<type_def, statement> {
         public:
+            token location;
             support::mapped_name name;
             type_decl *declaration;
 
-            XY_AST_CONSTRUCTOR(type_def, name, declaration)
-
-            virtual ~type_def(void) throw() {
-                support::delete_ast(declaration);
-            }
+            XY_AST_CONSTRUCTOR(type_def, location, name, declaration)
+            XY_AST_DESTRUCTOR(type_def, declaration)
         };
 
+        /// simple variable definition
         struct var_def : public support::ast_impl<var_def, statement> {
         public:
+            token location;
             support::mapped_name name;
             expression *value;
 
-            XY_AST_CONSTRUCTOR(var_def, name, value)
+            XY_AST_CONSTRUCTOR(var_def, location, name, value)
+            XY_AST_DESTRUCTOR(var_def, value)
+        };
 
-            virtual ~var_def(void) throw() {
-                support::delete_ast(value);
-            }
+        /// function definition/declaration
+        struct func_def : public support::ast_impl<var_def, statement> {
+        public:
+            token location;
+            support::mapped_name name;
+            arrow_type_decl *template_arg_types;
+            arrow_type_decl *arg_types;
+            std::vector<support::mapped_name> template_arg_names;
+            std::vector<support::mapped_name> arg_names;
+            statement_list *statements;
+
+            XY_AST_DEFAULT_CONSTRUCTOR(func_def,
+                (template_arg_types,    nullptr),
+                (arg_types,             nullptr),
+                (template_arg_names,    XY_NOTHING),
+                (arg_names,             XY_NOTHING),
+                (statements,            nullptr))
+
+            XY_AST_DESTRUCTOR(func_def,
+                template_arg_types, arg_types, statements)
         };
 
         struct return_stmt : public support::ast_impl<return_stmt, statement> {
             expression *value;
 
             XY_AST_CONSTRUCTOR(return_stmt, value)
-
-            virtual ~return_stmt(void) throw() {
-                support::delete_ast(value);
-            }
+            XY_AST_DESTRUCTOR(return_stmt, value)
         };
 
     struct type_decl : public support::ast_impl<type_decl, ast> {
@@ -408,20 +437,27 @@ namespace xy {
             std::vector<ast *> parameters;
 
             XY_AST_CONSTRUCTOR(template_instance_type_decl, template_type)
+            XY_AST_DESTRUCTOR(template_instance_type_decl, template_type, parameters)
 
-            virtual ~template_instance_type_decl(void) throw() {
-                support::delete_ast(template_type);
-                support::delete_ast_vector(parameters);
+            virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                template_type->print(os, stab);
+                os << "(";
+                support::print_separated_list(parameters, ", ", os, stab);
+                os << ")";
             }
         };
 
         struct named_type_decl : public support::ast_impl<named_type_decl, type_decl> {
         public:
             support::mapped_name name;
+            token location;
 
-            XY_AST_CONSTRUCTOR(named_type_decl, name)
+            XY_AST_CONSTRUCTOR(named_type_decl, name, location)
+            XY_AST_DEFAULT_DESTRUCTOR(named_type_decl)
 
-            virtual ~named_type_decl(void) throw() { }
+            virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                os << stab[name];
+            }
         };
 
         struct array_type_decl : public support::ast_impl<array_type_decl, type_decl> {
@@ -429,9 +465,12 @@ namespace xy {
             type_decl *inner_type;
 
             XY_AST_CONSTRUCTOR(array_type_decl, inner_type)
+            XY_AST_DESTRUCTOR(array_type_decl, inner_type)
 
-            virtual ~array_type_decl(void) throw() {
-                support::delete_ast(inner_type);
+            virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                os << "[";
+                inner_type->print(os, stab);
+                os << "]";
             }
         };
 
@@ -440,9 +479,19 @@ namespace xy {
             type_decl *inner_type;
 
             XY_AST_CONSTRUCTOR(reference_type_decl, inner_type)
+            XY_AST_DESTRUCTOR(reference_type_decl, inner_type)
 
-            virtual ~reference_type_decl(void) throw() {
-                support::delete_ast(inner_type);
+            virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                os << "&";
+                if(inner_type->is_instance<named_type_decl>()
+                || inner_type->is_instance<reference_type_decl>()
+                || inner_type->is_instance<array_type_decl>()) {
+                    inner_type->print(os, stab);
+                } else {
+                    os << "(";
+                    inner_type->print(os, stab);
+                    os << ")";
+                }
             }
         };
 
@@ -451,11 +500,7 @@ namespace xy {
             std::vector<type_decl *> types;
 
             XY_AST_DEFAULT_CONSTRUCTOR(binary_type_decl, (types, XY_NOTHING))
-            //XY_AST_CONSTRUCTOR(binary_type_decl, types)
-
-            virtual ~binary_type_decl(void) throw() {
-                support::delete_ast_vector(types);
-            }
+            XY_AST_DESTRUCTOR(binary_type_decl, types)
         };
 
             struct sum_type_decl : public support::ast_impl<sum_type_decl, binary_type_decl> {
@@ -463,10 +508,12 @@ namespace xy {
                 std::vector<support::mapped_name> params;
                 std::vector<support::mapped_name> fields;
 
-                //XY_AST_FORWARD_CONSTRUCTOR(sum_type_decl, binary_type_decl, types)
                 XY_AST_DEFAULT_CONSTRUCTOR(sum_type_decl, (params, XY_NOTHING), (fields, XY_NOTHING))
+                XY_AST_DEFAULT_DESTRUCTOR(sum_type_decl)
 
-                virtual ~sum_type_decl(void) throw() { }
+                virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                    support::print_separated_list(this->types, " + ", os, stab);
+                }
             };
 
             struct product_type_decl : public support::ast_impl<product_type_decl, binary_type_decl> {
@@ -474,21 +521,21 @@ namespace xy {
                 std::vector<support::mapped_name> params;
                 std::vector<support::mapped_name> fields;
 
-                //XY_AST_FORWARD_CONSTRUCTOR(product_type_decl, binary_type_decl, types)
                 XY_AST_DEFAULT_CONSTRUCTOR(product_type_decl, (params, XY_NOTHING), (fields, XY_NOTHING))
+                XY_AST_DEFAULT_DESTRUCTOR(product_type_decl)
 
-                virtual ~product_type_decl(void) throw() {
-                    support::delete_ast_vector(types);
+                virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                    support::print_separated_list(this->types, " * ", os, stab);
                 }
             };
 
             struct arrow_type_decl : public support::ast_impl<arrow_type_decl, binary_type_decl> {
             public:
+                XY_AST_DEFAULT_DESTRUCTOR(arrow_type_decl)
 
-                //XY_AST_FORWARD_CONSTRUCTOR(arrow_type_decl, binary_type_decl, types)
-                //XY_AST_DEFAULT_CONSTRUCTOR(sum_type_decl, (params, XY_NOTHING), (fields, XY_NOTHING))
-
-                virtual ~arrow_type_decl(void) throw() { }
+                virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                    support::print_separated_list(this->types, " -> ", os, stab);
+                }
             };
 
 }

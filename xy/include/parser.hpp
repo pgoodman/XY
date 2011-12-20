@@ -33,6 +33,7 @@ namespace xy {
         symbol_table stab;
         token_stream &stream;
         std::vector<ast *> stack;
+        const support::mapped_name Type;
 
         //bool accept_expected_newline(void) throw();
 
@@ -46,10 +47,10 @@ namespace xy {
             const token &first, const token &got, token_type expected1, token_type expected2
         ) throw();
 
-        bool parse_name_list(
-            token_type expected,
-            std::vector<std::pair<token, support::mapped_name> > &names
-        ) throw();
+        typedef std::vector<std::pair<token, support::mapped_name> > \
+                name_list_type;
+
+
 
         // precedence table
         struct precedence_parser {
@@ -99,6 +100,9 @@ namespace xy {
         template <typename>
         bool parse_infix_type_operator(unsigned, const token &, const char *) throw();
 
+        // function parsers
+        bool parse_function(arrow_type_decl *, arrow_type_decl *, bool, statement_list *) throw();
+
         //bool parse_arrow_type(unsigned, const token &, const char *) throw();
         //bool parse_sum_type(unsigned, const token &, const char *) throw();
         //bool parse_product_type(unsigned, const token &, const char *) throw();
@@ -107,12 +111,16 @@ namespace xy {
 
         /// parse a let statement. the let statement is used to bind the values
         /// of expressions to variables, or type declarations to type names.
+        bool parse_func_decl_type(bool, arrow_type_decl **, arrow_type_decl**) throw();
+        bool parse_name_list(token_type, name_list_type &) throw();
         bool parse_let(void) throw();
 
         parser(diagnostic_context &ctx_, token_stream &stream_) throw();
         ~parser(void) throw();
 
         static void parse_open_file(io::file<xy::io::read_tag> &ff, diagnostic_context &, bool &) throw();
+
+        bool parse(statement_list *) throw();
 
     public:
 

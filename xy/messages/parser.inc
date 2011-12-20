@@ -21,4 +21,9 @@ XY_MSG(e_incomplete_tpl_inst, error, "Incomplete template type instantiation. Th
 XY_MSG(e_bin_rhs_not_expr, error, "Incomplete right-hand-side to the binary operator. I expected an expression after the %s but when I tried to parse one I got an error.")
 XY_MSG(w_bin_empty_tpl_and_func_args, warning, "Possibly ambiguous statement. A function call specifying zero template arguments and zero expression arguments, but still specifying the ';' might be ambiguous.")
 XY_MSG(e_func_lhs_is_literal, error, "Performing function call on a non-function expression. The expression before the left parenthesis (denoting a function application/call) should evaluate to something with a function type.")
-
+XY_MSG(e_func_decl_bad_arrow, error, "I was expecting an (inline) type declaration here specifying either a template argument type, an argument type, or the return type for this function.")
+XY_MSG(e_type_decl_bad_arrow, error, "I was expecting an (inline) type declaration here specifying either a template argument type, or Type (i.e. that this is a type) for this type declaration.")
+XY_MSG(e_func_no_arg_type, error, "I was expecting either a function argument type here or the return type of this function.")
+XY_MSG(e_func_decl_multiple_names, error, "You can only let-bind one name while specifying a new function using the declaration (::) syntax. You have bound %lu names.")
+XY_MSG(e_tpl_arg_need_type_name, error, "Type name expected here as a template argument to match the declared type (Type) of the argument.")
+XY_MSG(e_tpl_arg_need_type_name_source, note, "Type of expected template argument declared here.")

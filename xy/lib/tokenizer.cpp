@@ -467,6 +467,7 @@ namespace xy {
         tok.type_ = T_INVALID;
         tok.num_columns_ = 0;
 
+    state_switch:
         switch(state) {
         case READ_NEXT_CODEPOINT:
             for(; ll.get_codepoint(f, ctx, cp); ) {
@@ -516,6 +517,7 @@ namespace xy {
                     } else if('>' == cp.to_cstring()[0]) {
                         tok.num_columns_ = 2;
                         tok.type_ = T_DOUBLE_ARROW;
+                        state = READ_NEXT_CODEPOINT;
                     } else {
                         state = HAVE_ASCII_CODEPOINT;
                     }
@@ -577,7 +579,7 @@ namespace xy {
                     } else if('-' == chr) {
                         //tok.type_ = T_NEW_LINE;
                         //tok.num_columns_ = 0;
-                        tok.type_ = T_INVALID;
+                        tok.type_ = T_EOF;
                         state = READ_NEXT_CODEPOINT;
 
                         for(; ll.get_codepoint(f, ctx, cp); ) {
@@ -597,6 +599,7 @@ namespace xy {
                                     tok.col_ = ll.column();
 
                                     if(!ll.get_codepoint(f, ctx, cp) || cp.is_null()) {
+                                        state = DONE;
                                         break;
                                     }
 
@@ -616,6 +619,11 @@ namespace xy {
                                     break;
                                 }
                             }
+                        }
+
+                        // go back around and get the next token
+                        if(DONE != state) {
+                            goto state_switch;
                         }
 
                     // block comment
