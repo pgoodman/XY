@@ -427,8 +427,10 @@ namespace xy {
         };
 
     struct type_decl : public support::ast_impl<type_decl, ast> {
+        token location;
         type_decl(void) throw() { }
         virtual ~type_decl(void) throw() { }
+        virtual bool is_template(const support::mapped_name) throw() { return false; }
     };
 
         struct template_instance_type_decl : public support::ast_impl<template_instance_type_decl, type_decl> {
@@ -450,9 +452,8 @@ namespace xy {
         struct named_type_decl : public support::ast_impl<named_type_decl, type_decl> {
         public:
             support::mapped_name name;
-            token location;
 
-            XY_AST_CONSTRUCTOR(named_type_decl, name, location)
+            XY_AST_CONSTRUCTOR(named_type_decl, name)
             XY_AST_DEFAULT_DESTRUCTOR(named_type_decl)
 
             virtual void print(std::ostream &os, symbol_table &stab) throw() {
@@ -512,7 +513,9 @@ namespace xy {
                 XY_AST_DEFAULT_DESTRUCTOR(sum_type_decl)
 
                 virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                    os << "(";
                     support::print_separated_list(this->types, " + ", os, stab);
+                    os << ")";
                 }
             };
 
@@ -534,7 +537,29 @@ namespace xy {
                 XY_AST_DEFAULT_DESTRUCTOR(arrow_type_decl)
 
                 virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                    os << "(";
                     support::print_separated_list(this->types, " -> ", os, stab);
+                    os << ")";
+                }
+
+                /// is this a template type? i.e. do we generate something
+                /// that is a type or is somehting that generates a type?
+                virtual bool is_template(const support::mapped_name Type) throw() {
+                    if(types.empty()) {
+                        return false;
+                    }
+
+                    type_decl *return_type(types.back());
+                    named_type_decl *back(return_type->reinterpret<named_type_decl>());
+                    if(nullptr == back) {
+                        return false;
+                    }
+
+                    if(Type == back->name) {
+                        return true;
+                    }
+
+                    return return_type->is_template(Type);
                 }
             };
 

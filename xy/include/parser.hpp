@@ -33,6 +33,8 @@ namespace xy {
         symbol_table stab;
         token_stream &stream;
         std::vector<ast *> stack;
+
+        /// the name for the type 'Type'
         const support::mapped_name Type;
 
         //bool accept_expected_newline(void) throw();
@@ -101,11 +103,8 @@ namespace xy {
         bool parse_infix_type_operator(unsigned, const token &, const char *) throw();
 
         // function parsers
-        bool parse_function(arrow_type_decl *, arrow_type_decl *, bool, statement_list *) throw();
+        bool parse_function(func_def *, bool) throw();
 
-        //bool parse_arrow_type(unsigned, const token &, const char *) throw();
-        //bool parse_sum_type(unsigned, const token &, const char *) throw();
-        //bool parse_product_type(unsigned, const token &, const char *) throw();
         bool parse_ref_type(const token &, const char *) throw();
         bool parse_array_type(const token &, const char *) throw();
 
@@ -175,7 +174,10 @@ namespace xy {
             return report_simple(io::e_type_decl_expected_before_type_op, op);
         }
 
+        token location;
         type_decl *left(left_->reinterpret<type_decl>());
+        location = left->location;
+        location.extend(op);
 
         // get a "pivot" token just in case we run into an error.
         token decl_tail;
@@ -201,7 +203,10 @@ namespace xy {
             op_decl->types.push_back(left);
         }
 
+        location.extend(right->location);
+
         op_decl->types.push_back(right);
+        op_decl->location = location;
 
         stack.push_back(op_decl);
         return true;

@@ -69,8 +69,8 @@ namespace xy {
     const parser::precedence_parser parser::type_parsers[] = {
         //{10,    T_FUNCTION,         &parser::parse_type_function,   &parser::parse_fail_s},
         {100,   T_OPEN_PAREN,       &parser::parse_type_group,      &parser::parse_application},
-        {80,    T_ASTERISK,         &parser::parse_fail_p,          &parser::parse_infix_type_operator<arrow_type_decl>},
-        {75,    T_ARROW,            &parser::parse_fail_p,          &parser::parse_infix_type_operator<product_type_decl>},
+        {80,    T_ASTERISK,         &parser::parse_fail_p,          &parser::parse_infix_type_operator<product_type_decl>},
+        {75,    T_ARROW,            &parser::parse_fail_p,          &parser::parse_infix_type_operator<arrow_type_decl>},
         {70,    T_PLUS,             &parser::parse_fail_p,          &parser::parse_infix_type_operator<sum_type_decl>},
 
         {10,    T_TYPE_NAME,        &parser::parse_type_name,       &parser::parse_fail_s},
@@ -291,13 +291,25 @@ namespace xy {
         } else if(node->is_instance<type_decl>()) {
             type_decl *decl(node->reinterpret<type_decl>());
             template_instance_type_decl *tplinst(new template_instance_type_decl(decl));
+            tplinst->location = decl->location;
+            tplinst->location.extend(paren);
 
             if(!parse_params<ast>(io::e_tpl_arg_not_ast, T_CLOSE_PAREN, tplinst->parameters)) {
                 delete tplinst;
                 return false;
             }
 
-            consume(T_CLOSE_PAREN);
+            // try to extend to the end of the template instantiation
+            token close_paren;
+            stream.accept(close_paren);
+            stream.undo();
+
+            if(!consume(T_CLOSE_PAREN)) {
+                delete tplinst;
+                return false;
+            }
+
+            tplinst->location.extend(close_paren);
 
             if(tplinst->parameters.empty()) {
                 ctx.report_here(paren, io::e_tpl_must_have_args);
@@ -447,7 +459,7 @@ namespace xy {
     /// end up parsing a inline type declaration if the first thing in the
     /// array literal is a type declararion, making this an array type
     /// declaration.
-    bool parser::parse_array_literal(const token &, const char *) throw() {
+    bool parser::parse_array_literal(const token &open_bracket, const char *) throw() {
 
         // empty array
         if(stream.check(T_CLOSE_BRACKET)) {
@@ -462,9 +474,22 @@ namespace xy {
 
         ast *first(pop(stack));
 
+        // make the array type declaration, and try to make its location extend
+        // for the entire declaration
         if(first->is_instance<type_decl>()) {
-            stack.push_back(new array_type_decl(first->reinterpret<type_decl>()));
-            return consume(T_CLOSE_BRACKET);
+            array_type_decl *decl(new array_type_decl(first->reinterpret<type_decl>()));
+            decl->location = open_bracket;
+            decl->location.extend(decl->inner_type->location);
+            stack.push_back(decl);
+            token next;
+            stream.accept(next);
+            stream.undo();
+            if(!consume(T_CLOSE_BRACKET)) {
+                return false;
+            }
+            decl->location.extend(next);
+
+            return true;
 
         } else if(first->is_instance<expression>()) {
             array_expr *arr(new array_expr);
@@ -556,7 +581,9 @@ namespace xy {
     }
 
     bool parser::parse_type_name(const token &tok, const char *name) throw() {
-        stack.push_back(new named_type_decl(stab[name], tok));
+        named_type_decl *decl(new named_type_decl(stab[name]));
+        decl->location = tok;
+        stack.push_back(decl);
         return true;
     }
     bool parser::parse_union(const token &, const char *) throw() {
@@ -568,12 +595,25 @@ namespace xy {
     bool parser::parse_type_function(const token &, const char *) throw() {
         return true;
     }
-    bool parser::parse_type_group(const token &, const char *) throw() {
+    bool parser::parse_type_group(const token &open_paren, const char *) throw() {
         if(!parse(type_parsers, 0)) {
             return false;
         }
 
-        return consume(T_CLOSE_PAREN);
+        type_decl *decl(stack.back()->reinterpret<type_decl>());
+        token decl_loc(decl->location);
+        decl->location = open_paren;
+        decl->location.extend(decl_loc);
+        stream.accept(decl_loc);
+        stream.undo();
+
+        if(!consume(T_CLOSE_PAREN)) {
+            return false;
+        }
+
+        decl->location.extend(decl_loc);
+
+        return true;
     }
 
     bool parser::parse_ref_type(const token &, const char *) throw() {
@@ -632,29 +672,25 @@ namespace xy {
 
     /// parse a function declaration. This could be a type generating function,
     /// i.e. a template type, a function template, or a normal function.
-    bool parser::parse_function(
-        arrow_type_decl *tpl_arg_types,
-        arrow_type_decl *arg_types,
-        bool is_func,
-        statement_list *stmts
-    ) throw() {
+    bool parser::parse_function(func_def *def, bool is_func) throw() {
+
         if(!(consume(T_FUNCTION) && consume(T_OPEN_PAREN))) {
             return false;
         }
 
         const char *name_buff;
         token got;
+        std::ostringstream ss;
 
-        size_t num_args(0);
-        if(nullptr != arg_types) {
-            num_args = arg_types->types.size();
-        }
+        bool can_have_semicolon(is_func);
 
-        if(nullptr != tpl_arg_types) {
-            const size_t num(tpl_arg_types->types.size());
+        if(nullptr != def->template_arg_types) {
+
+            const size_t num(def->template_arg_types->types.size() - (!is_func ? 1U : 0U));
             bool expect_comma(false);
+
             for(size_t i(0); i < num; ++i, expect_comma = true) {
-                type_decl *part(tpl_arg_types->types[i]);
+                type_decl *part(def->template_arg_types->types[i]);
                 named_type_decl *named(part->reinterpret<named_type_decl>());
 
                 if(expect_comma) {
@@ -669,31 +705,85 @@ namespace xy {
                 stream.accept(got, name_buff);
 
                 // we should expect a type name
+                if(nullptr != named) {
+                    printf("name: %s\n", stab[named->name]);
+                    printf("Type: %s\n", stab[Type]);
+                    printf("equiv %d\n", named->name == Type);
+                }
                 if(nullptr != named && Type == named->name) {
 
                     if(T_TYPE_NAME != got.type()) {
-                        ctx.report_here(got, io::e_tpl_arg_need_type_name);
-                        ctx.report_here(named->location, io::e_tpl_arg_need_type_name_source);
+                        named->print(ss, stab);
+                        ctx.report_here(got, io::e_missing_arg_for_type, token::name(T_TYPE_NAME), ss.str().c_str(), got.name());
+                        ctx.report_here(part->location, io::n_tpl_arg_need_type_name_source);
                         return false;
                     }
 
                 // we should expect a variable name
                 } else {
-
+                    if(T_NAME != got.type()) {
+                        part->print(ss, stab);
+                        ctx.report_here(got, io::e_missing_arg_for_type, token::name(T_NAME), ss.str().c_str(), got.name());
+                        ctx.report_here(part->location, io::n_tpl_arg_need_type_name_source);
+                        return false;
+                    }
                 }
+
+                def->template_arg_names.push_back(stab[name_buff]);
+            }
+
+            // must we get a semicolon?
+            if(nullptr != def->arg_types
+            && 1U < def->arg_types->types.size()) {
+                if(!consume(T_SEMICOLON)) {
+                    return false;
+                }
+                can_have_semicolon = false;
             }
         }
-        /*
-        for(size_t i(0); i < num_tpl_args; ++i) {
-            type_decl *arg_type()
+
+        // optionally get a semicolon
+        if(can_have_semicolon) {
+            if(stream.check(T_SEMICOLON)) {
+                stream.accept();
+            }
         }
 
-        (void) num_tpl_args;*/
-        (void) num_args;
-        (void) is_func;
-        (void) stmts;
+        if(nullptr != def->arg_types) {
 
-        return true;
+            const size_t num(def->arg_types->types.size() - (is_func ? 1U : 0U));
+            bool expect_comma(false);
+
+            for(size_t i(0); i < num; ++i, expect_comma = true) {
+
+                if(expect_comma && !consume(T_COMMA)) {
+                    return false;
+                }
+
+                type_decl *part(def->arg_types->types[i]);
+                stream.accept(got, name_buff);
+
+                if(T_NAME != got.type()) {
+                    part->print(ss, stab);
+                    ctx.report_here(got, io::e_missing_arg_for_type, token::name(T_NAME), ss.str().c_str());
+                    ctx.report_here(part->location, io::n_func_arg_need_type_name_source);
+                    return false;
+                }
+
+                def->arg_names.push_back(stab[name_buff]);
+            }
+        }
+
+        if(!(consume(T_CLOSE_PAREN) && consume(T_OPEN_BRACE))) {
+            return false;
+        }
+
+        // parse statements in this function
+        if(!parse(def->statements)) {
+            return false;
+        }
+
+        return consume(T_CLOSE_BRACE);
     }
 
     /// parse the function type declarations
@@ -714,7 +804,8 @@ namespace xy {
         }
 
         // if we have a declaration with only one type, but the type is
-        // (A -> ...), then that should be considered the return type.
+        // (A -> ...), then that should be considered the return type (or
+        // possibly the onky parameter type of the template)
         bool first_might_be_return(stream.check(T_OPEN_PAREN));
 
         type_decl *first_type(pop(stack)->reinterpret<type_decl>());
@@ -725,9 +816,18 @@ namespace xy {
                 return false;
             }
 
+            // add in the template types, given that we know we've gotten
+            // argument types
+            arrow_type_decl *tpl_types_(second_type->reinterpret<arrow_type_decl>());
+            if(nullptr == tpl_types_ || first_might_be_return) {
+                tpl_types_ = new arrow_type_decl;
+                tpl_types_->types.push_back(first_type);
+            }
+            *tpl_types = tpl_types_;
+
             stream.accept(next);
             stream.undo();
-            bool second_might_be_return(T_OPEN_PAREN == next.type());
+            first_might_be_return = T_OPEN_PAREN == next.type();
 
             // couldn't parse the function type arguments (following the
             // template type arguments)
@@ -737,15 +837,6 @@ namespace xy {
             }
 
             second_type = pop(stack)->reinterpret<type_decl>();
-
-            // add in the template types, given that we know we've gotten
-            // argument types
-            arrow_type_decl *tpl_types_(second_type->reinterpret<arrow_type_decl>());
-            if(nullptr == tpl_types_ || second_might_be_return) {
-                tpl_types_ = new arrow_type_decl;
-                tpl_types_->types.push_back(first_type);
-            }
-            *tpl_types = tpl_types_;
         }
 
         // add in the argument types. for a type declaration, these are
@@ -756,7 +847,47 @@ namespace xy {
             arg_types_->types.push_back(second_type);
         }
 
-        *arg_types = arg_types_;
+        // function (with possible template arguments)
+        if(allow_template) {
+            *arg_types = arg_types_;
+
+        // template type
+        } else {
+            *tpl_types = arg_types_;
+        }
+
+        // validate the template types
+        if(nullptr != (*tpl_types)) {
+
+            // make sure our template takes in at least one argument
+            if(1U == (*tpl_types)->types.size()
+            && nullptr == (*arg_types)) {
+                ctx.report_here((*tpl_types)->types[0]->location, io::e_template_needs_args);
+                return false;
+            }
+
+            type_decl *return_type((*tpl_types)->types.back());
+
+            // make sure we return either a type or another template if this
+            // is purely a template
+            if(!((*tpl_types)->is_template(Type))
+            && nullptr == (*arg_types)) {
+                ctx.report_here(return_type->location, io::e_template_must_return_type);
+                return false;
+            }
+        }
+
+        // validate the argument types
+        if(nullptr != (*arg_types)) {
+            type_decl *return_type((*arg_types)->types.back());
+
+            // a function can't return a type/template; only template types can
+            // return types
+            if((*arg_types)->is_template(Type)) {
+                ctx.report_here(return_type->location, io::e_func_cant_return_type);
+                return false;
+            }
+        }
 
         return true;
     }
@@ -819,7 +950,7 @@ namespace xy {
                 }
 
                 def->statements = new statement_list;
-                if(!parse_function(def->template_arg_types, def->arg_types, true, def->statements)) {
+                if(!parse_function(def, true)) {
                     delete def;
                     return false;
                 }
@@ -952,7 +1083,7 @@ namespace xy {
                 repl::wait();
                 last_parsed = parse_let();
                 if(last_parsed) {
-                    consume(T_SEMICOLON);
+                    last_parsed = consume(T_SEMICOLON);
                 }
                 repl::accept();
 
@@ -968,12 +1099,11 @@ namespace xy {
                 repl::wait();
                 last_parsed = parse(expression_parsers, 0);
                 if(last_parsed) {
-                    consume(T_SEMICOLON);
+                    last_parsed = consume(T_SEMICOLON);
                     expression *top_expr(pop(stack)->reinterpret<expression>());
                     stmts->statements.push_back(new expression_stmt(top_expr));
                 }
                 repl::accept();
-
 
             } else {
                 break;

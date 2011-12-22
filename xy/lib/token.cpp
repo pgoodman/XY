@@ -142,4 +142,10 @@ namespace xy {
     const char *token::name(void) const throw() {
         return token::name(type_);
     }
+
+    void token::extend(const token &other) throw() {
+        if(line_ == other.line_) {
+            num_columns_ += other.num_columns_ + (other.col_ - (col_ + num_columns_));
+        }
+    }
 }

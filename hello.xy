@@ -10,9 +10,9 @@ let a, b := function_call(1, 2, 2+3), function_call();
 
 let T1, T2 := Type_template(1, Int), Type(Inst);
 
-let foo :: Type -> Type -> Bar -> Baz;
-let bar :: Type -> Type => Type -> Type 
-    := function() {
+let bar :: Type -> Type => T1 -> T2 := 
+    function(T1, T2; a) {
+        
     }
 
 let bar := foo(Int, Int; 10, 111);

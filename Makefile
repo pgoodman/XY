@@ -25,12 +25,14 @@ CC_WARN_FLAGS = -Wall -Werror -Wno-unused-function
 CC_WARN_FLAGS += -Wcast-qual -Wno-format-security
 CC_FLAGS = -O0 -g -ansi -I${ROOT_DIR} -std=c99
 
-GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align -Wno-long-long
+GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align \
+					   -Wno-long-long -Wsign-promo -Wmissing-declarations \
+					   -Wstrict-overflow -Wno-unknown-pragmas -Wredundant-decls
 
 # are we compiling with the g++?
 ifeq (${CXX}, ${GNU_CXX})
 	#CXX_FEATURES += -flto
-	CXX_FEATURES += -fno-stack-protector
+	CXX_FEATURES += -fno-stack-protector -fdata-sections -ffunction-sections
 	CXX_WARN_FLAGS += -Wshadow -Wpointer-arith \
 				      -Wwrite-strings \
 				      -Wfloat-equal -Wconversion -Wredundant-decls \
@@ -77,6 +79,7 @@ OBJS += bin/lib/utf8/codepoint.o
 OBJS += bin/lib/utf8/decoder.o 
 OBJS += bin/lib/support/byte_reader.o
 OBJS += bin/lib/support/cstring_reader.o
+OBJS += bin/lib/support/hash_array_set.o
 OBJS += bin/lib/io/file.o
 OBJS += bin/lib/io/message.o
 OBJS += bin/lib/io/cwd.o
@@ -89,10 +92,12 @@ OBJS += bin/lib/token.o
 OBJS += bin/lib/tokenizer.o
 OBJS += bin/lib/token_stream.o
 
-OBJS += bin/deps/libdatrie/alpha-map.o
-OBJS += bin/deps/libdatrie/darray.o
-OBJS += bin/deps/libdatrie/tail.o
-OBJS += bin/deps/libdatrie/trie.o
+#OBJS += bin/deps/libdatrie/alpha-map.o
+#OBJS += bin/deps/libdatrie/darray.o
+#OBJS += bin/deps/libdatrie/tail.o
+#OBJS += bin/deps/libdatrie/trie.o
+
+OBJS += bin/deps/murmurhash/MurmurHash3.o
 
 OBJS += bin/deps/linenoise/linenoise.o
 
@@ -146,6 +151,7 @@ install:
 	-mkdir bin/deps/libdatrie
 	-mkdir bin/deps/linenoise
 	-mkdir bin/deps/openbsd
+	-mkdir bin/deps/murmurhash
 
 clean:
 	-rm -f bin/*.o
@@ -157,3 +163,4 @@ clean:
 	-rm -f bin/deps/libdatrie/*.o
 	-rm -f bin/deps/linenoise/*.o
 	-rm -f bin/deps/openbsd/*.o
+	-rm -f bin/deps/murmurhash/*.o

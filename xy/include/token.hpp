@@ -130,6 +130,8 @@ namespace xy {
         const char *name(void) const throw();
 
         static const char *name(token_type) throw();
+
+        void extend(const token &) throw();
     };
 
 }

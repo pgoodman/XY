@@ -10,6 +10,7 @@
 #define XY_UNSAFE_CAST_HPP_
 
 #include <stdint.h>
+#include <cstring>
 
 #include "xy/include/support/inline.hpp"
 

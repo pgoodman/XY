@@ -7,7 +7,8 @@
 // compile and run any of them on any platform, but your performance with the
 // non-native version will be less than optimal.
 
-#include "MurmurHash3.h"
+#include "xy/deps/murmurhash/MurmurHash3.h"
+#include "xy/include/support/unsafe_cast.hpp"
 
 //-----------------------------------------------------------------------------
 // Platform-specific functions and macros
@@ -94,7 +95,7 @@ FORCE_INLINE uint64_t fmix ( uint64_t k )
 void MurmurHash3_x86_32 ( const void * key, int len,
                           uint32_t seed, void * out )
 {
-  const uint8_t * data = (const uint8_t*)key;
+  const uint8_t * data = static_cast<const uint8_t*>(key);
   const int nblocks = len / 4;
 
   uint32_t h1 = seed;
@@ -105,7 +106,7 @@ void MurmurHash3_x86_32 ( const void * key, int len,
   //----------
   // body
 
-  const uint32_t * blocks = (const uint32_t *)(data + nblocks*4);
+  const uint32_t * blocks = xy::support::unsafe_cast<const uint32_t *>(data + nblocks*4);
 
   for(int i = -nblocks; i; i++)
   {
@@ -123,7 +124,7 @@ void MurmurHash3_x86_32 ( const void * key, int len,
   //----------
   // tail
 
-  const uint8_t * tail = (const uint8_t*)(data + nblocks*4);
+  const uint8_t * tail = static_cast<const uint8_t*>(data + nblocks*4);
 
   uint32_t k1 = 0;
 
@@ -145,12 +146,13 @@ void MurmurHash3_x86_32 ( const void * key, int len,
   *(uint32_t*)out = h1;
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 
 void MurmurHash3_x86_128 ( const void * key, const int len,
                            uint32_t seed, void * out )
 {
-  const uint8_t * data = (const uint8_t*)key;
+  const uint8_t * data = static_cast<const uint8_t*>(key);
   const int nblocks = len / 16;
 
   uint32_t h1 = seed;
@@ -330,5 +332,5 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
   ((uint64_t*)out)[0] = h1;
   ((uint64_t*)out)[1] = h2;
 }
-
+#endif
 //-----------------------------------------------------------------------------

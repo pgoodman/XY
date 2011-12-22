@@ -541,12 +541,12 @@ namespace xy {
                     if('=' == cp.to_cstring()[0]) {
                         state = READ_NEXT_CODEPOINT;
                         tok.type_ = T_ASSIGN;
-                        ++tok.num_columns_;
+                        tok.num_columns_ = 2;
                         return true;
                     } else if(':' == cp.to_cstring()[0]) {
                         state = READ_NEXT_CODEPOINT;
                         tok.type_ = T_DECLARE;
-                        ++tok.num_columns_;
+                        tok.num_columns_ = 2;
                         return true;
                     } else {
                         state = HAVE_ASCII_CODEPOINT;
@@ -573,12 +573,12 @@ namespace xy {
                     if('>' == chr) {
                         state = READ_NEXT_CODEPOINT;
                         tok.type_ = T_ARROW;
-                        ++(tok.num_columns_);
+                        tok.num_columns_ = 2;
 
                     // single-line comment
                     } else if('-' == chr) {
-                        //tok.type_ = T_NEW_LINE;
-                        //tok.num_columns_ = 0;
+                        tok.line_ = ll.line();
+                        tok.col_ = ll.column();
                         tok.type_ = T_EOF;
                         state = READ_NEXT_CODEPOINT;
 
@@ -1065,6 +1065,8 @@ namespace xy {
                 }
             }
         case DONE:
+            tok.line_ = ll.line();
+            tok.col_ = ll.column();
             tok.type_ = T_EOF;
             break;
         }
