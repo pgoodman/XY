@@ -25,8 +25,12 @@ CC_WARN_FLAGS = -Wall -Werror -Wno-unused-function
 CC_WARN_FLAGS += -Wcast-qual -Wno-format-security
 CC_FLAGS = -O0 -g -ansi -I${ROOT_DIR} -std=c99
 
-GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align \
+CXX_GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align \
 					   -Wno-long-long -Wsign-promo -Wmissing-declarations \
+					   -Wstrict-overflow -Wno-unknown-pragmas -Wredundant-decls
+
+CC_GNU_COMPATIBLE_FLAGS = -pedantic -pedantic-errors -Wextra -Wcast-align \
+					   -Wno-long-long -Wmissing-declarations \
 					   -Wstrict-overflow -Wno-unknown-pragmas -Wredundant-decls
 
 # are we compiling with the g++?
@@ -54,7 +58,8 @@ ifneq (,$(findstring ${INTEL_CC},${CC}))
 				 -wd869 -wd111
 	CC_FLAGS += -wd981 -wd111
 	LD_FLAGS += -lstdc++
-	GNU_COMPATIBLE_FLAGS = -Wextra -Wno-long-long
+	CXX_GNU_COMPATIBLE_FLAGS = -Wextra -Wno-long-long
+	CC_GNU_COMPATIBLE_FLAGS = CXX_GNU_COMPATIBLE_FLAGS
 endif
 
 # are we compiling with clang++?
@@ -64,8 +69,8 @@ ifneq (,$(findstring ${CLANG_CC},${CC}))
 	CXX_WARN_FLAGS += -Winline
 endif
 
-CXX_FLAGS += ${CXX_WARN_FLAGS} ${CXX_FEATURES} ${GNU_COMPATIBLE_FLAGS}
-CC_FLAGS += ${CC_WARN_FLAGS} ${CC_FEATURES} ${GNU_COMPATIBLE_FLAGS}
+CXX_FLAGS += ${CXX_WARN_FLAGS} ${CXX_FEATURES} ${CXX_GNU_COMPATIBLE_FLAGS}
+CC_FLAGS += ${CC_WARN_FLAGS} ${CC_FEATURES} ${CC_GNU_COMPATIBLE_FLAGS}
 
 OBJS = 
 
