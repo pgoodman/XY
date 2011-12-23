@@ -107,7 +107,7 @@ namespace xy {
 
         /// parse a let statement. the let statement is used to bind the values
         /// of expressions to variables, or type declarations to type names.
-        bool parse_func_decl_type(bool, arrow_type_decl **, arrow_type_decl**) throw();
+        bool parse_func_decl_type(arrow_type_decl **, arrow_type_decl**) throw();
         bool parse_name_list(token_type, name_list_type &) throw();
         bool parse_let(void) throw();
 

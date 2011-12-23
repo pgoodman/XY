@@ -33,4 +33,4 @@ XY_MSG(e_func_cant_return_type, error, "A function is not allowed to return a ty
 XY_MSG(e_template_needs_args, error, "A template type must have at least one argument type as well as returning a type. Only one type was given.")
 XY_MSG(e_template_must_return_type, error, "A type template must return either a type or another type template.")
 XY_MSG(e_rebind_reserved_type, error, "The %s cannot be re-bound as it is a reserved keyword of the language.")
-
+XY_MSG(e_error_parsing, error, "An error occurred while parsing this document. The error either occurred at this token, or somewhere just before this token.")

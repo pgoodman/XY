@@ -814,7 +814,6 @@ namespace xy {
 
     /// parse the function type declarations
     bool parser::parse_func_decl_type(
-        bool allow_template,
         arrow_type_decl **tpl_types,
         arrow_type_decl **arg_types
     ) throw() {
@@ -824,7 +823,7 @@ namespace xy {
 
         if(!parse(type_parsers, 0)) {
             ctx.report_here(next,
-                (allow_template ? io::e_func_decl_bad_arrow : io::e_type_decl_bad_arrow)
+                (nullptr != arg_types ? io::e_func_decl_bad_arrow : io::e_type_decl_bad_arrow)
             );
             return false;
         }
@@ -837,7 +836,11 @@ namespace xy {
         type_decl *first_type(pop(stack)->reinterpret<type_decl>());
         type_decl *second_type(first_type);
 
-        if(allow_template && stream.check(T_DOUBLE_ARROW)) {
+        // parsing a function and came across the separator for template
+        // args and normal args
+        if(nullptr != arg_types
+        && stream.check(T_DOUBLE_ARROW)) {
+
             if(!consume(T_DOUBLE_ARROW)) {
                 return false;
             }
@@ -874,7 +877,7 @@ namespace xy {
         }
 
         // function (with possible template arguments)
-        if(allow_template) {
+        if(nullptr != arg_types) {
             *arg_types = arg_types_;
 
             // only one return; so make it go from Unit to the return type,
@@ -894,7 +897,7 @@ namespace xy {
 
             // make sure our template takes in at least one argument
             if(1U == (*tpl_types)->types.size()
-            && nullptr == (*arg_types)) {
+            && (nullptr == arg_types || nullptr == (*arg_types))) {
                 ctx.report_here((*tpl_types)->types[0]->location, io::e_template_needs_args);
                 return false;
             }
@@ -904,14 +907,14 @@ namespace xy {
             // make sure we return either a type or another template if this
             // is purely a template
             if(!((*tpl_types)->returns_type())
-            && nullptr == (*arg_types)) {
+            && (nullptr == arg_types || nullptr == (*arg_types))) {
                 ctx.report_here(return_type->location, io::e_template_must_return_type);
                 return false;
             }
         }
 
         // validate the argument types
-        if(nullptr != (*arg_types)) {
+        if(nullptr != arg_types && nullptr != (*arg_types)) {
             type_decl *return_type((*arg_types)->types.back());
 
             // a function can't return a type/template; only template types can
@@ -976,7 +979,7 @@ namespace xy {
                 consume(T_DECLARE);
 
                 func_def *def(new func_def);
-                if(!parse_func_decl_type(true, &(def->template_arg_types), &(def->arg_types))) {
+                if(!parse_func_decl_type(&(def->template_arg_types), &(def->arg_types))) {
                     delete def;
                     return false;
                 }
@@ -1047,7 +1050,7 @@ namespace xy {
                 arrow_type_decl *template_arg_types(nullptr);
 
                 // get the info
-                if(!parse_func_decl_type(false, &template_arg_types, nullptr)) {
+                if(!parse_func_decl_type(&template_arg_types, nullptr)) {
                     if(nullptr != template_arg_types) {
                         delete template_arg_types;
                     }
@@ -1229,10 +1232,19 @@ namespace xy {
             p.consume(T_EOF);
         }
 
+        // failed to parse, and we have some (presumably) useful error
+        // messages in the queue
         if(ctx.has_message(io::message_type::error)
         || ctx.has_message(io::message_type::recoverable_error)
-        || ctx.has_message(io::message_type::failed_assertion)
-        || !last_parsed) {
+        || ctx.has_message(io::message_type::failed_assertion)) {
+            return false;
+        }
+
+        // failed to parse but no messages in the queue; try to be helpful.
+        if(!last_parsed) {
+            token last;
+            stream.accept(last);
+            ctx.report_here(last, io::e_error_parsing);
             return false;
         }
 
