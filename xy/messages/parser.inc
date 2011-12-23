@@ -25,9 +25,12 @@ XY_MSG(e_func_decl_bad_arrow, error, "I was expecting an (inline) type declarati
 XY_MSG(e_type_decl_bad_arrow, error, "I was expecting an (inline) type declaration here specifying either a template argument type, or Type (i.e. that this is a type) for this type declaration.")
 XY_MSG(e_func_no_arg_type, error, "I was expecting either a function argument type here or the return type of this function.")
 XY_MSG(e_func_decl_multiple_names, error, "You can only let-bind one name while specifying a new function using the declaration (::) syntax. You have bound %lu names.")
+XY_MSG(e_tpl_decl_multiple_names, error, "You can only let-bind one name while specifying a new template type using the declaration (::) syntax. You have bound %lu names.")
 XY_MSG(e_missing_arg_for_type, error, "Expected a %s here to match the declared parameter with type %s. Instead, I got a %s.")
 XY_MSG(n_tpl_arg_need_type_name_source, note, "Type of expected template argument declared here.")
 XY_MSG(n_func_arg_need_type_name_source, note, "Type of expected function argument declared here.")
 XY_MSG(e_func_cant_return_type, error, "A function is not allowed to return a type or a template.")
 XY_MSG(e_template_needs_args, error, "A template type must have at least one argument type as well as returning a type. Only one type was given.")
 XY_MSG(e_template_must_return_type, error, "A type template must return either a type or another type template.")
+XY_MSG(e_rebind_reserved_type, error, "The %s cannot be re-bound as it is a reserved keyword of the language.")
+

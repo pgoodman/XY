@@ -10,29 +10,40 @@ let a, b := function_call(1, 2, 2+3), function_call();
 
 let T1, T2 := Type_template(1, Int), Type(Inst);
 
+-- template function taking two types and one argument
 let bar :: Type -> Type => T1 -> T2 := 
     function(T1, T2; a) {
         
-    }
+        -- a has type T1
+        -- must return something with type T2
+    };
 
-let bar := foo(Int, Int; 10, 111);
+-- instantiation of the above template function
+let bar := foo(Int, Int; 10);
 
-let Int := Int -> Int * Int + Bar( -* needs args *- );
-
-
-let Person :: Type -> Foo(T) :=
+-- template type; can be used to make claims about types
+-- will generate a compile time error iff the type T is
+-- not a product type
+let MustBeProduct :: Type -> Type :=
     function(T) {
-       
+        if(/is_product_type(T)) {
+            error "Type", name(T), "must be a product type.";
+        } 
+        return T;
     }
+
 
 let InnerList :: Type -> Type :=
     record(T) {
-        T elem;
-        OuterList(T) next;
+        elem :: T;
+        next :: OuterList(T);
     };
 
 let OuterList :: Type -> Type :=
     record(T) {
-        T elem;
-        InnerList(T) next;
+        elem :: T;
+        next :: InnerList(T);
     };
+
+-- example type declaration shat should generate an error
+let Int := Int -> Int * Int + Bar( -* needs args *- );

@@ -37,6 +37,8 @@ namespace xy {
         T_UNION,
         T_RECORD,
         T_FUNCTION,
+        T_TYPE_TYPE,
+        T_TYPE_UNIT,
 
         T_OPEN_PAREN,               // (
         T_CLOSE_PAREN,              // )

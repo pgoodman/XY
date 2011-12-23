@@ -34,9 +34,6 @@ namespace xy {
         token_stream &stream;
         std::vector<ast *> stack;
 
-        /// the name for the type 'Type'
-        const support::mapped_name Type;
-
         //bool accept_expected_newline(void) throw();
 
         bool report_simple(io::message_id, const token &got) throw();
@@ -51,8 +48,6 @@ namespace xy {
 
         typedef std::vector<std::pair<token, support::mapped_name> > \
                 name_list_type;
-
-
 
         // precedence table
         struct precedence_parser {
@@ -91,6 +86,8 @@ namespace xy {
 
         // type parsers
         bool parse_type_name(const token &, const char *) throw();
+        bool parse_type_type_decl(const token &, const char *) throw();
+        bool parse_unit_type_decl(const token &, const char *) throw();
         bool parse_union(const token &, const char *) throw();
         bool parse_record(const token &, const char *) throw();
         bool parse_type_function(const token &, const char *) throw();
@@ -119,7 +116,7 @@ namespace xy {
 
         static void parse_open_file(io::file<xy::io::read_tag> &ff, diagnostic_context &, bool &) throw();
 
-        bool parse(statement_list *) throw();
+        bool parse(statement_list *, token_type, func_def *) throw();
 
     public:
 

@@ -430,7 +430,7 @@ namespace xy {
         token location;
         type_decl(void) throw() { }
         virtual ~type_decl(void) throw() { }
-        virtual bool is_template(const support::mapped_name) throw() { return false; }
+        virtual bool returns_type(void) throw() { return false; }
     };
 
         struct template_instance_type_decl : public support::ast_impl<template_instance_type_decl, type_decl> {
@@ -458,6 +458,20 @@ namespace xy {
 
             virtual void print(std::ostream &os, symbol_table &stab) throw() {
                 os << stab[name];
+            }
+        };
+
+        struct type_type_decl : public support::ast_impl<type_type_decl, type_decl> {
+        public:
+            virtual void print(std::ostream &os, symbol_table &) throw() {
+                os << "Type";
+            }
+        };
+
+        struct type_unit_decl : public support::ast_impl<type_unit_decl, type_decl> {
+        public:
+            virtual void print(std::ostream &os, symbol_table &) throw() {
+                os << "Unit";
             }
         };
 
@@ -544,22 +558,18 @@ namespace xy {
 
                 /// is this a template type? i.e. do we generate something
                 /// that is a type or is somehting that generates a type?
-                virtual bool is_template(const support::mapped_name Type) throw() {
+                virtual bool returns_type(void) throw() {
                     if(types.empty()) {
                         return false;
                     }
 
                     type_decl *return_type(types.back());
-                    named_type_decl *back(return_type->reinterpret<named_type_decl>());
-                    if(nullptr == back) {
-                        return false;
-                    }
 
-                    if(Type == back->name) {
+                    if(return_type->is_instance<type_type_decl>()) {
                         return true;
                     }
 
-                    return return_type->is_template(Type);
+                    return return_type->returns_type();
                 }
             };
 

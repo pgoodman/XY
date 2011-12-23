@@ -353,7 +353,9 @@ namespace xy {
             reserved_name("yield",       6U, T_YIELD),
             reserved_name("union",       6U, T_UNION),
             reserved_name("record",      7U, T_RECORD),
-            reserved_name("function",    9U, T_FUNCTION)
+            reserved_name("function",    9U, T_FUNCTION),
+            reserved_name("Type",        5U, T_TYPE_TYPE),
+            reserved_name("Unit",        5U, T_TYPE_UNIT)
         };
     }
 
@@ -1051,14 +1053,14 @@ namespace xy {
                     }
                     scratch[i] = '\0';
 
-                    if(T_NAME == tok.type_) {
-                        for(i = 0; i < array::length(RESERVED_NAMES); ++i) {
-                            if(0 == strncmp(scratch, RESERVED_NAMES[i].str, RESERVED_NAMES[i].len)) {
-                                tok.type_ = RESERVED_NAMES[i].type;
-                                break;
-                            }
+                    //if(T_NAME == tok.type_) {
+                    for(i = 0; i < array::length(RESERVED_NAMES); ++i) {
+                        if(0 == strncmp(scratch, RESERVED_NAMES[i].str, RESERVED_NAMES[i].len)) {
+                            tok.type_ = RESERVED_NAMES[i].type;
+                            break;
                         }
                     }
+                    //}
 
                     return true;
 

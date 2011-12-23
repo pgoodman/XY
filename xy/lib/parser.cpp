@@ -9,7 +9,7 @@
 #include <cassert>
 #include <sstream>
 
-#define D(x)
+#define D(x) x
 
 #include "xy/include/parser.hpp"
 #include "xy/include/tokenizer.hpp"
@@ -74,6 +74,8 @@ namespace xy {
         {70,    T_PLUS,             &parser::parse_fail_p,          &parser::parse_infix_type_operator<sum_type_decl>},
 
         {10,    T_TYPE_NAME,        &parser::parse_type_name,       &parser::parse_fail_s},
+        {10,    T_TYPE_TYPE,        &parser::parse_type_type_decl,  &parser::parse_fail_s},
+        {10,    T_TYPE_UNIT,        &parser::parse_unit_type_decl,  &parser::parse_fail_s},
         //{10,    T_UNION,            &parser::parse_union,           &parser::parse_fail_s},
         //{10,    T_RECORD,           &parser::parse_record,          &parser::parse_fail_s},
 
@@ -586,6 +588,20 @@ namespace xy {
         stack.push_back(decl);
         return true;
     }
+
+    bool parser::parse_type_type_decl(const token &tok, const char *) throw() {
+        type_type_decl *decl(new type_type_decl);
+        decl->location = tok;
+        stack.push_back(decl);
+        return true;
+    }
+    bool parser::parse_unit_type_decl(const token &tok, const char *) throw() {
+        type_unit_decl *decl(new type_unit_decl);
+        decl->location = tok;
+        stack.push_back(decl);
+        return true;
+    }
+
     bool parser::parse_union(const token &, const char *) throw() {
         return true;
     }
@@ -657,8 +673,15 @@ namespace xy {
             if(!stream.check(expected)) {
                 assert(check_comma);
 
+                // don't allow us to re-assign a type name
                 stream.accept(got);
-                report_unexpected_follow_symbol(prev_token, got, expected);
+                if(T_TYPE_UNIT == got.type()
+                || T_TYPE_TYPE == got.type()) {
+                    ctx.report_here(got, io::e_rebind_reserved_type, got.name());
+                } else {
+                    report_unexpected_follow_symbol(prev_token, got, expected);
+                }
+
                 return false;
             }
 
@@ -691,12 +714,12 @@ namespace xy {
 
             for(size_t i(0); i < num; ++i, expect_comma = true) {
                 type_decl *part(def->template_arg_types->types[i]);
-                named_type_decl *named(part->reinterpret<named_type_decl>());
 
                 if(expect_comma) {
                     if(stream.check(T_SEMICOLON)) {
                         break;
                     }
+
                     if(!consume(T_COMMA)) {
                         return false;
                     }
@@ -705,17 +728,20 @@ namespace xy {
                 stream.accept(got, name_buff);
 
                 // we should expect a type name
-                if(nullptr != named) {
-                    printf("name: %s\n", stab[named->name]);
-                    printf("Type: %s\n", stab[Type]);
-                    printf("equiv %d\n", named->name == Type);
-                }
-                if(nullptr != named && Type == named->name) {
+                if(part->is_instance<type_type_decl>()) {
 
+                    // don't allow us to re-assign a type name
                     if(T_TYPE_NAME != got.type()) {
-                        named->print(ss, stab);
-                        ctx.report_here(got, io::e_missing_arg_for_type, token::name(T_TYPE_NAME), ss.str().c_str(), got.name());
+
+                        if(T_TYPE_UNIT == got.type()
+                        || T_TYPE_TYPE == got.type()) {
+                            ctx.report_here(got, io::e_rebind_reserved_type, got.name());
+                        } else {
+                            ctx.report_here(got, io::e_missing_arg_for_type, token::name(T_TYPE_NAME), "Type", got.name());
+                        }
+
                         ctx.report_here(part->location, io::n_tpl_arg_need_type_name_source);
+
                         return false;
                     }
 
@@ -779,7 +805,7 @@ namespace xy {
         }
 
         // parse statements in this function
-        if(!parse(def->statements)) {
+        if(!parse(def->statements, T_CLOSE_BRACE, def)) {
             return false;
         }
 
@@ -851,6 +877,13 @@ namespace xy {
         if(allow_template) {
             *arg_types = arg_types_;
 
+            // only one return; so make it go from Unit to the return type,
+            // i.e. takes in nothing
+            if(1U == arg_types_->types.size()) {
+                arg_types_->types.push_back(arg_types_->types[0]);
+                arg_types_->types[0] = new type_unit_decl;
+            }
+
         // template type
         } else {
             *tpl_types = arg_types_;
@@ -870,7 +903,7 @@ namespace xy {
 
             // make sure we return either a type or another template if this
             // is purely a template
-            if(!((*tpl_types)->is_template(Type))
+            if(!((*tpl_types)->returns_type())
             && nullptr == (*arg_types)) {
                 ctx.report_here(return_type->location, io::e_template_must_return_type);
                 return false;
@@ -883,7 +916,7 @@ namespace xy {
 
             // a function can't return a type/template; only template types can
             // return types
-            if((*arg_types)->is_template(Type)) {
+            if((*arg_types)->returns_type()) {
                 ctx.report_here(return_type->location, io::e_func_cant_return_type);
                 return false;
             }
@@ -914,9 +947,14 @@ namespace xy {
 
         assert(nullptr != stmts);
 
-        if(!stream.check(T_NAME) && !stream.check(T_TYPE_NAME)){
+        if(!stream.check(T_NAME) && !stream.check(T_TYPE_NAME)) {
             stream.accept(curr);
-            return report_unexpected_follow_symbol_2(prev, curr, T_NAME, T_TYPE_NAME);
+            if(T_TYPE_TYPE == curr.type() || T_TYPE_UNIT == curr.type()) {
+                ctx.report_here(curr, io::e_rebind_reserved_type, curr.name());
+                return false;
+            } else {
+                return report_unexpected_follow_symbol_2(prev, curr, T_NAME, T_TYPE_NAME);
+            }
 
         // variable/func declaration
         } else if(stream.check(T_NAME)) {
@@ -990,7 +1028,57 @@ namespace xy {
 
         // type declaration
         } else {
-            if(!parse_name_list(T_TYPE_NAME, names) || !consume(T_ASSIGN)) {
+            if(!parse_name_list(T_TYPE_NAME, names)) {
+                return false;
+            }
+
+            // see if this is a type template declaration, e.g.
+            // let Fizz :: Bar -> Type := function(...) { ... }
+            if(stream.check(T_DECLARE)) {
+
+                // more than one names are part of this function declaration
+                if(1U != names.size()) {
+                    ctx.report_here(prev, io::e_tpl_decl_multiple_names, names.size());
+                    return false;
+                }
+
+                consume(T_DECLARE);
+
+                arrow_type_decl *template_arg_types(nullptr);
+
+                // get the info
+                if(!parse_func_decl_type(false, &template_arg_types, nullptr)) {
+                    if(nullptr != template_arg_types) {
+                        delete template_arg_types;
+                    }
+                    return false;
+                }
+
+                /*
+                func_def *def(new func_def);
+                if(!parse_func_decl_type(true, &(def->template_arg_types), &(def->arg_types))) {
+                    delete def;
+                    return false;
+                }
+
+                // now we want to parse the function itself
+                if(!consume(T_ASSIGN)) {
+                    delete def;
+                    return false;
+                }
+
+                def->statements = new statement_list;
+                if(!parse_function(def, true)) {
+                    delete def;
+                    return false;
+                }
+
+                stmts->statements.push_back(def);
+                return true;
+                */
+                return false;
+
+            } else if(!consume(T_ASSIGN)) {
                 return false;
             }
 
@@ -1017,7 +1105,6 @@ namespace xy {
             }
 
             if(last_seen < names.size()) {
-
                 ctx.report_here(names[last_seen].first, io::e_missing_type_decl_in_let, stab[names[last_seen].second]);
                 return false;
             }
@@ -1026,6 +1113,8 @@ namespace xy {
         return true;
     }
 
+    /// consume a single token, and report an error if the token cannot be
+    /// consumed
     bool parser::consume(token_type expected) throw() {
         repl::wait();
         if(!stream.check(expected)) {
@@ -1052,7 +1141,6 @@ namespace xy {
         , stab()
         , stream(stream_)
         , stack()
-        , Type(stab["Type"])
     { }
 
     parser::~parser(void) throw() {
@@ -1063,7 +1151,7 @@ namespace xy {
         }
     }
 
-    bool parser::parse(statement_list *stmts) throw() {
+    bool parser::parse(statement_list *stmts, token_type end, func_def *def) throw() {
         bool last_parsed(true);
         for(; last_parsed && stream.check(); ) {
 
@@ -1074,7 +1162,7 @@ namespace xy {
             }*/
 
             // done parsing this file
-            if(stream.check(T_EOF)) {
+            if(stream.check(end)) {
                 break;
             }
 
@@ -1088,7 +1176,7 @@ namespace xy {
                 repl::accept();
 
             // possibly unexpected token; try to parse an expression
-            } else if(stream.check() ){
+            } else if(stream.check()) {
                 /*token got;
                 stream.accept(got);
                 stream.undo();
@@ -1105,23 +1193,25 @@ namespace xy {
                 }
                 repl::accept();
 
+            // template or function
+            } else if(nullptr != def && stream.check(T_RETURN)) {
+                last_parsed = consume(T_RETURN);
+
+                // template type
+                if(nullptr == def->arg_types) {
+
+                // funcion
+                } else {
+
+                }
+
+            // no idea :(
             } else {
-                break;
+                return consume(end); // will fail.
             }
         }
 
-        if(last_parsed) {
-            consume(T_EOF);
-        }
-
-        if(ctx.has_message(io::message_type::error)
-        || ctx.has_message(io::message_type::recoverable_error)
-        || ctx.has_message(io::message_type::failed_assertion)
-        || !last_parsed) {
-            return false;
-        }
-
-        return true;
+        return last_parsed;
     }
 
     /// parse a stream of tokens
@@ -1133,7 +1223,20 @@ namespace xy {
         // push the top thing onto the stack :D
         statement_list *stmts(new statement_list);
         p.stack.push_back(stmts);
-        return p.parse(stmts);
+        bool last_parsed(p.parse(stmts, T_EOF, nullptr));
+
+        if(last_parsed) {
+            p.consume(T_EOF);
+        }
+
+        if(ctx.has_message(io::message_type::error)
+        || ctx.has_message(io::message_type::recoverable_error)
+        || ctx.has_message(io::message_type::failed_assertion)
+        || !last_parsed) {
+            return false;
+        }
+
+        return true;
     }
 
     /// -----------------------------------------------------------------------

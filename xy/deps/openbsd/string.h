@@ -11,7 +11,7 @@ extern "C" {
 #include <string.h>
 
 /* define the linkage for strdup */
-#if XY_HOST_LINUX && !XY_LINUX_HAS_STRDUP && !defined(HAVE_STRDUP)
+#if XY_HOST_LINUX && !XY_LINUX_HAS_STRDUP
 #   define XY_STRDUP_LINKAGE
 #else
 #   define XY_STRDUP_LINKAGE extern

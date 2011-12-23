@@ -84,6 +84,8 @@ namespace xy {
             "'union' symbol",
             "'record' symbol",
             "'function' symbol",
+            "type Type",
+            "type Unit",
 
             "left parenthesis",               // (
             "right parenthesis",              // )
