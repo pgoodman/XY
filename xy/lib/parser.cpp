@@ -1081,8 +1081,19 @@ namespace xy {
                     return false;
                 }
 
+                statement *stmt(nullptr);
+
                 // as a function
                 if(stream.check(T_FUNCTION)) {
+
+                    func_def *def(new func_def);
+                    def->template_arg_types = template_arg_types;
+                    def->statements = new statement_list;
+                    if(!parse_function(def, false)) {
+                        delete def;
+                        return false;
+                    }
+                    stmt = def;
 
                 // as a record
                 } else if(stream.check(T_RECORD)) {
@@ -1091,6 +1102,8 @@ namespace xy {
                 } else if(stream.check(T_UNION)) {
 
                 }
+
+                stmts->statements.push_back(stmt);
 
                 /*
                 func_def *def(new func_def);
@@ -1111,7 +1124,7 @@ namespace xy {
                 stmts->statements.push_back(def);
                 return true;
                 */
-                return false;
+                return true;
 
             } else if(!consume(T_ASSIGN)) {
                 return false;
