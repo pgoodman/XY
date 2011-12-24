@@ -902,14 +902,33 @@ namespace xy {
                 return false;
             }
 
-            type_decl *return_type((*tpl_types)->types.back());
+            //type_decl *return_type((*tpl_types)->types.back());
 
             // make sure we return either a type or another template if this
             // is purely a template
-            if(!((*tpl_types)->returns_type())
+            /*if(!((*tpl_types)->returns_type())
             && (nullptr == arg_types || nullptr == (*arg_types))) {
                 ctx.report_here(return_type->location, io::e_template_must_return_type);
+
                 return false;
+            }*/
+
+            // template type decl has unit declaration
+            const size_t len((*tpl_types)->types.size());
+            for(size_t i(0); i < len; ++i) {
+                if(!(*tpl_types)->types[i]->is_instance<type_unit_decl>()) {
+                    continue;
+                }
+
+                ctx.report_here((*tpl_types)->types[i]->location, io::e_tpl_decl_has_unit);
+                return false;
+            }
+
+            if(nullptr == arg_types || nullptr == (*arg_types)) {
+               if(1U == (*tpl_types)->types.size()) {
+                   ctx.report_here((*tpl_types)->types[0]->location, io::e_type_tpl_need_args);
+                   return false;
+               }
             }
         }
 
@@ -1057,6 +1076,22 @@ namespace xy {
                     return false;
                 }
 
+                if(!consume(T_ASSIGN)) {
+                    delete template_arg_types;
+                    return false;
+                }
+
+                // as a function
+                if(stream.check(T_FUNCTION)) {
+
+                // as a record
+                } else if(stream.check(T_RECORD)) {
+
+                // as a union
+                } else if(stream.check(T_UNION)) {
+
+                }
+
                 /*
                 func_def *def(new func_def);
                 if(!parse_func_decl_type(true, &(def->template_arg_types), &(def->arg_types))) {
@@ -1065,10 +1100,7 @@ namespace xy {
                 }
 
                 // now we want to parse the function itself
-                if(!consume(T_ASSIGN)) {
-                    delete def;
-                    return false;
-                }
+
 
                 def->statements = new statement_list;
                 if(!parse_function(def, true)) {

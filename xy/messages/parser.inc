@@ -34,3 +34,6 @@ XY_MSG(e_template_needs_args, error, "A template type must have at least one arg
 XY_MSG(e_template_must_return_type, error, "A type template must return either a type or another type template.")
 XY_MSG(e_rebind_reserved_type, error, "The %s cannot be re-bound as it is a reserved keyword of the language.")
 XY_MSG(e_error_parsing, error, "An error occurred while parsing this document. The error either occurred at this token, or somewhere just before this token.")
+XY_MSG(e_tpl_decl_has_unit, error, "Template argument declarations cannot contain the Unit type.")
+XY_MSG(e_type_tpl_need_args, error, "Template types must have at least one argument of non-Unit type. You have only provided a return type for the type template.")
+
