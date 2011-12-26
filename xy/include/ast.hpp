@@ -419,11 +419,18 @@ namespace xy {
                 template_arg_types, arg_types, statements)
         };
 
-        struct return_stmt : public support::ast_impl<return_stmt, statement> {
+        struct return_expr_stmt : public support::ast_impl<return_expr_stmt, statement> {
             expression *value;
 
-            XY_AST_CONSTRUCTOR(return_stmt, value)
-            XY_AST_DESTRUCTOR(return_stmt, value)
+            XY_AST_CONSTRUCTOR(return_expr_stmt, value)
+            XY_AST_DESTRUCTOR(return_expr_stmt, value)
+        };
+
+        struct return_type_stmt : public support::ast_impl<return_type_stmt, statement> {
+            type_decl *value;
+
+            XY_AST_CONSTRUCTOR(return_type_stmt, value)
+            XY_AST_DESTRUCTOR(return_type_stmt, value)
         };
 
     struct type_decl : public support::ast_impl<type_decl, ast> {
@@ -513,8 +520,9 @@ namespace xy {
         struct binary_type_decl : public support::ast_impl<binary_type_decl, type_decl> {
         public:
             std::vector<type_decl *> types;
+            bool is_wrapped;
 
-            XY_AST_DEFAULT_CONSTRUCTOR(binary_type_decl, (types, XY_NOTHING))
+            XY_AST_DEFAULT_CONSTRUCTOR(binary_type_decl, (types, XY_NOTHING), (is_wrapped, false))
             XY_AST_DESTRUCTOR(binary_type_decl, types)
         };
 

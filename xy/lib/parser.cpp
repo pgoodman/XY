@@ -629,6 +629,13 @@ namespace xy {
 
         decl->location.extend(decl_loc);
 
+        // so that we don't extend something like (A -> B) -> C
+        // into A -> B -> C
+        binary_type_decl *bin_decl(decl->reinterpret<binary_type_decl>());
+        if(nullptr != bin_decl) {
+            bin_decl->is_wrapped = true;
+        }
+
         return true;
     }
 
@@ -721,6 +728,7 @@ namespace xy {
                     }
 
                     if(!consume(T_COMMA)) {
+                        printf("here len=%lu is_func=%d i=%lu num=%lu\n", def->template_arg_types->types.size(), is_func, i, num);
                         return false;
                     }
                 }
@@ -1244,14 +1252,39 @@ namespace xy {
             // template or function
             } else if(nullptr != def && stream.check(T_RETURN)) {
                 last_parsed = consume(T_RETURN);
+                repl::wait();
 
                 // template type
                 if(nullptr == def->arg_types) {
 
-                // funcion
-                } else {
+                    last_parsed = parse(type_parsers, 0);
+                    if(last_parsed) {
+                        stmts->statements.push_back(new return_type_stmt(
+                            stack.back()->reinterpret<type_decl>()
+                        ));
+                    }
 
+                // funcion, not returning unit type, so get an expression
+                } else if(!def->arg_types->types.back()->is_instance<type_unit_decl>()) {
+                    last_parsed = parse(expression_parsers, 0);
+                    if(last_parsed) {
+                        stmts->statements.push_back(new return_type_stmt(
+                            stack.back()->reinterpret<type_decl>()
+                        ));
+                    }
+
+                // function returning Unit type but actually returning something
+                } else if(!stream.check(T_SEMICOLON)) {
+                    token got;
+                    stream.accept(got);
+                    ctx.report_here(got, io::e_func_return_expr_for_unit);
+                    last_parsed = false;
                 }
+
+                if(last_parsed) {
+                    last_parsed = consume(T_SEMICOLON);
+                }
+                repl::accept();
 
             // no idea :(
             } else {
