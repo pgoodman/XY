@@ -21,6 +21,7 @@
 
 #include "xy/include/diagnostic_context.hpp"
 #include "xy/include/parser.hpp"
+#include "xy/include/symbol_table.hpp"
 #include "xy/include/cstring.hpp"
 
 #include "xy/include/repl/repl.hpp"
@@ -47,28 +48,46 @@ static void delete_repl_file(void) throw() {
     remove(REPL_HISTORY_FILE_NAME);
 }
 
+static void init_symbol_table(symbol_table &stab) throw() {
+
+    /// initialize some entries
+    stab["Int8"];   stab["Int16"];  stab["Int32"];  stab["Int64"];
+    stab["UInt8"];  stab["UInt16"]; stab["UInt32"]; stab["UInt64"];
+    stab["Bool"];   stab["Byte"];
+
+
+}
+
+static void resolve(ast *) throw() {
+
+}
+
 int main(int argc, char *argv[]) {
+    symbol_table stab;
+    init_symbol_table(stab);
+    ast *tree(nullptr);
+
     if(argc > 1) {
         diagnostic_context ctx(argv[1], argv[1]);
-        if(!parser::parse_file(ctx, argv[1])) {
-            fprintf(stderr, "Error parsing file '%s'\n", argv[1]);
-        }
-        if(ctx.has_message()) {
+        tree = parser::parse_file(ctx, stab, argv[1]);
+        if(!tree || ctx.has_message()) {
             ctx.print_diagnostics(stderr);
             return false;
         }
+
+        resolve(tree);
+        delete tree;
     } else {
 
         repl::reader byte_reader;
-        bool parse_was_good(false);
         diagnostic_context ctx("stdin", REPL_HISTORY_FILE_NAME);
 
         for(;; ctx.reset(), byte_reader.reset()) {
 
             D( printf("MAIN: about to parse\n"); )
-            parse_was_good = parser::parse_reader(ctx, byte_reader);
+            tree = parser::parse_reader(ctx, stab, byte_reader);
 
-            if(ctx.has_message()) {
+            if(!tree || ctx.has_message()) {
                 write_repl_file(byte_reader.history());
                 ctx.print_diagnostics(stderr);
                 delete_repl_file();
@@ -78,9 +97,8 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            if(parse_was_good) {
-                // TODO
-            }
+            resolve(tree);
+            delete tree;
         }
     }
 

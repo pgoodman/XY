@@ -26,11 +26,28 @@ namespace xy {
 
     ast *pop(std::vector<ast *> &stack) throw();
 
+    // add something to the front of a vector
+    template <typename T>
+    void unshift(std::vector<T> &vec, T elm) throw() {
+        std::vector<T> new_vec;
+        new_vec.reserve(vec.size() + 1U);
+        new_vec.push_back(elm);
+        new_vec.insert(new_vec.end(), vec.begin(), vec.end());
+        vec.clear();
+        vec.swap(new_vec);
+    }
+
+    // concatenate two vectors
+    template <typename T>
+    void extend(std::vector<T> &to, std::vector<T> &from) throw() {
+        to.insert(to.end(), from.begin(), from.end());
+    }
+
     class parser {
     private:
 
         diagnostic_context &ctx;
-        symbol_table stab;
+        symbol_table &stab;
         token_stream &stream;
         std::vector<ast *> stack;
 
@@ -45,9 +62,6 @@ namespace xy {
         bool report_unexpected_follow_symbol_2(
             const token &first, const token &got, token_type expected1, token_type expected2
         ) throw();
-
-        typedef std::vector<std::pair<token, support::mapped_name> > \
-                name_list_type;
 
         // precedence table
         struct precedence_parser {
@@ -92,6 +106,7 @@ namespace xy {
         bool parse_record(const token &, const char *) throw();
         bool parse_type_function(const token &, const char *) throw();
         bool parse_type_group(const token &, const char *) throw();
+        bool parse_type_operands(unsigned, const token &, type_decl **, type_decl **) throw();
 
         template <typename param_type>
         bool parse_params(io::message_id, token_type, std::vector<param_type *> &) throw();
@@ -99,7 +114,16 @@ namespace xy {
         template <typename>
         bool parse_infix_type_operator(unsigned, const token &, const char *) throw();
 
+        bool parse_arrow_type_operator(unsigned, const token &, const char *) throw();
+
         // function parsers
+        bool parse_func_args(
+            arrow_type_decl *template_arg_types,
+            arrow_type_decl *arg_types,
+            name_list *template_arg_names,
+            name_list *arg_names,
+            bool is_func
+        ) throw();
         bool parse_function(func_def *, bool) throw();
 
         bool parse_ref_type(const token &, const char *) throw();
@@ -108,22 +132,22 @@ namespace xy {
         /// parse a let statement. the let statement is used to bind the values
         /// of expressions to variables, or type declarations to type names.
         bool parse_func_decl_type(arrow_type_decl **, arrow_type_decl**) throw();
-        bool parse_name_list(token_type, name_list_type &) throw();
+        bool parse_name_list(token_type, name_list &) throw();
         bool parse_let(void) throw();
 
-        parser(diagnostic_context &ctx_, token_stream &stream_) throw();
+        parser(diagnostic_context &, token_stream &, symbol_table &) throw();
         ~parser(void) throw();
 
-        static void parse_open_file(io::file<xy::io::read_tag> &ff, diagnostic_context &, bool &) throw();
+        static void parse_open_file(io::file<xy::io::read_tag> &ff, diagnostic_context &, symbol_table &, ast *&) throw();
 
         bool parse(statement_list *, token_type, func_def *) throw();
 
     public:
 
-        static bool parse(diagnostic_context &ctx, token_stream &stream_) throw();
-        static bool parse_file(diagnostic_context &ctx, const char * const file_name) throw();
-        static bool parse_buffer(diagnostic_context &ctx, const char * const buffer) throw();
-        static bool parse_reader(diagnostic_context &ctx, support::byte_reader &reader) throw();
+        static ast *parse(diagnostic_context &ctx, symbol_table &, token_stream &stream_) throw();
+        static ast *parse_file(diagnostic_context &ctx, symbol_table &, const char * const file_name) throw();
+        static ast *parse_buffer(diagnostic_context &ctx, symbol_table &, const char * const buffer) throw();
+        static ast *parse_reader(diagnostic_context &ctx, symbol_table &, support::byte_reader &reader) throw();
     };
 
     template <typename param_type>
@@ -161,52 +185,43 @@ namespace xy {
         return true;
     }
 
+    /// parse a left associative infix type operator
     template <typename type_operator>
     bool parser::parse_infix_type_operator(unsigned prec, const token &op, const char *) throw() {
 
-        ast *left_(pop(stack));
+        type_decl *left(nullptr);
+        type_decl *right(nullptr);
 
-        if(!left_->is_instance<type_decl>()) {
-            delete left_;
-            return report_simple(io::e_type_decl_expected_before_type_op, op);
-        }
-
-        token location;
-        type_decl *left(left_->reinterpret<type_decl>());
-        location = left->location;
-        location.extend(op);
-
-        // get a "pivot" token just in case we run into an error.
-        token decl_tail;
-        stream.accept(decl_tail);
-        stream.undo();
-
-        // parse the right-hand operand
-        if(!parse(type_parsers, prec)) {
-            delete left;
-            if(T_TYPE_NAME == decl_tail.type()) {
-                ctx.report_here(decl_tail, io::e_incomplete_tpl_inst);
-            } else {
-                ctx.report_here(decl_tail, io::e_bad_suffix_type_decl, decl_tail.name());
-            }
+        if(!parse_type_operands(prec, op, &left, &right)) {
             return false;
         }
 
-        type_decl *right(pop(stack)->reinterpret<type_decl>());
         type_operator *op_decl(left->reinterpret<type_operator>());
 
-        // see if we can extend the lhs
         if(nullptr == op_decl || op_decl->is_wrapped) {
             op_decl = new type_operator;
             op_decl->types.push_back(left);
         }
 
+        type_operator *right_op(right->reinterpret<type_operator>());
+
+        // non-op type, or op type that's wrapped
+        if(nullptr == right_op || right_op->is_wrapped) {
+            op_decl->types.push_back(right);
+
+        // non-wrapped op
+        } else {
+            extend(op_decl->types, right_op->types);
+            right_op->types.clear();
+            delete right_op;
+        }
+
+        token location(left->location);
+        location.extend(op);
         location.extend(right->location);
-
-        op_decl->types.push_back(right);
         op_decl->location = location;
-
         stack.push_back(op_decl);
+
         return true;
     }
 }

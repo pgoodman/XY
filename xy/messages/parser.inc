@@ -37,3 +37,9 @@ XY_MSG(e_error_parsing, error, "An error occurred while parsing this document. T
 XY_MSG(e_tpl_decl_has_unit, error, "Template argument declarations cannot contain the Unit type.")
 XY_MSG(e_type_tpl_need_args, error, "Template types must have at least one argument of non-Unit type. You have only provided a return type for the type template.")
 XY_MSG(e_func_return_expr_for_unit, error, "A function with Unit return type should not return anything.")
+XY_MSG(e_func_has_unit, error, "The argument type %s is not allowed for this function because it already takes the type Unit as an argument. If the Unit type appears as an argument type to a function then no other argument types are allowed.")
+XY_MSG(e_func_two_units, error, "The Unit type is not allowed to appear more than once as an argument type to a function.")
+XY_MSG(e_func_cant_take_type, error, "A function cannot take as an argument a type or a template type.")
+XY_MSG(e_double_arrow_tpl_type, error, "The double arrow (=>) is used to separate template arguments from function arguments in function templates and cannot be used in type templates.")
+
+

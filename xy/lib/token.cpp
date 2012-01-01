@@ -147,7 +147,16 @@ namespace xy {
 
     void token::extend(const token &other) throw() {
         if(line_ == other.line_) {
-            num_columns_ += other.num_columns_ + (other.col_ - (col_ + num_columns_));
+
+            // extend to the right
+            if(other.col_ > col_) {
+                num_columns_ += other.num_columns_ + (other.col_ - (col_ + num_columns_));
+
+            // extend to the left
+            } else if(other.col_ < col_) {
+                num_columns_ += col_ - other.col_;
+                col_ = other.col_;
+            }
         }
     }
 }

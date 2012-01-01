@@ -86,6 +86,9 @@ namespace xy {
 
     typedef size_t ast_type;
 
+    typedef std::vector<std::pair<token, support::mapped_name> > \
+            name_list;
+
     namespace support {
 
         /// implements the subtype relationship for AST class types and the
@@ -241,6 +244,7 @@ namespace xy {
     struct expression : public support::ast_impl<expression, ast> {
     public:
         type *type_;
+        token location;
 
         XY_AST_DEFAULT_CONSTRUCTOR(expression, (type_, nullptr))
         XY_AST_CONSTRUCTOR(expression, type_)
@@ -293,18 +297,16 @@ namespace xy {
         public:
             expression *left;
             expression *right;
-            token_type op;
 
-            XY_AST_CONSTRUCTOR(infix_expr, left, right, op)
+            XY_AST_CONSTRUCTOR(infix_expr, left, right)
             XY_AST_DESTRUCTOR(infix_expr, left, right)
         };
 
         struct prefix_expr : public support::ast_impl<prefix_expr, expression> {
         public:
             expression *right;
-            token_type op;
 
-            XY_AST_CONSTRUCTOR(prefix_expr, right, op)
+            XY_AST_CONSTRUCTOR(prefix_expr, right)
             XY_AST_DESTRUCTOR(prefix_expr, right)
         };
 
@@ -404,8 +406,8 @@ namespace xy {
             support::mapped_name name;
             arrow_type_decl *template_arg_types;
             arrow_type_decl *arg_types;
-            std::vector<support::mapped_name> template_arg_names;
-            std::vector<support::mapped_name> arg_names;
+            name_list template_arg_names;
+            name_list arg_names;
             statement_list *statements;
 
             XY_AST_DEFAULT_CONSTRUCTOR(func_def,
@@ -475,7 +477,7 @@ namespace xy {
             }
         };
 
-        struct type_unit_decl : public support::ast_impl<type_unit_decl, type_decl> {
+        struct unit_type_decl : public support::ast_impl<unit_type_decl, type_decl> {
         public:
             virtual void print(std::ostream &os, symbol_table &) throw() {
                 os << "Unit";
@@ -528,29 +530,31 @@ namespace xy {
 
             struct sum_type_decl : public support::ast_impl<sum_type_decl, binary_type_decl> {
             public:
-                std::vector<support::mapped_name> params;
-                std::vector<support::mapped_name> fields;
+                name_list params;
+                name_list fields;
 
                 XY_AST_DEFAULT_CONSTRUCTOR(sum_type_decl, (params, XY_NOTHING), (fields, XY_NOTHING))
                 XY_AST_DEFAULT_DESTRUCTOR(sum_type_decl)
 
                 virtual void print(std::ostream &os, symbol_table &stab) throw() {
-                    os << "(";
+                    if(this->is_wrapped) os << "(";
                     support::print_separated_list(this->types, " + ", os, stab);
-                    os << ")";
+                    if(this->is_wrapped) os << ")";
                 }
             };
 
             struct product_type_decl : public support::ast_impl<product_type_decl, binary_type_decl> {
             public:
-                std::vector<support::mapped_name> params;
-                std::vector<support::mapped_name> fields;
+                name_list params;
+                name_list fields;
 
                 XY_AST_DEFAULT_CONSTRUCTOR(product_type_decl, (params, XY_NOTHING), (fields, XY_NOTHING))
                 XY_AST_DEFAULT_DESTRUCTOR(product_type_decl)
 
                 virtual void print(std::ostream &os, symbol_table &stab) throw() {
+                    if(this->is_wrapped) os << "(";
                     support::print_separated_list(this->types, " * ", os, stab);
+                    if(this->is_wrapped) os << ")";
                 }
             };
 
@@ -559,9 +563,9 @@ namespace xy {
                 XY_AST_DEFAULT_DESTRUCTOR(arrow_type_decl)
 
                 virtual void print(std::ostream &os, symbol_table &stab) throw() {
-                    os << "(";
+                    if(this->is_wrapped) os << "(";
                     support::print_separated_list(this->types, " -> ", os, stab);
-                    os << ")";
+                    if(this->is_wrapped) os << ")";
                 }
 
                 /// is this a template type? i.e. do we generate something
