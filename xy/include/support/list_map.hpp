@@ -26,6 +26,8 @@ namespace xy { namespace support {
         /// find a value in the mapping and return it
         V *find(const K &key) throw() {
             entry foo;
+            foo.next = entries;
+
             for(entry *prev(&foo), *curr(entries);
                 nullptr != curr;
                 prev = curr, curr = curr->next) {
@@ -51,8 +53,13 @@ namespace xy { namespace support {
         { }
 
         ~list_map(void) throw() {
-            for(entry *curr(entries), *next(nullptr); nullptr != curr; curr = next) {
+            for(entry *curr(entries), *next(nullptr);
+                nullptr != curr;
+                curr = next) {
+
                 next = curr->next;
+                curr->next = nullptr;
+
                 delete curr;
             }
             entries = nullptr;
