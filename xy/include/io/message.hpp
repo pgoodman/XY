@@ -323,6 +323,7 @@ namespace xy { namespace io {
         public:
             static void allocate(tuple_type &t) {
                 STD_TR1::get<i>(t) = cstring::copy(STD_TR1::get<i>(t));
+                printf("** copied '%s'\n", STD_TR1::get<i>(t));
             }
         };
 
@@ -331,10 +332,16 @@ namespace xy { namespace io {
         class allocate_strings {
         public:
             static void allocate(tuple_type &t) throw() {
+                typedef typename STD_TR1::tuple_element<i,tuple_type>::type
+                        ith_type;
+
+                typedef typename mpl::remove_const<ith_type>::type
+                        non_const_ith_type;
+
                 allocate_string<
                     typename mpl::equal<
                         char *,
-                        typename STD_TR1::tuple_element<i,tuple_type>::type
+                        non_const_ith_type
                     >::result,
                     i,
                     tuple_type
