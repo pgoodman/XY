@@ -85,13 +85,6 @@ namespace xy { namespace pass {
                 } else if(stmt->is_instance<type_definition>()) {
 
                     printf("type def\n");
-                    printf("stmt->type_id=%lu & type_definition::exact_id=%lu = %lu\n", stmt->type_id(), type_definition::exact_id(), stmt->type_id() & type_definition::exact_id());
-
-                    printf("variable_definition::type_id = %lu\n", variable_definition::static_id());
-                    printf("variable_definition::exact_id = %lu\n", variable_definition::exact_id());
-                    printf("definition_statement::exact_id = %lu\n", definition_statement::exact_id());
-                    printf("statement::exact_id = %lu\n", statement::exact_id());
-                    printf("ast::exact_id = %lu\n", ast::exact_id());
 
                     type_definition *def(stmt->reinterpret<type_definition>());
                     entry = stab.lookup(top, def->name);
@@ -167,7 +160,14 @@ namespace xy { namespace pass {
                 // name already exists
                 if(nullptr != entry) {
                     ctx.report_here(def_stmt->location, io::e_duplicate_symbol, stab[def_stmt->name]);
-                    ctx.report_here(entry->origin->reinterpret<definition_statement>()->location, io::n_duplicate_symbol);
+                    ctx.report_here(entry->origin->reinterpret<definition_statement>()->location, io::n_duplicate_symbol, stab[def_stmt->name]);
+
+                // no name, make it
+                } else {
+                    entry = stab.insert(top, def_stmt->name);
+                    entry->name_type = def_type;
+                    entry->origin = def_stmt;
+                    entry->type_ = nullptr; // TODO
                 }
             }
 

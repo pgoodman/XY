@@ -139,19 +139,13 @@ namespace xy {
             ast_impl(void) throw() { }
 
             static ast_type static_id(void) throw() {
-                static bool has_id(false);
-                static ast_type id(0);
-
-                if(!has_id) {
-                    has_id = true;
-                    id = O::static_id() | (1 << mpl::id<T, ast_type_category>::get());
-                }
-
+                static ast_type id(O::static_id() | exact_id());
                 return id;
             }
 
             static ast_type exact_id(void) throw() {
-                return 1 << mpl::id<T, ast_type_category>::get();
+                static ast_type id(1UL << mpl::id<T, ast_type_category>::get());
+                return id;
             }
 
             virtual ~ast_impl(void) throw() { }
@@ -174,19 +168,12 @@ namespace xy {
             ast_impl(void) throw() { }
 
             static ast_type static_id(void) throw() {
-                static bool has_id(false);
-                static ast_type id(0);
-
-                if(!has_id) {
-                    has_id = true;
-                    id = (1 << mpl::id<T, ast_type_category>::get());
-                }
-
-                return id;
+                return exact_id();
             }
 
             static ast_type exact_id(void) throw() {
-                return 1 << mpl::id<T, ast_type_category>::get();
+                static ast_type id(1UL << mpl::id<T, ast_type_category>::get());
+                return id;
             }
 
             virtual ~ast_impl(void) throw() { }
