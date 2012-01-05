@@ -100,13 +100,13 @@ namespace xy {
 
         // type parsers
         bool parse_type_name(const token &, const char *) throw();
-        bool parse_type_type_decl(const token &, const char *) throw();
-        bool parse_unit_type_decl(const token &, const char *) throw();
+        bool parse_type_type_declaration(const token &, const char *) throw();
+        bool parse_unit_type_declaration(const token &, const char *) throw();
         bool parse_union(const token &, const char *) throw();
         bool parse_record(const token &, const char *) throw();
         bool parse_type_function(const token &, const char *) throw();
         bool parse_type_group(const token &, const char *) throw();
-        bool parse_type_operands(unsigned, const token &, type_decl **, type_decl **) throw();
+        bool parse_type_operands(unsigned, const token &, type_declaration **, type_declaration **) throw();
 
         template <typename param_type>
         bool parse_params(io::message_id, token_type, std::vector<param_type *> &) throw();
@@ -118,20 +118,20 @@ namespace xy {
 
         // function parsers
         bool parse_func_args(
-            arrow_type_decl *template_arg_types,
-            arrow_type_decl *arg_types,
+            arrow_type_declaration *template_arg_types,
+            arrow_type_declaration *arg_types,
             name_list *template_arg_names,
             name_list *arg_names,
             bool is_func
         ) throw();
-        bool parse_function(func_def *, bool) throw();
+        bool parse_function(function_definition *, bool) throw();
 
         bool parse_ref_type(const token &, const char *) throw();
         bool parse_array_type(const token &, const char *) throw();
 
         /// parse a let statement. the let statement is used to bind the values
         /// of expressions to variables, or type declarations to type names.
-        bool parse_func_decl_type(arrow_type_decl **, arrow_type_decl**) throw();
+        bool parse_func_decl_type(arrow_type_declaration **, arrow_type_declaration**) throw();
         bool parse_name_list(token_type, name_list &) throw();
         bool parse_let(void) throw();
 
@@ -140,7 +140,7 @@ namespace xy {
 
         static void parse_open_file(io::file<xy::io::read_tag> &ff, diagnostic_context &, symbol_table &, ast *&) throw();
 
-        bool parse(statement_list *, token_type, func_def *) throw();
+        bool parse(conjunctive_statement *, token_type, function_definition *) throw();
 
     public:
 
@@ -189,8 +189,8 @@ namespace xy {
     template <typename type_operator>
     bool parser::parse_infix_type_operator(unsigned prec, const token &op, const char *) throw() {
 
-        type_decl *left(nullptr);
-        type_decl *right(nullptr);
+        type_declaration *left(nullptr);
+        type_declaration *right(nullptr);
 
         if(!parse_type_operands(prec, op, &left, &right)) {
             return false;

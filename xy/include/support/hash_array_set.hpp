@@ -32,20 +32,20 @@ namespace xy { namespace support {
     template <typename T>
     class hash_array_set;
 
-    class hash_set_array_handle {
+    class hash_array_set_handle {
     private:
 
         template <typename> friend class hash_array_set;
 
         uint64_t handle;
 
-        hash_set_array_handle(uint64_t handle_) throw();
+        hash_array_set_handle(uint64_t handle_) throw();
 
     public:
-        hash_set_array_handle(void) throw();
-        ~hash_set_array_handle(void) throw();
-        bool operator==(const hash_set_array_handle &other) const throw();
-        bool operator!=(const hash_set_array_handle &other) const throw();
+        hash_array_set_handle(void) throw();
+        ~hash_array_set_handle(void) throw();
+        bool operator==(const hash_array_set_handle &other) const throw();
+        bool operator!=(const hash_array_set_handle &other) const throw();
     };
 
     template <typename T>
@@ -209,7 +209,7 @@ namespace xy { namespace support {
 
         /// add an array into the hash array set; this returns a handle
         /// back to that thing in the hash array set.
-        hash_set_array_handle add(const T *arr, int len) throw() {
+        hash_array_set_handle add(const T *arr, int len) throw() {
             assert(nullptr != arr);
             assert(0 < len);
 
@@ -247,7 +247,7 @@ namespace xy { namespace support {
             handle |= static_cast<uint64_t>(table_id) << 16U << 16U << 16U;
             handle |= hash;
 
-            return hash_set_array_handle(handle);
+            return hash_array_set_handle(handle);
         }
 
         enum : uint64_t {
@@ -255,7 +255,7 @@ namespace xy { namespace support {
         };
 
         /// does this hash array set contain a specific thing?
-        bool contains(hash_set_array_handle h) throw() {
+        bool contains(hash_array_set_handle h) throw() {
             static int id(static_cast<int>(h.handle >> 16U >> 16U >> 16U));
             if(id == table_id) {
                 return true;
@@ -275,7 +275,7 @@ namespace xy { namespace support {
         }
 
         /// try to extract something from the hash set.
-        const T *find(hash_set_array_handle h) const throw() {
+        const T *find(hash_array_set_handle h) const throw() {
             const uint32_t hash(static_cast<uint32_t>(h.handle & MASK_HASH));
             const int len(static_cast<int>((h.handle >> 16U >> 16U) & 0xFFFF));
             slot_type *slot(find(slots, detail::primes[slot_index], hash, len));

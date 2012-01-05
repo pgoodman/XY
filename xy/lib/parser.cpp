@@ -69,13 +69,13 @@ namespace xy {
     const parser::precedence_parser parser::type_parsers[] = {
         //{10,    T_FUNCTION,         &parser::parse_type_function,   &parser::parse_fail_s},
         {100,   T_OPEN_PAREN,       &parser::parse_type_group,      &parser::parse_application},
-        {80,    T_ASTERISK,         &parser::parse_fail_p,          &parser::parse_infix_type_operator<product_type_decl>},
+        {80,    T_ASTERISK,         &parser::parse_fail_p,          &parser::parse_infix_type_operator<product_type_declaration>},
         {75,    T_ARROW,            &parser::parse_fail_p,          &parser::parse_arrow_type_operator},
-        {70,    T_PLUS,             &parser::parse_fail_p,          &parser::parse_infix_type_operator<sum_type_decl>},
+        {70,    T_PLUS,             &parser::parse_fail_p,          &parser::parse_infix_type_operator<sum_type_declaration>},
 
         {10,    T_TYPE_NAME,        &parser::parse_type_name,       &parser::parse_fail_s},
-        {10,    T_TYPE_TYPE,        &parser::parse_type_type_decl,  &parser::parse_fail_s},
-        {10,    T_TYPE_UNIT,        &parser::parse_unit_type_decl,  &parser::parse_fail_s},
+        {10,    T_TYPE_TYPE,        &parser::parse_type_type_declaration,  &parser::parse_fail_s},
+        {10,    T_TYPE_UNIT,        &parser::parse_unit_type_declaration,  &parser::parse_fail_s},
         //{10,    T_UNION,            &parser::parse_union,           &parser::parse_fail_s},
         //{10,    T_RECORD,           &parser::parse_record,          &parser::parse_fail_s},
 
@@ -206,16 +206,16 @@ namespace xy {
     }
 
     /// parse out two types for a type operator
-    bool parser::parse_type_operands(unsigned prec, const token &op, type_decl **ll, type_decl **rr) throw() {
+    bool parser::parse_type_operands(unsigned prec, const token &op, type_declaration **ll, type_declaration **rr) throw() {
         ast *left_(pop(stack));
 
-        if(!left_->is_instance<type_decl>()) {
+        if(!left_->is_instance<type_declaration>()) {
             delete left_;
-            return report_simple(io::e_type_decl_expected_before_type_op, op);
+            return report_simple(io::e_type_declaration_expected_before_type_op, op);
         }
 
         token location;
-        type_decl *left(left_->reinterpret<type_decl>());
+        type_declaration *left(left_->reinterpret<type_declaration>());
         location = left->location;
         location.extend(op);
 
@@ -230,12 +230,12 @@ namespace xy {
             if(T_TYPE_NAME == decl_tail.type()) {
                 ctx.report_here(decl_tail, io::e_incomplete_tpl_inst);
             } else {
-                ctx.report_here(decl_tail, io::e_bad_suffix_type_decl, decl_tail.name());
+                ctx.report_here(decl_tail, io::e_bad_suffix_type_declaration, decl_tail.name());
             }
             return false;
         }
 
-        type_decl *right(pop(stack)->reinterpret<type_decl>());
+        type_declaration *right(pop(stack)->reinterpret<type_declaration>());
 
         *ll = left;
         *rr = right;
@@ -246,18 +246,18 @@ namespace xy {
     /// parse an arrow type operator, which is right associative
     bool parser::parse_arrow_type_operator(unsigned prec, const token &op, const char *) throw() {
 
-        type_decl *left(nullptr);
-        type_decl *right(nullptr);
+        type_declaration *left(nullptr);
+        type_declaration *right(nullptr);
 
         if(!parse_type_operands(prec, op, &left, &right)) {
             return false;
         }
 
-        arrow_type_decl *left_op(left->reinterpret<arrow_type_decl>());
-        arrow_type_decl *right_op(right->reinterpret<arrow_type_decl>());
+        arrow_type_declaration *left_op(left->reinterpret<arrow_type_declaration>());
+        arrow_type_declaration *right_op(right->reinterpret<arrow_type_declaration>());
 
         if(nullptr == right_op) {
-            right_op = new arrow_type_decl;
+            right_op = new arrow_type_declaration;
             right_op->types.push_back(right);
         }
 
@@ -298,10 +298,10 @@ namespace xy {
         // function call
         if(node->is_instance<expression>()) {
 
-            D( printf("looks like a function application!\n"); )
+            //D( printf("looks like a function application!\n"); )
 
             expression *function(node->reinterpret<expression>());
-            function_call_expr *funcall(new function_call_expr(function));
+            function_call_expression *funcall(new function_call_expression(function));
 
             if(!parse_params<ast>(io::e_tpl_arg_not_ast, T_SEMICOLON, funcall->template_parameters)) {
                 delete funcall;
@@ -330,7 +330,7 @@ namespace xy {
             } else {
                 funcall->might_be_ambiguous = true;
                 for(size_t i(0); i < funcall->template_parameters.size(); ++i) {
-                    if(funcall->template_parameters[i]->is_instance<type_decl>()) {
+                    if(funcall->template_parameters[i]->is_instance<type_declaration>()) {
                         funcall->might_be_ambiguous = false;
                         break;
                     }
@@ -340,16 +340,16 @@ namespace xy {
             consume(T_CLOSE_PAREN);
 
             // function is clearly not a function
-            if(node->is_instance<literal_expr>()) {
+            if(node->is_instance<literal_expression>()) {
 
                 // try to merge adjacent string literals
-                if(node->is_instance<string_literal_expr>()
+                if(node->is_instance<string_literal_expression>()
                 && funcall->might_be_ambiguous
                 && 1 == funcall->template_parameters.size()
-                && funcall->template_parameters[0]->is_instance<string_literal_expr>()) {
+                && funcall->template_parameters[0]->is_instance<string_literal_expression>()) {
 
-                    string_literal_expr *lhs_str(node->reinterpret<string_literal_expr>());
-                    string_literal_expr *rhs_str(funcall->template_parameters[0]->reinterpret<string_literal_expr>());
+                    string_literal_expression *lhs_str(node->reinterpret<string_literal_expression>());
+                    string_literal_expression *rhs_str(funcall->template_parameters[0]->reinterpret<string_literal_expression>());
 
                     funcall->function = nullptr;
                     funcall->template_parameters[0] = nullptr;
@@ -376,9 +376,9 @@ namespace xy {
             stack.push_back(funcall);
 
         // template instantiation
-        } else if(node->is_instance<type_decl>()) {
-            type_decl *decl(node->reinterpret<type_decl>());
-            template_instance_type_decl *tplinst(new template_instance_type_decl(decl));
+        } else if(node->is_instance<type_declaration>()) {
+            type_declaration *decl(node->reinterpret<type_declaration>());
+            template_instance_type_declaration *tplinst(new template_instance_type_declaration(decl));
             tplinst->location = decl->location;
             tplinst->location.extend(paren);
 
@@ -409,7 +409,7 @@ namespace xy {
 
         // wtf?
         } else {
-            ctx.report_here(paren, io::e_type_decl_or_func_expr_expected);
+            ctx.report_here(paren, io::e_type_declaration_or_func_expr_expected);
             delete node;
             node = nullptr;
             return false;
@@ -423,14 +423,14 @@ namespace xy {
 
         ast *decl_(pop(stack));
 
-        if(!decl_->is_instance<type_decl>()) {
+        if(!decl_->is_instance<type_declaration>()) {
             delete decl_;
             return report_simple(io::e_not_a_type_for_instance, tok);
         }
 
         bool consume_comma(false);
-        type_decl *type_of_inst(decl_->reinterpret<type_decl>());
-        type_instance_expr *inst(new type_instance_expr(type_of_inst));
+        type_declaration *type_of_inst(decl_->reinterpret<type_declaration>());
+        type_instance_expression *inst(new type_instance_expression(type_of_inst));
 
         inst->location = type_of_inst->location;
         inst->location.extend(tok);
@@ -521,7 +521,7 @@ namespace xy {
         }
 
         expression *sub_expr(right_->reinterpret<expression>());
-        array_access_expr *arr_expr(new array_access_expr(left, sub_expr));
+        array_access_expression *arr_expr(new array_access_expression(left, sub_expr));
 
         // try to extend the location
         arr_expr->location = left->location;
@@ -540,11 +540,11 @@ namespace xy {
     bool parser::parse_infix(unsigned prec, const token &tok, const char *data) throw() {
 
         // looks like we're parsing an inline type declaration
-        if(stack.back()->is_instance<type_decl>()) {
+        if(stack.back()->is_instance<type_declaration>()) {
             switch(tok.type()) {
             case T_ARROW: return parse_arrow_type_operator(prec, tok, data);
-            case T_PLUS: return parse_infix_type_operator<sum_type_decl>(prec, tok, data);
-            case T_ASTERISK: return parse_infix_type_operator<product_type_decl>(prec, tok, data);
+            case T_PLUS: return parse_infix_type_operator<sum_type_declaration>(prec, tok, data);
+            case T_ASTERISK: return parse_infix_type_operator<product_type_declaration>(prec, tok, data);
             default:
                 return report_simple(io::e_bad_type_operator, tok);
             }
@@ -568,7 +568,7 @@ namespace xy {
         expression *right(pop(stack)->reinterpret<expression>());
         expression *left(pop(stack)->reinterpret<expression>());
 
-        infix_expr *expr(new infix_expr(left, right));
+        infix_expression *expr(new infix_expression(left, right));
         expr->location = tok;
         expr->location.extend(left->location);
         expr->location.extend(right->location);
@@ -613,12 +613,14 @@ namespace xy {
     bool parser::parse_array_literal(const token &open_bracket, const char *) throw() {
 
         // empty array
-        if(stream.check(T_CLOSE_BRACKET)) {
+        /*if(stream.check(T_CLOSE_BRACKET)) {
             // TODO
             stream.accept();
             stack.push_back(new array_expr);
             return true;
-        }
+
+            assert(false && "Array literals?");
+        }*/
 
         if(!parse(expression_parsers, 0)) {
             return false;
@@ -628,8 +630,8 @@ namespace xy {
 
         // make the array type declaration, and try to make its location extend
         // for the entire declaration
-        if(first->is_instance<type_decl>()) {
-            array_type_decl *decl(new array_type_decl(first->reinterpret<type_decl>()));
+        if(first->is_instance<type_declaration>()) {
+            array_type_declaration *decl(new array_type_declaration(first->reinterpret<type_declaration>()));
             decl->location = open_bracket;
             decl->location.extend(decl->inner_type->location);
             stack.push_back(decl);
@@ -644,7 +646,7 @@ namespace xy {
             return true;
 
         } else if(first->is_instance<expression>()) {
-            array_expr *arr(new array_expr);
+            /*array_expr *arr(new array_expr);
             arr->elements.push_back(first->reinterpret<expression>());
 
             token expr_head;
@@ -683,6 +685,9 @@ namespace xy {
             stack.push_back(arr);
 
             return consume(T_CLOSE_BRACKET);
+            */
+            assert(false); // TODO
+            return false;
         } else {
             return false;
         }
@@ -697,16 +702,16 @@ namespace xy {
         expression *ee(nullptr);
         switch(tok.type()) {
         case T_INTEGER_LITERAL:
-            ee = new integer_literal_expr(cstring::copy(data));
+            ee = new integer_literal_expression(cstring::copy(data));
             break;
         case T_STRING_LITERAL:
-            ee = new string_literal_expr(cstring::copy(data), cstring::byte_length(data));
+            ee = new string_literal_expression(cstring::copy(data), cstring::byte_length(data));
             break;
         case T_RATIONAL_LITERAL:
-            ee = new rational_literal_expr(cstring::copy(data));
+            ee = new rational_literal_expression(cstring::copy(data));
             break;
         case T_NAME:
-            ee = new name_expr(stab[data]);
+            ee = new name_expression(stab[data]);
             break;
         default:
             return false;
@@ -721,7 +726,7 @@ namespace xy {
 
     /// concatenate adjacent string literals
     bool parser::parse_string_concat(unsigned, const token &, const char *data) throw() {
-        string_literal_expr *prev_str(stack.back()->reinterpret<string_literal_expr>());
+        string_literal_expression *prev_str(stack.back()->reinterpret<string_literal_expression>());
         if(nullptr == prev_str) {
             return false;
         }
@@ -740,20 +745,20 @@ namespace xy {
     }
 
     bool parser::parse_type_name(const token &tok, const char *name) throw() {
-        named_type_decl *decl(new named_type_decl(stab[name]));
+        named_type_declaration *decl(new named_type_declaration(stab[name]));
         decl->location = tok;
         stack.push_back(decl);
         return true;
     }
 
-    bool parser::parse_type_type_decl(const token &tok, const char *) throw() {
-        type_type_decl *decl(new type_type_decl);
+    bool parser::parse_type_type_declaration(const token &tok, const char *) throw() {
+        type_type_declaration *decl(new type_type_declaration);
         decl->location = tok;
         stack.push_back(decl);
         return true;
     }
-    bool parser::parse_unit_type_decl(const token &tok, const char *) throw() {
-        unit_type_decl *decl(new unit_type_decl);
+    bool parser::parse_unit_type_declaration(const token &tok, const char *) throw() {
+        unit_type_declaration *decl(new unit_type_declaration);
         decl->location = tok;
         stack.push_back(decl);
         return true;
@@ -773,7 +778,7 @@ namespace xy {
             return false;
         }
 
-        type_decl *decl(stack.back()->reinterpret<type_decl>());
+        type_declaration *decl(stack.back()->reinterpret<type_declaration>());
         token decl_loc(decl->location);
         decl->location = open_paren;
         decl->location.extend(decl_loc);
@@ -788,7 +793,7 @@ namespace xy {
 
         // so that we don't extend something like (A -> B) -> C
         // into A -> B -> C
-        binary_type_decl *bin_decl(decl->reinterpret<binary_type_decl>());
+        binary_type_declaration *bin_decl(decl->reinterpret<binary_type_declaration>());
         if(nullptr != bin_decl) {
             bin_decl->is_wrapped = true;
         }
@@ -863,8 +868,8 @@ namespace xy {
 
     /// parse the argument names list to a function, record, or union.
     bool parser::parse_func_args(
-        arrow_type_decl *template_arg_types,
-        arrow_type_decl *arg_types,
+        arrow_type_declaration *template_arg_types,
+        arrow_type_declaration *arg_types,
         name_list *template_arg_names,
         name_list *arg_names,
         bool is_func
@@ -884,7 +889,7 @@ namespace xy {
             printf("tpl num=%lu\n", num);
 
             for(size_t i(0); i < num; ++i, expect_comma = true) {
-                type_decl *part(template_arg_types->types[i]);
+                type_declaration *part(template_arg_types->types[i]);
 
                 if(expect_comma) {
                     if(stream.check(T_SEMICOLON)) {
@@ -899,7 +904,7 @@ namespace xy {
                 stream.accept(got, name_buff);
 
                 // we should expect a type name
-                if(part->is_instance<type_type_decl>()) {
+                if(part->is_instance<type_type_declaration>()) {
 
                     // don't allow us to re-assign a type name
                     if(T_TYPE_NAME != got.type()) {
@@ -961,7 +966,7 @@ namespace xy {
                     return false;
                 }
 
-                type_decl *part(arg_types->types[i]);
+                type_declaration *part(arg_types->types[i]);
                 stream.accept(got, name_buff);
 
                 if(T_NAME != got.type()) {
@@ -983,7 +988,7 @@ namespace xy {
 
     /// parse a function declaration. This could be a type generating function,
     /// i.e. a template type, a function template, or a normal function.
-    bool parser::parse_function(func_def *def, bool is_func) throw() {
+    bool parser::parse_function(function_definition *def, bool is_func) throw() {
 
         if(!(consume(T_FUNCTION) && consume(T_OPEN_PAREN))) {
             return false;
@@ -1013,8 +1018,8 @@ namespace xy {
 
     /// parse the function type declarations
     bool parser::parse_func_decl_type(
-        arrow_type_decl **tpl_types,
-        arrow_type_decl **arg_types
+        arrow_type_declaration **tpl_types,
+        arrow_type_declaration **arg_types
     ) throw() {
         token next;
         stream.accept(next);
@@ -1024,14 +1029,14 @@ namespace xy {
         // go get the (first) set of types
         if(!parse(type_parsers, 0)) {
             ctx.report_here(next,
-                (nullptr != arg_types ? io::e_func_decl_bad_arrow : io::e_type_decl_bad_arrow)
+                (nullptr != arg_types ? io::e_func_decl_bad_arrow : io::e_type_declaration_bad_arrow)
             );
             return false;
         }
 
-        type_decl *first_type(pop(stack)->reinterpret<type_decl>());
-        type_decl *second_type(first_type);
-        arrow_type_decl *tpl_types_(nullptr);
+        type_declaration *first_type(pop(stack)->reinterpret<type_declaration>());
+        type_declaration *second_type(first_type);
+        arrow_type_declaration *tpl_types_(nullptr);
 
         // parsing a function and came across the separator for template
         // args and normal args
@@ -1044,12 +1049,12 @@ namespace xy {
 
             // add in the template types, given that we know we've gotten
             // argument types
-            tpl_types_ = first_type->reinterpret<arrow_type_decl>();
+            tpl_types_ = first_type->reinterpret<arrow_type_declaration>();
             if(nullptr == tpl_types_
             || tpl_types_->is_wrapped) {
                 printf("re-wrapping template types\n");
 
-                tpl_types_ = new arrow_type_decl;
+                tpl_types_ = new arrow_type_declaration;
                 tpl_types_->types.push_back(first_type);
             }
             *tpl_types = tpl_types_;
@@ -1065,7 +1070,7 @@ namespace xy {
                 return false;
             }
 
-            second_type = pop(stack)->reinterpret<type_decl>();
+            second_type = pop(stack)->reinterpret<type_declaration>();
 
         // not allowed the => for type templates
         } else if(!is_func && stream.check(T_DOUBLE_ARROW)) {
@@ -1077,11 +1082,11 @@ namespace xy {
 
         // add in the argument types. for a type declaration, these are
         // actually template argument types.
-        arrow_type_decl *arg_types_(second_type->reinterpret<arrow_type_decl>());
+        arrow_type_declaration *arg_types_(second_type->reinterpret<arrow_type_declaration>());
         if(nullptr == arg_types_
         || arg_types_->is_wrapped) {
             printf("re-wrapping args\n");
-            arg_types_ = new arrow_type_decl;
+            arg_types_ = new arrow_type_declaration;
             arg_types_->types.push_back(second_type);
         }
 
@@ -1092,9 +1097,9 @@ namespace xy {
             // only one return; so make it go from Unit to the return type,
             // i.e. takes in nothing
             if(1U == arg_types_->types.size()) {
-                printf("adding in unit\n");
+                //printf("adding in unit\n");
                 arg_types_->types.push_back(arg_types_->types[0]);
-                arg_types_->types[0] = new unit_type_decl;
+                arg_types_->types[0] = new unit_type_declaration;
             }
 
         // template type
@@ -1109,16 +1114,16 @@ namespace xy {
         assert(!(is_func && nullptr != tpl_types_ && nullptr == arg_types_));
         assert(!is_func || (is_func && nullptr != arg_types_));
 
-        if(nullptr != tpl_types_) {
+        /*if(nullptr != tpl_types_) {
             printf("tpl len = %lu\n", tpl_types_->types.size());
         }
         if(nullptr != arg_types_) {
             printf("arg len = %lu\n", arg_types_->types.size());
-        }
+        }*/
 
         // validate the argument types
         if(is_func && nullptr != (*arg_types)) {
-            type_decl *return_type((*arg_types)->types.back());
+            type_declaration *return_type((*arg_types)->types.back());
 
             // a function can't return a type/template; only template types can
             // return types
@@ -1127,8 +1132,8 @@ namespace xy {
                 return false;
             }
 
-            type_decl *first_unit(nullptr);
-            type_decl *first_non_unit(nullptr);
+            type_declaration *first_unit(nullptr);
+            type_declaration *first_non_unit(nullptr);
             std::ostringstream ss;
 
             // make sure the function arguments (excluding return type) has at
@@ -1137,10 +1142,10 @@ namespace xy {
             const size_t len((*arg_types)->types.size() - 1U);
             for(size_t i(0); i < len; ++i) {
 
-                type_decl *curr((*arg_types)->types[i]);
+                type_declaration *curr((*arg_types)->types[i]);
 
                 // Unit in arg list
-                if(curr->is_instance<unit_type_decl>()) {
+                if(curr->is_instance<unit_type_declaration>()) {
 
                     // two Unit types!
                     if(nullptr != first_unit) {
@@ -1152,7 +1157,7 @@ namespace xy {
 
                 // Type or type-returning thing in arg list; not a perfect check
                 // i.e. only works in some cases.
-                } else if(curr->is_instance<type_type_decl>()
+                } else if(curr->is_instance<type_type_declaration>()
                        || curr->returns_type()) {
 
                     ctx.report_here(curr->location, io::e_func_cant_take_type);
@@ -1182,7 +1187,7 @@ namespace xy {
                 return false;
             }
 
-            //type_decl *return_type((*tpl_types)->types.back());
+            //type_declaration *return_type((*tpl_types)->types.back());
 
             // make sure we return either a type or another template if this
             // is purely a template
@@ -1196,7 +1201,7 @@ namespace xy {
             // template type decl has unit declaration
             const size_t len((*tpl_types)->types.size());
             for(size_t i(0); i < len; ++i) {
-                if(!(*tpl_types)->types[i]->is_instance<unit_type_decl>()) {
+                if(!(*tpl_types)->types[i]->is_instance<unit_type_declaration>()) {
                     continue;
                 }
 
@@ -1233,7 +1238,7 @@ namespace xy {
         stream.accept(prev);
 
         // assume that top of stack is a statement list
-        statement_list *stmts(stack.back()->reinterpret<statement_list>());
+        conjunctive_statement *stmts(stack.back()->reinterpret<conjunctive_statement>());
 
         assert(nullptr != stmts);
 
@@ -1269,7 +1274,7 @@ namespace xy {
 
                 consume(T_DECLARE);
 
-                func_def *def(new func_def);
+                function_definition *def(new function_definition);
                 if(!parse_func_decl_type(&(def->template_arg_types), &(def->arg_types))) {
                     delete def;
                     return false;
@@ -1281,7 +1286,9 @@ namespace xy {
                     return false;
                 }
 
-                def->statements = new statement_list;
+                def->statements = new conjunctive_statement;
+                def->statements->parent_scope = stmts;
+
                 if(!parse_function(def, true)) {
                     delete def;
                     return false;
@@ -1304,11 +1311,15 @@ namespace xy {
                     break;
                 }
 
-                stmts->statements.push_back(new var_def(
+                variable_definition *var_def(new variable_definition(
                     names[i].first,
                     names[i].second,
                     stack.back()->reinterpret<expression>()
                 ));
+
+                printf("making var def %p\n", reinterpret_cast<void *>(var_def));
+
+                stmts->statements.push_back(var_def);
                 stack.pop_back();
 
                 check_sep = true;
@@ -1338,7 +1349,7 @@ namespace xy {
 
                 consume(T_DECLARE);
 
-                arrow_type_decl *template_arg_types(nullptr);
+                arrow_type_declaration *template_arg_types(nullptr);
 
                 // get the info
                 if(!parse_func_decl_type(&template_arg_types, nullptr)) {
@@ -1353,19 +1364,21 @@ namespace xy {
                     return false;
                 }
 
-                statement *stmt(nullptr);
+                ast *decl(nullptr);
 
                 // as a function
                 if(stream.check(T_FUNCTION)) {
 
-                    func_def *def(new func_def);
+                    function_definition *def(new function_definition);
                     def->template_arg_types = template_arg_types;
-                    def->statements = new statement_list;
+                    def->statements = new conjunctive_statement;
+                    def->statements->parent_scope = stmts;
+
                     if(!parse_function(def, false)) {
                         delete def;
                         return false;
                     }
-                    stmt = def;
+                    decl = def;
 
                 // as a record
                 } else if(stream.check(T_RECORD)) {
@@ -1375,10 +1388,15 @@ namespace xy {
 
                 }
 
-                stmts->statements.push_back(stmt);
+                stmts->statements.push_back(new structured_type_definition(
+                    names[0].first,
+                    names[0].second,
+                    decl,
+                    template_arg_types
+                ));
 
                 /*
-                func_def *def(new func_def);
+                function_definition *def(new function_definition);
                 if(!parse_func_decl_type(true, &(def->template_arg_types), &(def->arg_types))) {
                     delete def;
                     return false;
@@ -1387,7 +1405,7 @@ namespace xy {
                 // now we want to parse the function itself
 
 
-                def->statements = new statement_list;
+                def->statements = new conjunctive_statement;
                 if(!parse_function(def, true)) {
                     delete def;
                     return false;
@@ -1413,10 +1431,10 @@ namespace xy {
                     break;
                 }
 
-                stmts->statements.push_back(new type_def(
+                stmts->statements.push_back(new type_definition(
                     names[i].first,
                     names[i].second,
-                    stack.back()->reinterpret<type_decl>()
+                    stack.back()->reinterpret<type_declaration>()
                 ));
                 stack.pop_back();
 
@@ -1425,7 +1443,7 @@ namespace xy {
             }
 
             if(last_seen < names.size()) {
-                ctx.report_here(names[last_seen].first, io::e_missing_type_decl_in_let, stab[names[last_seen].second]);
+                ctx.report_here(names[last_seen].first, io::e_missing_type_declaration_in_let, stab[names[last_seen].second]);
                 return false;
             }
         }
@@ -1471,9 +1489,9 @@ namespace xy {
         }
     }
 
-    bool parser::parse(statement_list *stmts, token_type end, func_def *def) throw() {
+    bool parser::parse(conjunctive_statement *stmts, token_type end, function_definition *def) throw() {
         bool last_parsed(true);
-        printf("def = %p\n", reinterpret_cast<void *>(def));
+        //printf("def = %p\n", reinterpret_cast<void *>(def));
         for(; last_parsed && stream.check(); ) {
 
             /*while(stream.check(T_STRING_LITERAL)
@@ -1510,7 +1528,7 @@ namespace xy {
                 if(last_parsed) {
                     last_parsed = consume(T_SEMICOLON);
                     expression *top_expr(pop(stack)->reinterpret<expression>());
-                    stmts->statements.push_back(new expression_stmt(top_expr));
+                    stmts->statements.push_back(new expression_statement(top_expr));
                 }
                 repl::accept();
 
@@ -1519,24 +1537,24 @@ namespace xy {
                 last_parsed = consume(T_RETURN);
                 repl::wait();
 
-                printf("arg types = %p\n", reinterpret_cast<void *>(def->arg_types));
+                //printf("arg types = %p\n", reinterpret_cast<void *>(def->arg_types));
 
                 // template type
                 if(nullptr == def->arg_types) {
 
                     last_parsed = parse(type_parsers, 0);
                     if(last_parsed) {
-                        stmts->statements.push_back(new return_type_stmt(
-                            stack.back()->reinterpret<type_decl>()
+                        stmts->statements.push_back(new return_type_statement(
+                            stack.back()->reinterpret<type_declaration>()
                         ));
                     }
 
                 // funcion, not returning unit type, so get an expression
-                } else if(!def->arg_types->types.back()->is_instance<unit_type_decl>()) {
+                } else if(!def->arg_types->types.back()->is_instance<unit_type_declaration>()) {
                     last_parsed = parse(expression_parsers, 0);
                     if(last_parsed) {
-                        stmts->statements.push_back(new return_type_stmt(
-                            stack.back()->reinterpret<type_decl>()
+                        stmts->statements.push_back(new return_type_statement(
+                            stack.back()->reinterpret<type_declaration>()
                         ));
                     }
 
@@ -1569,7 +1587,7 @@ namespace xy {
         stream.ctx = ctx;
 
         // push the top thing onto the stack :D
-        statement_list *stmts(new statement_list);
+        conjunctive_statement *stmts(new conjunctive_statement);
         p.stack.push_back(stmts);
         bool last_parsed(p.parse(stmts, T_EOF, nullptr));
 

@@ -27,6 +27,8 @@
 #include "xy/include/repl/repl.hpp"
 #include "xy/include/repl/reader.hpp"
 
+#include "xy/include/pass/resolve_names.hpp"
+
 #define D(x)
 
 using namespace xy;
@@ -58,10 +60,6 @@ static void init_symbol_table(symbol_table &stab) throw() {
 
 }
 
-static void resolve(ast *) throw() {
-
-}
-
 int main(int argc, char *argv[]) {
     symbol_table stab;
     init_symbol_table(stab);
@@ -75,7 +73,7 @@ int main(int argc, char *argv[]) {
             return false;
         }
 
-        resolve(tree);
+        //resolve(tree);
         delete tree;
     } else {
 
@@ -90,6 +88,7 @@ int main(int argc, char *argv[]) {
             if(!tree || ctx.has_message()) {
                 write_repl_file(byte_reader.history());
                 ctx.print_diagnostics(stderr);
+                ctx.reset();
                 delete_repl_file();
             }
 
@@ -97,7 +96,15 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            resolve(tree);
+            pass::resolve_names(ctx, stab, tree);
+
+            if(ctx.has_message()) {
+                write_repl_file(byte_reader.history());
+                ctx.print_diagnostics(stderr);
+                delete_repl_file();
+            }
+
+            //resolve(tree);
             delete tree;
         }
     }

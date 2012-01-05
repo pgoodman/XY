@@ -14,7 +14,7 @@
 #include <functional>
 #include <utility>
 
-#include "xy/include/support/name_map.hpp"
+#include "xy/include/front_end.hpp"
 #include "xy/include/support/small_set.hpp"
 #include "xy/include/support/disjoint_set.hpp"
 
@@ -67,7 +67,7 @@ namespace xy {
     }
 
     typedef enum kind::type_kind_ type_kind;
-    typedef support::mapped_name type_name;
+    typedef symtab::symbol type_name;
     typedef uint16_t type_id;
 
 #if 0

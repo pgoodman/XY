@@ -7,23 +7,41 @@
  */
 
 #include "xy/include/symbol_table.hpp"
+#include "xy/include/ast.hpp"
 
 namespace xy {
 
-    void symbol_table::push_context(void) throw() {
-
+    symtab::entry *symbol_table::lookup(conjunctive_statement *context, symtab::symbol name) throw() {
+        symtab::entry *found(nullptr);
+        for(; nullptr != context; context = context->parent_scope) {
+            if(context->bound_names.find(name, found)) {
+                break;
+            }
+        }
+        return found;
     }
 
-    void symbol_table::pop_context(void) throw() {
+    symtab::entry *symbol_table::insert(conjunctive_statement *context, symtab::symbol name) throw() {
 
+        symtab::entry *new_entry(nullptr);
+        assert(nullptr != context);
+        assert(!context->bound_names.find(name, new_entry));
+
+        new_entry = entry_alloc.allocate();
+        context->bound_names.force_insert(name, new_entry);
+
+        return new_entry;
     }
 
-    support::mapped_name symbol_table::operator[](const char *name) throw() {
-        return names.map_name(name);
+    symtab::symbol symbol_table::operator[](const char *name) throw() {
+        return names.add(
+            name,
+            static_cast<int>(cstring::byte_length(name) + 1U)
+        );
     }
 
-    const char *symbol_table::operator[](const support::mapped_name name) throw() {
-        return names.unmap_name(name);
+    const char *symbol_table::operator[](const symtab::symbol name) throw() {
+        return names.find(name);
     }
 
 }

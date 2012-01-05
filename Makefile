@@ -97,20 +97,15 @@ OBJS += bin/lib/token.o
 OBJS += bin/lib/tokenizer.o
 OBJS += bin/lib/token_stream.o
 
-#OBJS += bin/deps/libdatrie/alpha-map.o
-#OBJS += bin/deps/libdatrie/darray.o
-#OBJS += bin/deps/libdatrie/tail.o
-#OBJS += bin/deps/libdatrie/trie.o
-
 OBJS += bin/deps/murmurhash/MurmurHash3.o
-
 OBJS += bin/deps/linenoise/linenoise.o
 
-OBJS += bin/lib/support/name_map.o
 OBJS += bin/lib/type.o
 OBJS += bin/lib/type_system.o
 OBJS += bin/lib/symbol_table.o
+OBJS += bin/lib/ast.o
 OBJS += bin/lib/parser.o
+OBJS += bin/lib/pass/resolve_names.o
 
 OBJS += bin/lib/repl/repl.o
 OBJS += bin/lib/repl/reader.o  
@@ -152,6 +147,7 @@ install:
 	-mkdir bin/lib/io
 	-mkdir bin/lib/support
 	-mkdir bin/lib/repl
+	-mkdir bin/lib/pass
 	-mkdir bin/deps
 	-mkdir bin/deps/libdatrie
 	-mkdir bin/deps/linenoise
@@ -165,6 +161,7 @@ clean:
 	-rm -f bin/lib/io/*.o
 	-rm -f bin/lib/support/*.o
 	-rm -f bin/lib/repl/*.o
+	-rm -f bin/lib/pass/*.o
 	-rm -f bin/deps/libdatrie/*.o
 	-rm -f bin/deps/linenoise/*.o
 	-rm -f bin/deps/openbsd/*.o

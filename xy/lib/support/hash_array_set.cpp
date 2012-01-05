@@ -10,17 +10,17 @@
 
 namespace xy { namespace support {
 
-    hash_set_array_handle::hash_set_array_handle(uint64_t handle_) throw()
+    hash_array_set_handle::hash_array_set_handle(uint64_t handle_) throw()
         : handle(handle_)
     { }
 
-    hash_set_array_handle::hash_set_array_handle(void) throw()
+    hash_array_set_handle::hash_array_set_handle(void) throw()
         : handle(0U)
     { }
 
-    hash_set_array_handle::~hash_set_array_handle(void) throw() { }
+    hash_array_set_handle::~hash_array_set_handle(void) throw() { }
 
-    bool hash_set_array_handle::operator==(const hash_set_array_handle &other) const throw() {
+    bool hash_array_set_handle::operator==(const hash_array_set_handle &other) const throw() {
         if(handle == other.handle) {
             return true;
         }
@@ -32,7 +32,7 @@ namespace xy { namespace support {
         return (handle & MASK_OFF_ID) == (other.handle & MASK_OFF_ID);
     }
 
-    bool hash_set_array_handle::operator!=(const hash_set_array_handle &other) const throw() {
+    bool hash_array_set_handle::operator!=(const hash_array_set_handle &other) const throw() {
         return !(*this == other);
     }
 
