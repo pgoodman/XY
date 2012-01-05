@@ -85,13 +85,13 @@ namespace xy { namespace pass {
                 } else if(stmt->is_instance<type_definition>()) {
 
                     printf("type def\n");
-                    printf("stmt->type_id=%llu & type_definition::exact_id=%llu = %llu\n", stmt->type_id(), type_definition::exact_id(), stmt->type_id() & type_definition::exact_id());
+                    printf("stmt->type_id=%lu & type_definition::exact_id=%lu = %lu\n", stmt->type_id(), type_definition::exact_id(), stmt->type_id() & type_definition::exact_id());
 
-                    printf("variable_definition::type_id = %llu\n", variable_definition::static_id());
-                    printf("variable_definition::exact_id = %llu\n", variable_definition::exact_id());
-                    printf("definition_statement::exact_id = %llu\n", definition_statement::exact_id());
-                    printf("statement::exact_id = %llu\n", statement::exact_id());
-                    printf("ast::exact_id = %llu\n", ast::exact_id());
+                    printf("variable_definition::type_id = %lu\n", variable_definition::static_id());
+                    printf("variable_definition::exact_id = %lu\n", variable_definition::exact_id());
+                    printf("definition_statement::exact_id = %lu\n", definition_statement::exact_id());
+                    printf("statement::exact_id = %lu\n", statement::exact_id());
+                    printf("ast::exact_id = %lu\n", ast::exact_id());
 
                     type_definition *def(stmt->reinterpret<type_definition>());
                     entry = stab.lookup(top, def->name);
