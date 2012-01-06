@@ -323,7 +323,6 @@ namespace xy { namespace io {
         public:
             static void allocate(tuple_type &t) {
                 STD_TR1::get<i>(t) = cstring::copy(STD_TR1::get<i>(t));
-                printf("** copied '%s'\n", STD_TR1::get<i>(t));
             }
         };
 

@@ -76,9 +76,9 @@ namespace xy { namespace pass {
                 stmt = ls->statements[i];
                 def_stmt = stmt->reinterpret<definition_statement>();
                 printf("stmt = %p\n", reinterpret_cast<void *>(stmt));
+
                 // expression statement, conjunctive statement
                 if(nullptr == def_stmt) {
-                    printf("wtf?\n");
                     continue;
 
                 // simple type def

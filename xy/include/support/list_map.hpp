@@ -37,7 +37,11 @@ namespace xy { namespace support {
                     // re-order to front
                     prev->next = curr->next;
                     curr->next = entries;
-                    entries = curr;
+                    if(entries == curr) {
+                        curr->next = nullptr;
+                    } else {
+                        entries = curr;
+                    }
 
                     return &(curr->val);
                 }

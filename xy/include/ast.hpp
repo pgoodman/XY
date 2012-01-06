@@ -196,7 +196,6 @@ namespace xy {
         class delete_ast<std::vector<T *> > {
         public:
             static void rec_delete(std::vector<T *> &vec) throw() {
-                //for(T *type : vec) {
                 for(size_t i(0); i < vec.size(); ++i) {
                     if(nullptr != vec[i]) {
                         delete vec[i];

@@ -106,8 +106,11 @@ namespace xy { namespace io {
     message_queue::~message_queue(void) throw() {
         for(message *msg(first), *next(&LAST_MESSAGE); &LAST_MESSAGE != msg; msg = next) {
             next = msg->next;
+            msg->next = nullptr;
             delete msg;
         }
+        first = nullptr;
+        last = nullptr;
     }
 
     message_iterator message_queue::begin(void) const throw() {
