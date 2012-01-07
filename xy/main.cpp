@@ -106,6 +106,7 @@ int main(int argc, char *argv[]) {
             }
 
             if(byte_reader.got_exit()) {
+                if(tree) delete tree;
                 break;
             }
 
