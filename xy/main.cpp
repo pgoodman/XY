@@ -19,14 +19,17 @@
 #include <vector>
 #include <cassert>
 
+#include "xy/include/color.hpp"
 #include "xy/include/diagnostic_context.hpp"
 #include "xy/include/parser.hpp"
 #include "xy/include/ast.hpp"
 #include "xy/include/symbol_table.hpp"
 #include "xy/include/cstring.hpp"
 
-#include "xy/include/repl/repl.hpp"
-#include "xy/include/repl/reader.hpp"
+#ifndef XY_DISABLE_REPL
+#   include "xy/include/repl/repl.hpp"
+#   include "xy/include/repl/reader.hpp"
+#endif
 
 #include "xy/include/pass/resolve_names.hpp"
 
@@ -86,6 +89,7 @@ int main(int argc, char *argv[]) {
         delete tree;
     } else {
 
+#ifndef XY_DISABLE_REPL
         repl::reader byte_reader;
         diagnostic_context ctx("stdin", REPL_HISTORY_FILE_NAME);
 
@@ -116,6 +120,11 @@ int main(int argc, char *argv[]) {
             //resolve(tree);
             delete tree;
         }
+#else
+
+        fprintf(stderr, XY_F_RED "Expected a file name." XY_F_DEF "\n\n");
+
+#endif
     }
 
     return 0;

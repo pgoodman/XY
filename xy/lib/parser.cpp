@@ -1610,11 +1610,9 @@ namespace xy {
             ctx.report_here(last, io::e_error_parsing);
             return nullptr;
         }
-
-        ast *ret(p.stack.back());
         p.stack.pop_back();
 
-        return ret;
+        return stmts;
     }
 
     /// -----------------------------------------------------------------------

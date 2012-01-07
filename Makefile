@@ -7,6 +7,7 @@ ROOT_DIR = ./
 CLANG_CC = clang
 INTEL_CC = icc
 GNU_CC = gcc
+EMSCRIPTEN_CC = emcc
 
 DEFAULT_CXX = /Users/petergoodman/Code/build/llvm/Debug+Asserts/bin/clang++
 DEFAULT_CC = /Users/petergoodman/Code/build/llvm/Debug+Asserts/bin/clang
@@ -69,6 +70,23 @@ ifneq (,$(findstring ${CLANG_CC},${CC}))
 	CXX_WARN_FLAGS += -Winline
 endif
 
+REPL_OBJS =
+REPL_OBJS += bin/deps/linenoise/linenoise.o
+REPL_OBJS += bin/lib/repl/repl.o
+REPL_OBJS += bin/lib/repl/reader.o 
+
+# are we compiling eith emscriptem? if so, disable the REPL and don't
+# build the REPL files.
+ifneq (,$(findstring ${EMSCRIPTEN_CC},${CC}))
+	CXX_FEATURES += -fcatch-undefined-behavior -finline-functions -stdlib=libc++
+	LD_FLAGS += -stdlib=libc++
+	CXX_WARN_FLAGS += -Winline
+	
+	# disable the REPL with emscripten
+	CXX_FLAGS += -DXY_DISABLE_REPL
+	REPL_OBJS =
+endif
+
 CXX_FLAGS += ${CXX_WARN_FLAGS} ${CXX_FEATURES} ${CXX_GNU_COMPATIBLE_FLAGS}
 CC_FLAGS += ${CC_WARN_FLAGS} ${CC_FEATURES} ${CC_GNU_COMPATIBLE_FLAGS}
 
@@ -98,7 +116,7 @@ OBJS += bin/lib/tokenizer.o
 OBJS += bin/lib/token_stream.o
 
 OBJS += bin/deps/murmurhash/MurmurHash3.o
-OBJS += bin/deps/linenoise/linenoise.o
+OBJS += ${REPL_OBJS}
 
 OBJS += bin/lib/type.o
 OBJS += bin/lib/type_system.o
@@ -106,9 +124,6 @@ OBJS += bin/lib/symbol_table.o
 OBJS += bin/lib/ast.o
 OBJS += bin/lib/parser.o
 OBJS += bin/lib/pass/resolve_names.o
-
-OBJS += bin/lib/repl/repl.o
-OBJS += bin/lib/repl/reader.o  
 
 OBJS += bin/main.o 
 OUT = bin/xy
