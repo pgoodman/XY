@@ -886,7 +886,7 @@ namespace xy {
             const size_t num(template_arg_types->types.size() - (!is_func ? 1U : 0U));
             bool expect_comma(false);
 
-            printf("tpl num=%lu\n", num);
+            //printf("tpl num=%lu\n", num);
 
             for(size_t i(0); i < num; ++i, expect_comma = true) {
                 type_declaration *part(template_arg_types->types[i]);
@@ -958,7 +958,7 @@ namespace xy {
             const size_t num(arg_types->types.size() - (is_func ? 1U : 0U));
             bool expect_comma(false);
 
-            printf("func num=%lu\n", num);
+            //printf("func num=%lu\n", num);
 
             for(size_t i(0); i < num; ++i, expect_comma = true) {
 
