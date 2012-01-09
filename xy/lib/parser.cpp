@@ -264,16 +264,22 @@ namespace xy {
         arrow_type_declaration *left_op(left->reinterpret<arrow_type_declaration>());
         arrow_type_declaration *right_op(right->reinterpret<arrow_type_declaration>());
 
+        printf("left_op=%p  left=%p\n", reinterpret_cast<void *>(left_op), reinterpret_cast<void *>(left));
+        printf("right_op=%p  right=%p\n", reinterpret_cast<void *>(right_op), reinterpret_cast<void *>(right));
+
         if(nullptr == right_op) {
             right_op = new arrow_type_declaration;
             right_op->types.push_back(right);
         }
 
-        std::ostringstream lss;
+        printf("right_op=%p  right=%p\n", reinterpret_cast<void *>(right_op), reinterpret_cast<void *>(right));
+
+        /*std::ostringstream lss;
         std::ostringstream rss;
 
         left->print(lss, stab);
         right->print(rss, stab);
+        */
 
         token location(left->location);
         location.extend(op);
