@@ -24,6 +24,8 @@ namespace xy {
 
     ast *pop(std::vector<ast *> &stack) throw() {
         ast *back(stack.back());
+        printf("popped %p\n", reinterpret_cast<void *>(back));
+        stack.back() = support::unsafe_cast<ast *>(reinterpret_cast<void *>(0xDEADBEEF));
         stack.pop_back();
         return back;
     }
