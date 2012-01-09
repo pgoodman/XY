@@ -27,7 +27,7 @@ namespace xy { namespace mpl {
     public:
 
         virtual rtti_type type_id(void) const throw() = 0;
-        virtual const char *class_anme(void) const throw() = 0;
+        virtual const char *class_name(void) const throw() = 0;
 
         template <typename T>
         bool is_instance(void) const throw() {
