@@ -62,7 +62,7 @@ namespace xy { namespace mpl {
         }
 
         virtual rtti_type type_id(void) const throw() {
-            printf("class %s has id %llu\n",
+            printf("class %s has id %lu\n",
                             this->class_name(),
                             rtti<Category, Derived, void>::static_id());
             return rtti<Category, Derived, Base>::static_id();
