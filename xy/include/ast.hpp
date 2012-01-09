@@ -99,11 +99,11 @@
 
 namespace xy {
 
-    namespace {
+    //namespace {
 
         /// a "hidden" category for type ids
         class ast_type_category { };
-    }
+    //}
 
     typedef mpl::rtti_type ast_type;
 

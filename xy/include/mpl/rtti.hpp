@@ -27,9 +27,11 @@ namespace xy { namespace mpl {
     public:
 
         virtual rtti_type type_id(void) const throw() = 0;
+        virtual const char *class_anme(void) const throw() = 0;
 
         template <typename T>
         bool is_instance(void) const throw() {
+            printf("type class name is: '%s' with id %lu, checking if it has id %lu\n", this->class_name(), this->type_id(), T::static_id());
             return 0UL != (this->type_id() & T::exact_id());
         }
 
@@ -52,7 +54,7 @@ namespace xy { namespace mpl {
         virtual ~rtti(void) throw() { }
 
         static rtti_type static_id(void) throw() {
-            static rtti_type id(Base::static_id() | rtti<Category, Derived, Base>::exact_id());
+            static rtti_type id(Base::static_id() | exact_id());
             return id;
         }
 
@@ -64,8 +66,8 @@ namespace xy { namespace mpl {
         virtual rtti_type type_id(void) const throw() {
             printf("class %s has id %lu\n",
                             this->class_name(),
-                            rtti<Category, Derived, void>::static_id());
-            return rtti<Category, Derived, Base>::static_id();
+                            static_id());
+            return static_id();
         }
     };
 
