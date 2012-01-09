@@ -10,7 +10,6 @@
 #define XY_RTTI_HPP_
 
 #include <stdint.h>
-#include <cstdio>
 
 #include "xy/include/mpl/id.hpp"
 #include "xy/include/support/unsafe_cast.hpp"
@@ -31,7 +30,6 @@ namespace xy { namespace mpl {
 
         template <typename T>
         bool is_instance(void) const throw() {
-            printf("type class name is: '%s' with id %lu, checking if it has id %lu\n", this->class_name(), this->type_id(), T::static_id());
             return 0UL != (this->type_id() & T::exact_id());
         }
 
@@ -64,9 +62,6 @@ namespace xy { namespace mpl {
         }
 
         virtual rtti_type type_id(void) const throw() {
-            printf("class %s has id %lu\n",
-                            this->class_name(),
-                            static_id());
             return static_id();
         }
     };
