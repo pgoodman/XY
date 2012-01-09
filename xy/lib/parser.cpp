@@ -224,6 +224,8 @@ namespace xy {
         stream.accept(decl_tail);
         stream.undo();
 
+        printf("about to parse right operand...\n");
+
         // parse the right-hand operand
         if(!parse(type_parsers, prec)) {
             delete left;
@@ -237,6 +239,8 @@ namespace xy {
 
         type_declaration *right(pop(stack)->reinterpret<type_declaration>());
 
+        printf("left=%p  right=%p\n", reinterpret_cast<void *>(left), reinterpret_cast<void *>(right));
+
         *ll = left;
         *rr = right;
 
@@ -248,6 +252,8 @@ namespace xy {
 
         type_declaration *left(nullptr);
         type_declaration *right(nullptr);
+
+        printf("parsing arrow type\n");
 
         if(!parse_type_operands(prec, op, &left, &right)) {
             return false;
