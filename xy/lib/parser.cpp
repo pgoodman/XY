@@ -737,7 +737,8 @@ namespace xy {
         return true;
     }
 
-    /// concatenate adjacent string literals
+    /// concatenate adjacent string literals; modifies the string on the stack
+    /// in place.
     bool parser::parse_string_concat(unsigned, const token &, const char *data) throw() {
         string_literal_expression *prev_str(stack.back()->reinterpret<string_literal_expression>());
         if(nullptr == prev_str) {
@@ -1333,8 +1334,6 @@ namespace xy {
                     stack.back()->reinterpret<expression>()
                 ));
 
-                printf("making var def %p\n", reinterpret_cast<void *>(var_def));
-
                 stmts->statements.push_back(var_def);
                 stack.pop_back();
 
@@ -1389,6 +1388,7 @@ namespace xy {
                     def->template_arg_types = template_arg_types;
                     def->statements = new conjunctive_statement;
                     def->statements->parent_scope = stmts;
+
                     stack.push_back(def->statements);
 
                     if(!parse_function(def, false)) {
@@ -1457,9 +1457,8 @@ namespace xy {
                 stmts->statements.push_back(new type_definition(
                     names[i].first,
                     names[i].second,
-                    stack.back()->reinterpret<type_declaration>()
+                    pop(stack)->reinterpret<type_declaration>()
                 ));
-                stack.pop_back();
 
                 check_sep = true;
                 ++last_seen;
@@ -1526,10 +1525,9 @@ namespace xy {
             // done parsing this file
             if(stream.check(end)) {
                 break;
-            }
 
             // variable definition
-            else if(stream.check(T_LET)) {
+            } else if(stream.check(T_LET)) {
                 repl::wait();
                 last_parsed = parse_let();
                 if(last_parsed) {
@@ -1550,7 +1548,7 @@ namespace xy {
                     last_parsed = parse(type_parsers, 0);
                     if(last_parsed) {
                         stmts->statements.push_back(new return_type_statement(
-                            stack.back()->reinterpret<type_declaration>()
+                            pop(stack)->reinterpret<type_declaration>()
                         ));
                     }
 
@@ -1559,7 +1557,7 @@ namespace xy {
                     last_parsed = parse(expression_parsers, 0);
                     if(last_parsed) {
                         stmts->statements.push_back(new return_type_statement(
-                            stack.back()->reinterpret<type_declaration>()
+                            pop(stack)->reinterpret<type_declaration>()
                         ));
                     }
 
@@ -1611,6 +1609,7 @@ namespace xy {
 
         // push the top thing onto the stack :D
         conjunctive_statement *stmts(new conjunctive_statement);
+
         p.stack.push_back(stmts);
         bool last_parsed(p.parse(stmts, T_EOF, nullptr));
 
@@ -1633,8 +1632,8 @@ namespace xy {
             ctx.report_here(last, io::e_error_parsing);
             return nullptr;
         }
-        p.stack.pop_back();
 
+        p.stack.pop_back();
         return stmts;
     }
 
