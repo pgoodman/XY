@@ -24,6 +24,7 @@
 #include "xy/include/parser.hpp"
 #include "xy/include/ast.hpp"
 #include "xy/include/symbol_table.hpp"
+#include "xy/include/type_system.hpp"
 #include "xy/include/cstring.hpp"
 
 #ifndef XY_DISABLE_REPL
@@ -64,16 +65,17 @@ static void init_symbol_table(symbol_table &stab) throw() {
 
 }
 
-//#define XY_AST_INIT_ID(type) \
-//    printf(#type " id is %llu\n", type::exact_id());
+#define XY_AST_INIT_ID(type) \
+    printf(#type " id is %llu\n", type::static_id());
 
 int main(int argc, char *argv[]) {
 
     // initialize the AST type ids
-    //printf("ast id is %llu\n", ast::exact_id());
-    //XY_AST_TYPES(XY_AST_INIT_ID)
+    printf("ast id is %llu\n", ast::static_id());
+    XY_AST_TYPES(XY_AST_INIT_ID)
 
     symbol_table stab;
+    type_system ts;
     init_symbol_table(stab);
     ast *tree(nullptr);
 
@@ -110,7 +112,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            pass::resolve_names(ctx, stab, tree);
+            pass::resolve_names(ctx, stab, ts, tree);
 
             if(ctx.has_message()) {
                 write_repl_file(byte_reader.history());

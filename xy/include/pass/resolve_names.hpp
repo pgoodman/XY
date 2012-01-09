@@ -13,7 +13,7 @@
 
 namespace xy { namespace pass {
 
-    void resolve_names(diagnostic_context &, symbol_table &, ast *) throw();
+    void resolve_names(diagnostic_context &, symbol_table &, type_system &, ast *) throw();
 
 }}
 

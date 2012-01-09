@@ -15,7 +15,15 @@ namespace xy {
 
     ast::~ast(void) throw() { }
 
+    void ast::visit(ast_visitor &visitor) throw() {
+        visitor.visit(this);
+    }
+
     void ast::print(std::ostream &, symbol_table &) throw() { }
+
+    const char *ast::class_name(void) const throw() {
+        return "ast";
+    }
 
 #   define XY_AST_IN_CPP
 #   include "xy/include/ast.inc"

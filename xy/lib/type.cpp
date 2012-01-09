@@ -10,6 +10,42 @@
 
 namespace xy {
 
+    /// get the most resolved version of some type
+    const type *type::resolve(void) const throw() {
+        return this;
+    }
+
+    type *type::resolve(void) throw() {
+        return this;
+    }
+
+    /// inner types are already fully resolved
+    type *type_variable_type::resolve(void) throw() {
+        return inner_types.back();
+    }
+
+    const type *type_variable_type::resolve(void) const throw() {
+        return inner_types.back();
+    }
+
+    void type_variable_type::push(type *inner_type) throw() {
+        inner_types.push_back(inner_type->resolve());
+    }
+
+    void type_variable_type::pop(void) throw() {
+        inner_types.pop_back();
+    }
+
+    void type_variable_type::assign(type *inner_type) throw() {
+        inner_types.back() = inner_type->resolve();
+    }
+
+}
+
+#if 0
+
+namespace xy {
+
     type::~type(void) throw() { }
     name_type::~name_type(void) throw() { }
     alias_type::~alias_type(void) throw() { }
@@ -18,7 +54,7 @@ namespace xy {
     tuple_type::~tuple_type(void) throw() { }
     record_type::~record_type(void) throw() { }
     sum_type::~sum_type(void) throw() { }
-    function_type::~function_type(void) throw() { }
+    arrow_type::~arrow_type(void) throw() { }
     reference_type::~reference_type(void) throw() { }
     integer_type::~integer_type(void) throw() { }
     array_type::~array_type(void) throw() { }
@@ -97,8 +133,8 @@ namespace xy {
             );
 
         case kind::FUNCTION: {
-            const function_type *this_p(reinterpret_cast<const function_type *>(this));
-            const function_type *that_p(reinterpret_cast<const function_type *>(that));
+            const arrow_type *this_p(reinterpret_cast<const arrow_type *>(this));
+            const arrow_type *that_p(reinterpret_cast<const arrow_type *>(that));
             return this_p->from_type->is_equivalent(that_p->from_type)
                 && this_p->to_type->is_equivalent(that_p->to_type);
         }
@@ -299,7 +335,7 @@ namespace xy {
 
     //--------------------------------------------------------------------------
 
-    type_kind function_type::get_kind(void) const throw() {
+    type_kind arrow_type::get_kind(void) const throw() {
         return kind::FUNCTION;
     }
 
@@ -391,3 +427,6 @@ namespace xy {
     }
 #endif
 }
+
+#endif
+

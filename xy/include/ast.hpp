@@ -15,10 +15,10 @@
 #include "xy/include/pp.hpp"
 #include "xy/include/token.hpp"
 #include "xy/include/front_end.hpp"
-#include "xy/include/mpl/id.hpp"
+
+#include "xy/include/mpl/rtti.hpp"
 
 #include "xy/include/support/list_map.hpp"
-#include "xy/include/support/unsafe_cast.hpp"
 
 #include "xy/include/cstring.hpp"
 
@@ -105,7 +105,7 @@ namespace xy {
         class ast_type_category { };
     }
 
-    typedef uint64_t ast_type;
+    typedef mpl::rtti_type ast_type;
 
     typedef std::vector<std::pair<token, symtab::symbol> > \
             name_list;
@@ -124,7 +124,7 @@ namespace xy {
     };
 
     namespace support {
-
+#if 0
         /// implements the subtype relationship for AST class types and the
         /// needed RTTI.
         template <typename T, typename O=void>
@@ -187,6 +187,7 @@ namespace xy {
                 visitor.visit(self);
             }
         };
+#endif
 
         template <typename T>
         class delete_ast;
@@ -241,28 +242,15 @@ namespace xy {
     }
 
     /// top-level AST node type
-    struct ast : public support::ast_impl<ast> {
+    struct ast : public mpl::rtti<ast_type_category, ast> {
     public:
 
         ast(void) throw();
 
         virtual ~ast(void) throw();
-
-        template <typename T>
-        bool is_instance(void) const throw() {
-            return 0UL != (this->type_id() & T::exact_id());
-        }
-
-        template <typename T>
-        T *reinterpret(void) throw() {
-            if(!this->is_instance<T>()) {
-                return nullptr;
-            }
-
-            return support::unsafe_cast<T *>(this);
-        }
-
         virtual void print(std::ostream &, symbol_table &) throw();
+        virtual void visit(ast_visitor &) throw();
+        virtual const char *class_name(void) const throw();
     };
 
 #   include "xy/include/ast.inc"

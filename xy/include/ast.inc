@@ -42,7 +42,13 @@
 #   define XY_AST_METHOD_DEF(class_name, virt, return_type, method_name, args, body) \
     return_type class_name::method_name args throw() body
 
-#   define XY_AST_BEGIN(base, super)
+#   define XY_AST_BEGIN(base, super) \
+    void base::visit(ast_visitor &visitor) throw() { \
+        visitor.visit(this); \
+    } \
+    const char *base::class_name(void) const throw() { \
+        return #base; \
+    }
 
 #   define XY_AST_END
 
@@ -79,7 +85,7 @@
 
 /// inherit a base class constructor
 #   define XY_AST_INHERIT_CONSTRUCTOR(class_name, parent_class) \
-    using ast_impl<class_name,parent_class>::ast_impl;
+    using mpl::rtti<ast_type_category,class_name,parent_class>::rtti;
 
 /// make a constructor that forwords all of its arguments to a base class
 /// constructor
@@ -90,8 +96,11 @@
     virt return_type method_name args throw();
 
 #   define XY_AST_BEGIN(base, super) \
-    struct base : public support::ast_impl<base, super> { \
-    public: 
+    struct base : public mpl::rtti<ast_type_category, base, super> { \
+    public: \
+        using mpl::rtti<ast_type_category, base, super>::type_id; \
+        virtual void visit(ast_visitor &visitor) throw(); \
+        virtual const char *class_name(void) const throw();
 
 #   define XY_AST_END };
 
@@ -302,7 +311,8 @@ XY_AST_END
 
 XY_AST_BEGIN(type_declaration, statement)
     XY_AST_MEMBERS(XY_AST_MEMBER_VAR,
-        (token, location))
+        (token, location),
+        (type *, type_))
 
     XY_AST_EMPTY_CONSTRUCTOR(type_declaration)
     XY_AST_DEFAULT_DESTRUCTOR(type_declaration)
@@ -313,8 +323,8 @@ XY_AST_END
 
     XY_AST_BEGIN(template_instance_type_declaration, type_declaration)
         XY_AST_MEMBERS(XY_AST_MEMBER_VAR,
-            (type_declaration *,        template_type),
-            (std::vector<ast *>, parameters))
+            (type_declaration *,    template_type),
+            (std::vector<ast *>,    parameters))
 
         XY_AST_CONSTRUCTOR(template_instance_type_declaration, template_type)
         XY_AST_DESTRUCTOR(template_instance_type_declaration, template_type, parameters)

@@ -1052,7 +1052,7 @@ namespace xy {
             tpl_types_ = first_type->reinterpret<arrow_type_declaration>();
             if(nullptr == tpl_types_
             || tpl_types_->is_wrapped) {
-                printf("re-wrapping template types\n");
+                //printf("re-wrapping template types\n");
 
                 tpl_types_ = new arrow_type_declaration;
                 tpl_types_->types.push_back(first_type);
@@ -1085,7 +1085,7 @@ namespace xy {
         arrow_type_declaration *arg_types_(second_type->reinterpret<arrow_type_declaration>());
         if(nullptr == arg_types_
         || arg_types_->is_wrapped) {
-            printf("re-wrapping args\n");
+            printf("re-wrapping args %p %llu '%s'\n", reinterpret_cast<void *>(second_type), second_type->type_id(), second_type->class_name());
             arg_types_ = new arrow_type_declaration;
             arg_types_->types.push_back(second_type);
         }

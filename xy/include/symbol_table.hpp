@@ -26,10 +26,11 @@ namespace xy {
     public:
 
         symtab::symbol operator[](const char *name) throw();
-        const char *operator[](symtab::symbol name) throw();
+        const char *operator[](symtab::symbol name) const throw();
 
         /// lookup a symbol in some context based on the AST
         symtab::entry *lookup(conjunctive_statement *context, symtab::symbol name) throw();
+        symtab::entry *shallow_lookup(conjunctive_statement *context, symtab::symbol name) throw();
 
         /// insert a symbol into the symbol table
         symtab::entry *insert(conjunctive_statement *context, symtab::symbol name) throw();

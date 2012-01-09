@@ -18,6 +18,100 @@
 #include "xy/include/support/small_set.hpp"
 #include "xy/include/support/disjoint_set.hpp"
 
+#include "xy/include/mpl/rtti.hpp"
+
+namespace xy {
+
+    struct type_category { };
+
+    /// base type for all types
+    struct type : public mpl::rtti<type_category, type> {
+    public:
+
+        /// where this type was defined.
+        ast *definition;
+
+        /// representative for each type
+        support::disjoint_set<type_category> rep;
+
+        virtual const type *resolve(void) const throw();
+        virtual type *resolve(void) throw();
+        virtual const char *class_name(void) const throw() {
+            return "type";
+        }
+    };
+
+        /// represents a sum of types
+        struct sum_type : public mpl::rtti<type_category, sum_type, type> {
+        public:
+            support::small_set<type *> inner_types;
+        };
+
+        /// represents a product of types.
+        struct product_type : public mpl::rtti<type_category, product_type, type> {
+        public:
+            std::vector<type *> inner_types;
+        };
+
+            /// represents a record type, i.e. a product type, where each thing is
+            /// accessible by some name
+            struct record_type : public mpl::rtti<type_category, record_type, product_type> {
+            public:
+                std::vector<symtab::symbol> inner_names;
+            };
+
+        /// represents a function type
+        struct arrow_type : public mpl::rtti<type_category, arrow_type, type> {
+        public:
+            std::vector<type *> inner_types;
+        };
+
+        /// represents a reference to some type
+        struct reference_type : public mpl::rtti<type_category, reference_type, type> {
+        public:
+            type *inner_type;
+        };
+
+        /// represents an array of elements of some type; can be seen as a
+        /// special case of a product type
+        struct array_type : public mpl::rtti<type_category, array_type, type> {
+        public:
+            type *inner_type;
+        };
+
+        /// represents a stack of the current type assignments to a type variable
+        /// in a template expansion
+        struct type_variable_type : public mpl::rtti<type_category, type_variable_type, type> {
+        public:
+            std::vector<type *> inner_types;
+
+            virtual const type *resolve(void) const throw();
+            virtual type *resolve(void) throw();
+
+            template <typename T>
+            bool is_instance(void) const throw() {
+                type *self(inner_types.back());
+                return 0UL != (self->type_id() & T::exact_id());
+            }
+
+            template <typename T>
+            T *reinterpret(void) throw() {
+                type *self(inner_types.back());
+                if(!self->is_instance<T>()) {
+                    return nullptr;
+                }
+
+                return support::unsafe_cast<T *>(self);
+            }
+
+
+            void push(type *) throw();
+            void pop(void) throw();
+            void assign(type *) throw();
+        };
+}
+
+#if 0
 namespace xy {
 
     class type_system;
@@ -30,7 +124,7 @@ namespace xy {
     struct tuple_type;
     struct record_type;
     struct sum_type;
-    struct function_type;
+    struct arrow_type;
     struct reference_type;
     struct integer_type;
     struct array_type;
@@ -105,7 +199,7 @@ namespace xy {
         friend struct tuple_type;
         friend struct record_type;
         friend struct sum_type;
-        friend struct function_type;
+        friend struct arrow_type;
         friend struct reference_type;
         friend struct integer_type;
         friend struct array_type;
@@ -114,9 +208,9 @@ namespace xy {
         friend struct kind_equivalent_meta_type;
 
         // where this came from
-        uint32_t line;
+        /*uint32_t line;
         uint32_t column;
-        uint16_t file_id;
+        uint16_t file_id;*/
         bool is_new;
 
         // this type's handle
@@ -140,6 +234,12 @@ namespace xy {
         //virtual bool is_subtype(const type *that) const throw();
     };
 
+#if 0
+    struct type_variable_type : public type {
+    public:
+        std::vector<type *> inner_type;
+    };
+
     struct kind_equivalent_meta_type : public type {
     public:
         const type_kind kind;
@@ -149,6 +249,8 @@ namespace xy {
 
         //virtual bool is_subtype(const type *that) const throw();
     };
+
+    //struct template
 
     /// a type with a name
     struct name_type : public type {
@@ -238,10 +340,10 @@ namespace xy {
     };
 
     /// Function type from_type -> to_type
-    struct function_type : public type {
+    struct arrow_type : public type {
     public:
 
-        virtual ~function_type(void) throw();
+        virtual ~arrow_type(void) throw();
         virtual type_kind get_kind(void) const throw();
 
         type *from_type;
@@ -391,7 +493,10 @@ namespace std {
         };
     }
     */
+#endif
 }
 #endif
+#endif
+
 
 #endif /* TYPE_HPP_ */

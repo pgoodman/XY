@@ -21,6 +21,12 @@ namespace xy {
         return found;
     }
 
+    symtab::entry *symbol_table::shallow_lookup(conjunctive_statement *context, symtab::symbol name) throw() {
+        symtab::entry *found(nullptr);
+        context->bound_names.find(name, found);
+        return found;
+    }
+
     symtab::entry *symbol_table::insert(conjunctive_statement *context, symtab::symbol name) throw() {
 
         symtab::entry *new_entry(nullptr);
@@ -28,6 +34,7 @@ namespace xy {
         assert(!context->bound_names.find(name, new_entry));
 
         new_entry = entry_alloc.allocate();
+        new_entry->scope = context;
         context->bound_names.force_insert(name, new_entry);
 
         return new_entry;
@@ -40,7 +47,7 @@ namespace xy {
         );
     }
 
-    const char *symbol_table::operator[](const symtab::symbol name) throw() {
+    const char *symbol_table::operator[](const symtab::symbol name) const throw() {
         return names.find(name);
     }
 
