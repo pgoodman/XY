@@ -1302,11 +1302,14 @@ namespace xy {
                 def->statements = new conjunctive_statement;
                 def->statements->parent_scope = stmts;
 
+                stack.push_back(def->statements);
+
                 if(!parse_function(def, true)) {
                     delete def;
                     return false;
                 }
 
+                stack.pop_back();
                 stmts->statements.push_back(def);
                 return true;
 
@@ -1386,18 +1389,25 @@ namespace xy {
                     def->template_arg_types = template_arg_types;
                     def->statements = new conjunctive_statement;
                     def->statements->parent_scope = stmts;
+                    stack.push_back(def->statements);
 
                     if(!parse_function(def, false)) {
                         delete def;
                         return false;
                     }
+
+                    stack.pop_back();
                     decl = def;
 
                 // as a record
                 } else if(stream.check(T_RECORD)) {
 
+                    assert(false); // TODO
+
                 // as a union
                 } else if(stream.check(T_UNION)) {
+
+                    assert(false); // TODO
 
                 }
 
