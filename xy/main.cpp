@@ -65,14 +65,14 @@ static void init_symbol_table(symbol_table &stab) throw() {
 
 }
 
-#define XY_AST_INIT_ID(type) \
-    printf(#type " id is %lu\n", type::static_id());
+//#define XY_AST_INIT_ID(type) \
+//    printf(#type " id is %lu\n", type::static_id());
 
 int main(int argc, char *argv[]) {
 
     // initialize the AST type ids
-    printf("ast id is %lu\n", ast::static_id());
-    XY_AST_TYPES(XY_AST_INIT_ID)
+    //printf("ast id is %lu\n", ast::static_id());
+    //XY_AST_TYPES(XY_AST_INIT_ID)
 
     symbol_table stab;
     type_system ts;

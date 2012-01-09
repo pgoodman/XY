@@ -1,1 +1,13 @@
 bin/xy
+bin/*.o
+bin/lib/*.o
+bin/lib/utf8/*.o
+bin/lib/io/*.o
+bin/lib/support/*.o
+bin/lib/repl/*.o
+bin/lib/pass/*.o
+bin/deps/libdatrie/*.o
+bin/deps/linenoise/*.o
+bin/deps/openbsd/*.o
+bin/deps/murmurhash/*.o
+.DS_Store

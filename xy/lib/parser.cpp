@@ -24,7 +24,6 @@ namespace xy {
 
     ast *pop(std::vector<ast *> &stack) throw() {
         ast *back(stack.back());
-        printf("popped %p\n", reinterpret_cast<void *>(back));
         stack.back() = support::unsafe_cast<ast *>(reinterpret_cast<void *>(0xDEADBEEF));
         stack.pop_back();
         return back;
@@ -767,7 +766,6 @@ namespace xy {
 
     bool parser::parse_type_type_declaration(const token &tok, const char *) throw() {
         type_type_declaration *decl(new type_type_declaration);
-        printf("pushed Type %p\n", reinterpret_cast<void *>(decl));
         decl->location = tok;
         stack.push_back(decl);
         return true;
@@ -1100,7 +1098,7 @@ namespace xy {
         arrow_type_declaration *arg_types_(second_type->reinterpret<arrow_type_declaration>());
         if(nullptr == arg_types_
         || arg_types_->is_wrapped) {
-            printf("re-wrapping args %p %lu '%s'\n", reinterpret_cast<void *>(second_type), second_type->type_id(), second_type->class_name());
+            printf("re-wrapping args %p %lu '%s'\n", reinterpret_cast<void *>(second_type), static_cast<unsigned long>(second_type->type_id()), second_type->class_name());
             arg_types_ = new arrow_type_declaration;
             arg_types_->types.push_back(second_type);
         }
@@ -1529,24 +1527,6 @@ namespace xy {
                 }
                 repl::accept();
 
-            // possibly unexpected token; try to parse an expression
-            } else if(stream.check()) {
-                /*token got;
-                stream.accept(got);
-                stream.undo();
-                p.report_simple(io::e_unexpected_symbol, got);
-                last_parsed = false;
-                */
-
-                repl::wait();
-                last_parsed = parse(expression_parsers, 0);
-                if(last_parsed) {
-                    last_parsed = consume(T_SEMICOLON);
-                    expression *top_expr(pop(stack)->reinterpret<expression>());
-                    stmts->statements.push_back(new expression_statement(top_expr));
-                }
-                repl::accept();
-
             // template or function
             } else if(nullptr != def && stream.check(T_RETURN)) {
                 last_parsed = consume(T_RETURN);
@@ -1583,6 +1563,24 @@ namespace xy {
 
                 if(last_parsed) {
                     last_parsed = consume(T_SEMICOLON);
+                }
+                repl::accept();
+
+            // possibly unexpected token; try to parse an expression
+            } else if(stream.check()) {
+                /*token got;
+                stream.accept(got);
+                stream.undo();
+                p.report_simple(io::e_unexpected_symbol, got);
+                last_parsed = false;
+                */
+
+                repl::wait();
+                last_parsed = parse(expression_parsers, 0);
+                if(last_parsed) {
+                    last_parsed = consume(T_SEMICOLON);
+                    expression *top_expr(pop(stack)->reinterpret<expression>());
+                    stmts->statements.push_back(new expression_statement(top_expr));
                 }
                 repl::accept();
 
