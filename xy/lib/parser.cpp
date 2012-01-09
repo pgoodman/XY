@@ -759,6 +759,7 @@ namespace xy {
 
     bool parser::parse_type_type_declaration(const token &tok, const char *) throw() {
         type_type_declaration *decl(new type_type_declaration);
+        printf("pushed Type %p\n", reinterpret_cast<void *>(decl));
         decl->location = tok;
         stack.push_back(decl);
         return true;
