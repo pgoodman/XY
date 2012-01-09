@@ -10,6 +10,7 @@
 #define XY_RTTI_HPP_
 
 #include <stdint.h>
+#include <cstdio>
 
 #include "xy/include/mpl/id.hpp"
 #include "xy/include/support/unsafe_cast.hpp"
