@@ -98,7 +98,6 @@
 #   define XY_AST_BEGIN(base, super) \
     struct base : public mpl::rtti<ast_type_category, base, super> { \
     public: \
-        using mpl::rtti<ast_type_category, base, super>::type_id; \
         virtual void visit(ast_visitor &visitor) throw(); \
         virtual const char *class_name(void) const throw();
 

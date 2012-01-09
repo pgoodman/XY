@@ -52,7 +52,7 @@ namespace xy { namespace mpl {
         virtual ~rtti(void) throw() { }
 
         static rtti_type static_id(void) throw() {
-            static rtti_type id(Base::static_id() | exact_id());
+            static rtti_type id(Base::static_id() | rtti<Category, Derived, Base>::exact_id());
             return id;
         }
 
@@ -78,7 +78,7 @@ namespace xy { namespace mpl {
         virtual ~rtti(void) throw() { }
 
         static rtti_type static_id(void) throw() {
-            return exact_id();
+            return rtti<Category, Derived, void>::exact_id();
         }
 
         static rtti_type exact_id(void) throw() {
