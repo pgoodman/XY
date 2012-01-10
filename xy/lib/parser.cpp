@@ -1099,7 +1099,7 @@ namespace xy {
         arrow_type_declaration *arg_types_(second_type->reinterpret<arrow_type_declaration>());
         if(nullptr == arg_types_
         || arg_types_->is_wrapped) {
-            printf("re-wrapping args %p %lu '%s'\n", reinterpret_cast<void *>(second_type), static_cast<unsigned long>(second_type->type_id()), second_type->class_name());
+            //printf("re-wrapping args %p %lu '%s'\n", reinterpret_cast<void *>(second_type), static_cast<unsigned long>(second_type->type_id()), second_type->class_name());
             arg_types_ = new arrow_type_declaration;
             arg_types_->types.push_back(second_type);
         }
@@ -1379,7 +1379,7 @@ namespace xy {
                     return false;
                 }
 
-                ast *decl(nullptr);
+                definition_statement *decl_as_def(nullptr);
 
                 // as a function
                 if(stream.check(T_FUNCTION)) {
@@ -1397,7 +1397,7 @@ namespace xy {
                     }
 
                     stack.pop_back();
-                    decl = def;
+                    decl_as_def = def;
 
                 // as a record
                 } else if(stream.check(T_RECORD)) {
@@ -1414,8 +1414,7 @@ namespace xy {
                 stmts->statements.push_back(new structured_type_definition(
                     names[0].first,
                     names[0].second,
-                    decl,
-                    template_arg_types
+                    decl_as_def
                 ));
 
                 /*

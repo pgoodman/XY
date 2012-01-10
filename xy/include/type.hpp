@@ -70,6 +70,8 @@ namespace xy {
         struct reference_type : public mpl::rtti<type_category, reference_type, type> {
         public:
             type *inner_type;
+
+            void assign(type *) throw();
         };
 
         /// represents an array of elements of some type; can be seen as a

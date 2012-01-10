@@ -33,6 +33,8 @@ namespace xy { namespace repl {
         case ':': linenoiseAddCompletion(lc,":="); break;
         case 'y': linenoiseAddCompletion(lc,"yield"); break;
         case '=': linenoiseAddCompletion(lc,"=>"); break;
+        case 'T': linenoiseAddCompletion(lc,"Type"); break;
+        case 'U': linenoiseAddCompletion(lc,"Unit"); break;
             break;
         default: break;
         }

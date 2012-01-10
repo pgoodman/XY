@@ -40,6 +40,15 @@ namespace xy {
         inner_types.back() = inner_type->resolve();
     }
 
+    void reference_type::assign(type *inner_type_) throw() {
+        reference_type *inner_as_ref(inner_type_->reinterpret<reference_type>());
+        if(nullptr == inner_as_ref) {
+            inner_type = inner_type_;
+        } else {
+            inner_type = inner_as_ref->inner_type;
+        }
+    }
+
 }
 
 #if 0

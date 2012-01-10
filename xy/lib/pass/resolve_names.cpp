@@ -26,18 +26,16 @@ namespace xy { namespace pass {
     struct name_expectation {
     public:
         symtab::symbol expected_name;
-        ast *expected_by;
-        io::message_id message;
+        symtab::entry *needed_by;
     };
 
     /// list of expected names
     struct name_expectation_list : public std::list<name_expectation> {
     public:
-        void push_back(symtab::symbol sym_, ast *ast_, io::message_id id_) throw() {
+        void push_back(symtab::symbol sym_, symtab::entry *entry) throw() {
             name_expectation exp;
-            exp.expected_by = ast_;
             exp.expected_name = sym_;
-            exp.message = id_;
+            exp.needed_by = entry;
             this->std::list<name_expectation>::push_back(exp);
         }
     };
@@ -345,14 +343,14 @@ namespace xy { namespace pass {
 
             entry->origin.def = def;
 
-            if(def->declaration->is_instance<function_definition>()) {
+            if(def->def->is_instance<function_definition>()) {
                 entry->name_type = symtab::TEMPLATE_TYPE_FUNCTION;
 
             } else {
                 assert(false); // TODO
             }
 
-            def->declaration->visit(*this);
+            def->def->visit(*this);
         }
 
         virtual void visit(variable_definition *def) throw() {
@@ -374,6 +372,9 @@ namespace xy { namespace pass {
             entry->type.base = def->value->type_;
         }
 
+        /// visit a function definition. Because of the way things are brought
+        /// into scope, template arguments are able to represent anonymously
+        /// defined recursive types, or anonymous CRTP
         virtual void visit(function_definition *def) throw() {
             const size_t num_args(def->arg_names.size());
             const size_t num_tpl_args(def->template_arg_names.size());
@@ -397,19 +398,47 @@ namespace xy { namespace pass {
                     entry->type.base = ts.make_type_var();
                 } else {
                     entry->name_type = symtab::TEMPLATE_VARIABLE;
+
                     // entry->type.base // TODO
                 }
             }
 
-            // then the names of argument types
+            // then the types of the arguments, given the template arguments
+            // as being in scope
+            for(size_t i(0); i < num_tpl_args; ++i) {
+                type_declaration *decl(def->template_arg_types->types[i]);
+                if(!decl->is_instance<type_type_declaration>()
+                && !decl->is_instance<unit_type_declaration>()) {
+                    decl->visit(*this);
+                }
+            }
             for(size_t i(0); i < num_args; ++i) {
-
+                type_declaration *decl(def->arg_types->types[i]);
+                if(!decl->is_instance<type_type_declaration>()
+                && !decl->is_instance<unit_type_declaration>()) {
+                    decl->visit(*this);
+                }
             }
 
-            // then the types of the arguments, given the argument names and
-            // template arguments as being in scope
+            // then bring the names of argument types into scope; make sure they
+            // don't clash with template argument names!
+            for(size_t i(0); i < num_args; ++i) {
+                name = def->arg_names[i].second;
+                entry = stab.shallow_lookup(def->statements, name);
+                if(nullptr != entry) {
+                    report_existing_symbol(
+                        def->arg_names[i].first,
+                        *(entry->origin.location)
+                    );
+                } else {
+                    entry = stab.insert(def->statements, name);
+                }
+
+                entry->origin.location = &(def->arg_names[i].first);
+            }
 
             // then the body
+            def->statements->visit(*this);
         }
     };
 

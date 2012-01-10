@@ -256,11 +256,10 @@ XY_AST_END
         /// complex type definition
         XY_AST_BEGIN(structured_type_definition, definition_statement)
             XY_AST_MEMBERS(XY_AST_MEMBER_VAR,
-                (ast *,                     declaration),
-                (arrow_type_declaration *,  args))
+                (definition_statement *,    def))
 
-            XY_AST_CONSTRUCTOR(structured_type_definition, location, name, declaration, args)
-            XY_AST_DESTRUCTOR(structured_type_definition, declaration)
+            XY_AST_CONSTRUCTOR(structured_type_definition, location, name, def)
+            XY_AST_DESTRUCTOR(structured_type_definition, def)
         XY_AST_END
 
         /// simple variable definition
