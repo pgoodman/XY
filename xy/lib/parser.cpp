@@ -1306,6 +1306,7 @@ namespace xy {
                 stack.push_back(def->statements);
 
                 if(!parse_function(def, true)) {
+                    stack.pop_back();
                     delete def;
                     return false;
                 }
@@ -1392,6 +1393,7 @@ namespace xy {
                     stack.push_back(def->statements);
 
                     if(!parse_function(def, false)) {
+                        stack.pop_back();
                         delete def;
                         return false;
                     }
