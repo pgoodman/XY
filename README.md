@@ -31,8 +31,8 @@ Compiling with LLVM Toolchain
     make install
     make CXX="clang++ -Dconstexpr=const -Dnullptr=0" CC="clang"
 
-Compiling with the Intel&reg; C++ Studio
---------------------------------------
+Compiling with Intel&reg; C++ Studio
+------------------------------------
 
     make install
     make CXX="icpc -Dconstexpr=const -Dnullptr=0" CC="icc"
