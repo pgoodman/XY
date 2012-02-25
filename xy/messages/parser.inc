@@ -42,4 +42,6 @@ XY_MSG(e_func_two_units, error, "The Unit type is not allowed to appear more tha
 XY_MSG(e_func_cant_take_type, error, "A function cannot take as an argument a type or a template type.")
 XY_MSG(e_double_arrow_tpl_type, error, "The double arrow (=>) is used to separate template arguments from function arguments in function templates and cannot be used in type templates.")
 
+XY_MSG(e_expected_type_in_brackets, error, "An inline type declaration was expected after this opening bracket. This would have made an inline array type declaration.")
+XY_MSG(e_not_type_in_brackets, error, "Only inline type definitions are allowed to appear between square brackets.")
 

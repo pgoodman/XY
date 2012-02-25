@@ -260,7 +260,30 @@ namespace xy {
             return false;
         }
 
-        arrow_type_declaration *left_op(left->reinterpret<arrow_type_declaration>());
+        arrow_type_declaration *left_op(new arrow_type_declaration);
+
+        left_op->types.push_back(left);
+        left_op->location = left->location;
+        left_op->location.extend(right->location);
+
+        arrow_type_declaration *right_op(right->reinterpret<arrow_type_declaration>());
+
+        if(nullptr != right_op) {
+            right_op->print(std::cout << "is wrapped: " << right_op->is_wrapped, stab);
+            std::cout << std::endl;
+        }
+
+        if(nullptr == right_op || right_op->is_wrapped) {
+            left_op->types.push_back(right);
+        } else {
+            extend(left_op->types, right_op->types);
+            right_op->types.clear();
+            delete right_op;
+        }
+
+        stack.push_back(left_op);
+
+#if 0
         arrow_type_declaration *right_op(right->reinterpret<arrow_type_declaration>());
 
         //printf("left_op=%p  left=%p\n", reinterpret_cast<void *>(left_op), reinterpret_cast<void *>(left));
@@ -300,7 +323,7 @@ namespace xy {
 
         right_op->location = location;
         stack.push_back(right_op);
-
+#endif
         return true;
     }
 
@@ -625,21 +648,25 @@ namespace xy {
     /// declaration.
     bool parser::parse_array_literal(const token &open_bracket, const char *) throw() {
 
-        // empty array
-        /*if(stream.check(T_CLOSE_BRACKET)) {
-            // TODO
-            stream.accept();
-            stack.push_back(new array_expr);
-            return true;
-
-            assert(false && "Array literals?");
-        }*/
-
         if(!parse(expression_parsers, 0)) {
+            ctx.report_here(open_bracket, io::e_expected_type_in_brackets);
             return false;
         }
 
         ast *first(pop(stack));
+
+        token next;
+        stream.accept(next);
+        stream.undo();
+
+        if(!consume(T_CLOSE_BRACKET)) {
+            if(!first->is_instance<type_declaration>()) {
+                goto report_not_array_type;
+            }
+
+            delete first;
+            return false;
+        }
 
         // make the array type declaration, and try to make its location extend
         // for the entire declaration
@@ -648,62 +675,26 @@ namespace xy {
             decl->location = open_bracket;
             decl->location.extend(decl->inner_type->location);
             stack.push_back(decl);
-            token next;
-            stream.accept(next);
-            stream.undo();
-            if(!consume(T_CLOSE_BRACKET)) {
-                return false;
-            }
             decl->location.extend(next);
 
             return true;
-
-        } else if(first->is_instance<expression>()) {
-            /*array_expr *arr(new array_expr);
-            arr->elements.push_back(first->reinterpret<expression>());
-
-            token expr_head;
-            for(; !stream.check(T_CLOSE_BRACKET);) {
-                if(!consume(T_COMMA)) {
-                    delete arr;
-                    return false;
-                }
-
-                if(stream.check(T_CLOSE_BRACKET)) {
-                    break;
-                }
-
-                stream.accept(expr_head);
-                stream.undo();
-
-                if(!parse(expression_parsers, 0)) {
-                    delete arr;
-                    return false;
-                }
-
-                first = pop(stack);
-
-                // add the array element into the array
-                if(first->is_instance<expression>()) {
-                    arr->elements.push_back(first->reinterpret<expression>());
-
-                // found a non-expression array element
-                } else {
-                    delete first;
-                    delete arr;
-                    return report_simple(io::e_array_element_must_be_expr, expr_head);
-                }
-            }
-
-            stack.push_back(arr);
-
-            return consume(T_CLOSE_BRACKET);
-            */
-            assert(false); // TODO
-            return false;
-        } else {
-            return false;
         }
+
+    report_not_array_type:
+
+        token location(open_bracket);
+        if(first->is_instance<expression>()) {
+            location.extend(first->reinterpret<expression>()->location);
+
+            if(T_CLOSE_BRACKET == next.type()) {
+                location.extend(next);
+            }
+        }
+
+        delete first;
+
+        ctx.report_here(location, io::e_not_type_in_brackets);
+        return false;
     }
 
     bool parser::parse_record_literal(const token &, const char *) throw() {
@@ -918,7 +909,8 @@ namespace xy {
                 stream.accept(got, name_buff);
 
                 // we should expect a type name
-                if(part->is_instance<type_type_declaration>()) {
+                if(part->is_instance<type_type_declaration>()
+                || part->returns_type()) {
 
                     // don't allow us to re-assign a type name
                     if(T_TYPE_NAME != got.type()) {
@@ -1127,13 +1119,6 @@ namespace xy {
         // if null then there are none for either
         assert(!(is_func && nullptr != tpl_types_ && nullptr == arg_types_));
         assert(!is_func || (is_func && nullptr != arg_types_));
-
-        /*if(nullptr != tpl_types_) {
-            printf("tpl len = %lu\n", tpl_types_->types.size());
-        }
-        if(nullptr != arg_types_) {
-            printf("arg len = %lu\n", arg_types_->types.size());
-        }*/
 
         // validate the argument types
         if(is_func && nullptr != (*arg_types)) {

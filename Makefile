@@ -94,7 +94,7 @@ OBJS =
 
 #OBJS += bin/deps/openbsd/realpath.o
 OBJS += bin/deps/openbsd/strcasecmp.o
-OBJS += bin/deps/openbsd/strdup.o
+#OBJS += bin/deps/openbsd/strdup.o
 OBJS += bin/deps/openbsd/strlcat.o
 OBJS += bin/deps/openbsd/strlcpy.o
 
@@ -146,9 +146,6 @@ bin/lib/repl/%.o: xy/lib/repl/%.cpp
 bin/deps/libdatrie/%.o: xy/deps/libdatrie/%.c
 	${CC} ${CC_FLAGS} -c $< -o $@
 
-bin/deps/libdatrie/%.o: xy/deps/libdatrie/%.c
-	${CC} ${CC_FLAGS} -c $< -o $@
-
 bin/deps/linenoise/%.o: xy/deps/linenoise/%.c
 	${CC} ${CC_FLAGS} -c $< -o $@
 
@@ -164,7 +161,6 @@ install:
 	-mkdir bin/lib/repl
 	-mkdir bin/lib/pass
 	-mkdir bin/deps
-	-mkdir bin/deps/libdatrie
 	-mkdir bin/deps/linenoise
 	-mkdir bin/deps/openbsd
 	-mkdir bin/deps/murmurhash
@@ -177,7 +173,6 @@ clean:
 	-rm -f bin/lib/support/*.o
 	-rm -f bin/lib/repl/*.o
 	-rm -f bin/lib/pass/*.o
-	-rm -f bin/deps/libdatrie/*.o
 	-rm -f bin/deps/linenoise/*.o
 	-rm -f bin/deps/openbsd/*.o
 	-rm -f bin/deps/murmurhash/*.o
