@@ -1,3 +1,5 @@
+**Note: XY is incomplete, bug-ridden, and unmaintained!!**
+
 XY Programming Language
 =======================
 
